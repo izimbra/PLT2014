@@ -7,8 +7,13 @@ Func. Function ::= Type Ident "()" "{" [Stm] "}" ;
 terminator Function ""  ;
 terminator Stm	    ";" ;
 
-S1.   Stm  ::= Ident ;
+SReturn. Stm ::= "return" Ident;
+SReturn2. Stm ::= "return" Integer;
 
+MClassMethod. Mth ::= Ident "::" Ident; 
+S1.   Stm  ::= Ident ;
+S2.   Stm  ::= Mth ;
+S3.   Stm  ::= Mth "<<" String "<<" Mth;
 TInt. Type ::= "int" ;
 
 
