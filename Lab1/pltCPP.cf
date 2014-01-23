@@ -1,0 +1,16 @@
+comment "//" ;
+comment "#" ; 
+
+Prog. Program  ::= [Function] ;
+Func. Function ::= Type Ident "()" "{" [Stm] "}" ;
+
+terminator Function ""  ;
+terminator Stm	    ";" ;
+
+S1.   Stm  ::= Ident ;
+
+TInt. Type ::= "int" ;
+
+
+
+

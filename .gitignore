@@ -5,3 +5,16 @@ cabal-dev
 *.chi
 *.chs.h
 .virthualenv
+*.dvi
+*.aux
+*.log
+*.pdf
+*.ps
+*.txt
+*.tex
+*.o
+*.x
+*.y
+
+# temporarily disable Haskell source files
+*.hs
