@@ -1,20 +1,76 @@
+-- optional entrypoint
+entrypoints Program ;
+
+-- Programs
+Prog. Program  ::= [Def] ;
+terminator Def "" ;
+
+-- Comments are ignored
 comment "//" ;
-comment "#" ; 
+comment "#" ;
+comment "/*" "*/" ;
 
-Prog. Program  ::= [Function] ;
-Func. Function ::= Type Ident "()" "{" [Stm] "}" ;
+-- Definitions
+DFunc. Def ::= Type Id "(" [Arg] ")" "{" [Stm] "}" ;
+-- alt Body => BStm . Body ::= "{" [Stm] "}" ;
+--DTypedef. Def ::= "typedef" ;
+--VarDecl
+--DStruct
+DUsing. Def ::= "using" QConst ";" ;
 
-terminator Function ""  ;
-terminator Stm	    ";" ;
 
-SReturn. Stm ::= "return" Ident;
-SReturn2. Stm ::= "return" Integer;
+-- Varible and argument declarations -- watch out for counterexample!
+DecArg. Arg ::= Type Id;
+separator Arg "," ;
+DecVar. Var ::= Type [Id];
+separator nonempty Id "," ;
 
-MClassMethod. Mth ::= Ident "::" Ident; 
-S1.   Stm  ::= Ident ;
-S2.   Stm  ::= Mth ;
-S3.   Stm  ::= Mth "<<" String "<<" Mth;
-TInt. Type ::= "int" ;
+-- statements
+SExpr. Stm ::= Exp ";" ;
+SDec.  Stm ::= Var ";" ;
+SRet.  Stm ::= "return" Exp ";" ;
+SDecl. Stm ::= Type Id ";" ;
+--terminator Function ""  ;
+terminator Stm	    "" ;
+
+
+
+-- expressions
+EInt.    Exp16 ::= Integer ;
+EString. Exp16 ::= String ;
+EConst.  Exp15 ::= QConst ;
+ELShift. Exp10 ::= Exp10 "<<" Exp11 ;
+--left-associativity
+ERShift. Exp10 ::= Exp11 ">>" Exp10 ;
+
+coercions Exp 16 ;
+
+--qualified constants
+QCon.  QConst ::= [Const] ;
+separator nonempty Const "::" ;
+
+CId.    Const ::= Id ;
+
+--types
+TInt.   Type  ::= "int" ;
+TDoube. Type  ::= "double" ;
+TConst. Type  ::= QConst ;
+
+--names : Ident allows \', we should not!
+token Id (letter (letter | digit | '_')*) ;
+
+
+
+--SReturn. Stm ::= "return" Ident ;
+--SReturn2. Stm ::= "return" Integer ;
+--SExpr. Stm ::= "" ; 
+
+--MClassMethod. Mth ::= Ident "::" Ident ;
+
+--S1.   Stm  ::= Ident ;
+--S2.   Stm  ::= Mth ;
+--S3.   Stm  ::= Mth "<<" String "<<" Mth ;
+--TInt. Type ::= "int" ;
 
 
 
