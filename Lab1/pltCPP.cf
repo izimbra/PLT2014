@@ -22,8 +22,8 @@ DUsing. Def ::= "using" QConst ";" ;
 -- Varible and argument declarations -- watch out for counterexample!
 DecArg. Arg ::= Type Id;
 separator Arg "," ;
-DecVar. Var ::= Type [Id];
-separator nonempty Id "," ;
+DecVar. Var ::= Type [Id] ;
+separator nonempty  Id "," ;
 
 -- statements
 SExpr. Stm ::= Exp ";" ;
@@ -50,7 +50,10 @@ QCon.  QConst ::= [Const] ;
 separator nonempty Const "::" ;
 
 CId.    Const ::= Id ;
+CTempl. Const ::= Id"<"[Type]">" ;
+separator nonempty Type "," ;
 
+--TT.     TType ::= Type ;
 --types
 TInt.   Type  ::= "int" ;
 TDoube. Type  ::= "double" ;

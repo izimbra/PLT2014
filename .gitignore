@@ -17,7 +17,7 @@ cabal-dev
 *.y
 *.tar
 *.gz
-Lab1/TestpltCPP
+Lab1/TestpltCPP*
 
 # temporarily disable Haskell source files
 *.hs
