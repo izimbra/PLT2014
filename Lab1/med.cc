@@ -22,9 +22,8 @@ int main()
 
 	// ask for and read the midterm and final grades
 	cout << "Please enter your midterm and final exam grades: ";
-	double;
-        //midterm, final;
-	//cin >> midterm >> final;
+	double midterm, final;
+	cin >> midterm >> final;
 
 	// ask for and read the homework grades
 	cout << "Enter all your homework grades, "

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 make distclean
-bnfc -m --haskell pltCPP.cf
+bnfc --haskell pltCPP.cf
 make
 echo ""
 echo "Running test 1:"

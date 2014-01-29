@@ -20,16 +20,19 @@ DUsing. Def ::= "using" QConst ";" ;
 
 
 -- Varible and argument declarations -- watch out for counterexample!
-DecArg. Arg ::= Type Id;
+DecArg. Arg ::= Type Id ;
 separator Arg "," ;
 DecVar. Var ::= Type [Id] ;
 separator nonempty  Id "," ;
 
 -- statements
-SExpr. Stm ::= Exp ";" ;
-SDec.  Stm ::= Var ";" ;
-SRet.  Stm ::= "return" Exp ";" ;
-SDecl. Stm ::= Type Id ";" ;
+SExpr.    Stm ::= Exp ";" ;
+SVar.     Stm ::= Var ";" ;
+SRet.     Stm ::= "return" Exp ";" ;
+--SDecl.    Stm ::= Type Id ;
+SBlock.   Stm ::= "{" [Stm] "}" ;
+SWhile.   Stm ::= "while" "(" Exp ")" Stm ;
+STDef.    Stm ::= "typedef" QConst Id;
 --terminator Function ""  ;
 terminator Stm	    "" ;
 
@@ -37,11 +40,19 @@ terminator Stm	    "" ;
 
 -- expressions
 EInt.    Exp16 ::= Integer ;
-EString. Exp16 ::= String ;
+EDbl.    Exp16 ::= Double ;
+--EString. Exp16 ::= String ;
+EStrLit. Exp16 ::= [String] ;
 EConst.  Exp15 ::= QConst ;
 ELShift. Exp10 ::= Exp10 "<<" Exp11 ;
 --left-associativity
 ERShift. Exp10 ::= Exp11 ">>" Exp10 ;
+EFunCall. Exp15 ::= Id "("[Exp]")" ;
+EStrDot. Exp14 ::= Exp15"."Exp15 ;
+EStrArr. Exp14 ::= Exp15"->"Exp15 ;
+EAssign. Exp2 ::= Exp3"="Exp3; 
+separator Exp "," ;
+separator String "" ;
 
 coercions Exp 16 ;
 
