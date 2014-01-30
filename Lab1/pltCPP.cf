@@ -29,10 +29,11 @@ separator nonempty  Id "," ;
 SExpr.    Stm ::= Exp ";" ;
 SVar.     Stm ::= Var ";" ;
 SRet.     Stm ::= "return" Exp ";" ;
---SDecl.    Stm ::= Type Id ;
+SDecl.    Stm ::= Type Id ;
 SBlock.   Stm ::= "{" [Stm] "}" ;
 SWhile.   Stm ::= "while" "(" Exp ")" Stm ;
 STDef.    Stm ::= "typedef" QConst Id;
+SIf.      Stm ::= "if" "(" Exp ")" Stm ;
 --terminator Function ""  ;
 terminator Stm	    "" ;
 
@@ -44,13 +45,23 @@ EDbl.    Exp16 ::= Double ;
 --EString. Exp16 ::= String ;
 EStrLit. Exp16 ::= [String] ;
 EConst.  Exp15 ::= QConst ;
-ELShift. Exp10 ::= Exp10 "<<" Exp11 ;
---left-associativity
-ERShift. Exp10 ::= Exp11 ">>" Exp10 ;
+EIndex.   Exp15 ::= Exp16"["Exp"]" ;
 EFunCall. Exp15 ::= Id "("[Exp]")" ;
 EStrDot. Exp14 ::= Exp15"."Exp15 ;
 EStrArr. Exp14 ::= Exp15"->"Exp15 ;
-EAssign. Exp2 ::= Exp3"="Exp3; 
+--Exp14 e++, e--, *e
+--Exp13 ++e, --e, !e
+--Exp12 *,/,%
+EDiv.    Exp12 ::= Exp13 "/" Exp13 ;
+EMod.    Exp12 ::= Exp13 "%" Exp13 ;
+--Exp11 +,-
+ELShift.  Exp10 ::= Exp10 "<<" Exp11 ; --left-associativity
+ERShift.  Exp10 ::= Exp11 ">>" Exp10 ;
+--EComp.  Exp9
+EEqual.   Exp8  ::= Exp9 "==" Exp9 ;
+EIneq.    Exp8  ::= Exp9 "!=" Exp9 ;
+EAssign.  Exp2  ::= Exp3 "=" Exp3 ;
+ETernary. Exp2  ::= Exp3 "?" Exp3 ":" Exp3 ;
 separator Exp "," ;
 separator String "" ;
 
