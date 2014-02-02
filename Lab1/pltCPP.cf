@@ -20,7 +20,10 @@ DUsing. Def ::= "using" QConst ";" ;
 
 
 -- Varible and argument declarations -- watch out for counterexample!
+ConstArg. Arg ::= "const" Arg;
 DecArg. Arg ::= Type Id ;
+DecArgRef. Arg ::= Type "&" Id; -- probably want to make & part of Id, not of Type, to be correct and general in cases such as  int &a, b, &c  or int *a , b, *c , Watch out for counterexmaples!
+
 separator Arg "," ;
 DecVar. Var ::= Type [Id] ;
 separator nonempty  Id "," ;
