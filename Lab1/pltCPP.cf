@@ -13,7 +13,10 @@ comment "/*" "*/" ;
 -- Definitions
 DFunc. Def ::= Type Id "(" [Arg] ")" "{" [Stm] "}" ;
 -- alt Body => BStm . Body ::= "{" [Stm] "}" ;
---DTypedef. Def ::= "typedef" ;
+DTypedefdef. Def ::= TyDef ";";  --The problem with grammar.cc is that it has typedefs outside of any function, they become statements but not defs.
+--this solution looks kinda ugly, but allows a single definition of the typedef statement to be used outside of functions as defs, and also inside functions as statements (below).  I moved the definition of typedef outside, and then allowed it to be a statement or a def, adding ";" for the def
+DTypedef. TyDef ::= "typedef" QConst Id ;
+--DTypedef. Def ::= "typedef" QConst Id ;
 --VarDecl
 --DStruct
 DUsing. Def ::= "using" QConst ";" ;
@@ -22,7 +25,10 @@ DUsing. Def ::= "using" QConst ";" ;
 -- Varible and argument declarations -- watch out for counterexample!
 ConstArg. Arg ::= "const" Arg;
 DecArg. Arg ::= Type Id ;
+DecArgNoname. Arg ::= Type; --Arguments in function prototypes don't have to have names (grammar.cc line 48)
 DecArgRef. Arg ::= Type "&" Id; -- probably want to make & part of Id, not of Type, to be correct and general in cases such as  int &a, b, &c  or int *a , b, *c , Watch out for counterexmaples!
+
+DefArgRefNoname. Arg ::= Type "&" ; -- grammar 48, prototype with & noname args. getting too specific, I know
 
 separator Arg "," ;
 DecVar. Var ::= Type [Id] ;
@@ -35,7 +41,8 @@ SRet.     Stm ::= "return" Exp ";" ;
 SDecl.    Stm ::= Type Id ;
 SBlock.   Stm ::= "{" [Stm] "}" ;
 SWhile.   Stm ::= "while" "(" Exp ")" Stm ;
-STDef.    Stm ::= "typedef" QConst Id;
+STDef.    Stm ::= TyDef;
+--STDef.    Stm ::= "typedef" QConst Id;
 SIf.      Stm ::= "if" "(" Exp ")" Stm ;
 --terminator Function ""  ;
 terminator Stm	    "" ;
@@ -70,6 +77,7 @@ EEqual.   Exp8  ::= Exp9 "==" Exp9 ;
 EIneq.    Exp8  ::= Exp9 "!=" Exp9 ;
 EAssign.  Exp2  ::= Exp3 "=" Exp2 ;
 ETernary. Exp2  ::= Exp3 "?" Exp3 ":" Exp3 ;
+ENegate.  Exp1  ::= "!" Exp2; --I put this lowest, figure it can negate any higher level exp -- grammar.cc line 40
 separator Exp "," ;
 separator String "" ;
 
@@ -79,8 +87,8 @@ coercions Exp 16 ;
 QCon.  QConst ::= [Const] ;
 separator nonempty Const "::" ;
 
-CId.    Const ::= Id ;
 CTempl. Const ::= Id"<"[Type]">" ;
+CId.    Const ::= Id ;
 separator nonempty Type "," ;
 
 --TT.     TType ::= Type ;
