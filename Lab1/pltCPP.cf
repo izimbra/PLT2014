@@ -11,6 +11,7 @@ comment "#" ;
 comment "/*" "*/" ;
 
 -- Definitions
+DProto. Def ::= Type Id "(" [Arg] ")" ";" ; --function prototype grammar.cc 48
 DFunc. Def ::= Type Id "(" [Arg] ")" "{" [Stm] "}" ;
 -- alt Body => BStm . Body ::= "{" [Stm] "}" ;
 DTypedefdef. Def ::= TyDef ";";  --The problem with grammar.cc is that it has typedefs outside of any function, they become statements but not defs.
@@ -43,7 +44,9 @@ SBlock.   Stm ::= "{" [Stm] "}" ;
 SWhile.   Stm ::= "while" "(" Exp ")" Stm ;
 STDef.    Stm ::= TyDef;
 --STDef.    Stm ::= "typedef" QConst Id;
-SIf.      Stm ::= "if" "(" Exp ")" Stm ;
+SIfpart.  IfHead ::= "if" "(" Exp ")" Stm ; --more compact
+SIfElse.  Stm ::= IfHead "else" Stm ; --book  34, grammar.cc 68-70 -adds else option
+SIf.      Stm ::= IfHead; -- if without else
 --terminator Function ""  ;
 terminator Stm	    "" ;
 
@@ -52,6 +55,7 @@ terminator Stm	    "" ;
 -- expressions
 EInt.    Exp16 ::= Integer ;
 EDbl.    Exp16 ::= Double ;
+EChar.   Exp16 ::= Char ; --book 31 built in BNFC type, solves grammar.cc 61 '<'
 --EString. Exp16 ::= String ;
 EStrLit. Exp16 ::= [String] ;
 EConst.  Exp15 ::= QConst ;
@@ -72,9 +76,11 @@ EMod.    Exp12 ::= Exp13 "%" Exp13 ;
 --Exp11 +,-
 ELShift.  Exp10 ::= Exp10 "<<" Exp11 ; --left-associativity
 ERShift.  Exp10 ::= Exp11 ">>" Exp10 ;
+EGt.      Exp9  ::= Exp9 ">" Exp10; --book 35  grammar.cc 61
 --EComp.  Exp9
 EEqual.   Exp8  ::= Exp9 "==" Exp9 ;
 EIneq.    Exp8  ::= Exp9 "!=" Exp9 ;
+EAnd.     Exp4  ::= Exp4 "&&" Exp5 ; -- book p36,  grammar.cc 61
 EAssign.  Exp2  ::= Exp3 "=" Exp2 ;
 ETernary. Exp2  ::= Exp3 "?" Exp3 ":" Exp3 ;
 ENegate.  Exp1  ::= "!" Exp2; --I put this lowest, figure it can negate any higher level exp -- grammar.cc line 40
