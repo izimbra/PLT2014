@@ -41,7 +41,6 @@ int main()
 #else
 	typedef vector<double>::size_type vec_sz;
 #endif
-        //x = 5; passes
 	vec_sz size = homework.size();
 	if (size == 0) {
 		cout << endl << "You must enter your grades.  "
