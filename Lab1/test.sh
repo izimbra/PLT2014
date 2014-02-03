@@ -22,5 +22,23 @@ echo ""
 echo "Done!"
 echo ""
 echo ""
+echo "Running test 4:"
+./TestpltCPP grade.cc
+echo ""
+echo "Done!"
+echo ""
+echo ""
+echo "Running test 5:"
+./TestpltCPP palin.cc
+echo ""
+echo "Done!"
+echo ""
+echo ""
+echo "Running test 6:"
+./TestpltCPP grammar.cc
+echo ""
+echo "Done!"
+echo ""
+echo ""
 
 

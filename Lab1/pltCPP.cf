@@ -11,11 +11,15 @@ comment "#" ;
 comment "/*" "*/" ;
 
 -- Definitions
-DProto. Def ::= Type Id "(" [Arg] ")" ";" ; --function prototype grammar.cc 48
-DFunc. Def ::= Type Id "(" [Arg] ")" "{" [Stm] "}" ;
--- alt Body => BStm . Body ::= "{" [Stm] "}" ;
-DTypedefdef. Def ::= TyDef ";";  --The problem with grammar.cc is that it has typedefs outside of any function, they become statements but not defs.
---this solution looks kinda ugly, but allows a single definition of the typedef statement to be used outside of functions as defs, and also inside functions as statements (below).  I moved the definition of typedef outside, and then allowed it to be a statement or a def, adding ";" for the def
+DFunProto. Def ::= Type Id "(" [Arg] ")" ";" ; -- function prototype grammar.cc 48
+DFuncDef.  Def ::= Type Id "(" [Arg] ")" "{" [Stm] "}" ; -- function definition
+--DFunBody. Body ::= "{" [Stm] "}" ;
+
+
+DTypedefdef. Def ::= TyDef ";" ;
+-- The problem with grammar.cc is that it has typedefs outside of any function,
+-- they become statements but not defs.
+-- this solution looks kinda ugly, but allows a single definition of the typedef statement to be used outside of functions as defs, and also inside functions as statements (below).  I moved the definition of typedef outside, and then allowed it to be a statement or a def, adding ";" for the def
 DTypedef. TyDef ::= "typedef" QConst Id ;
 --DTypedef. Def ::= "typedef" QConst Id ;
 --VarDecl
@@ -23,67 +27,95 @@ DTypedef. TyDef ::= "typedef" QConst Id ;
 DUsing. Def ::= "using" QConst ";" ;
 
 
--- Varible and argument declarations -- watch out for counterexample!
-ConstArg. Arg ::= "const" Arg;
-DecArg. Arg ::= Type Id ;
-DecArgNoname. Arg ::= Type; --Arguments in function prototypes don't have to have names (grammar.cc line 48)
-DecArgRef. Arg ::= Type "&" Id; -- probably want to make & part of Id, not of Type, to be correct and general in cases such as  int &a, b, &c  or int *a , b, *c , Watch out for counterexmaples!
+-- Initialisation declarations, used for both arguments and variables
+IBasic.     Init ::= Type Id "=" Exp ;
+IConst.     Init ::= "const" Type Id "=" Exp ;
 
-DefArgRefNoname. Arg ::= Type "&" ; -- grammar 48, prototype with & noname args. getting too specific, I know
+-- Argument declarations -- watch out for counterexample!
+AConst.     Arg ::= "const" Arg;
+ADecl.      Arg ::= Type Id ; -- alt. merge 2 rules into Type [Id]
+ANoname.    Arg ::= Type ;
+AInit.      Arg ::= Init ;
+   -- arguments in function prototypes do not have to have names (grammar.cc line 48)
+
+--ARef. Arg ::= Type "&" Id; 
+  -- probably want to make & part of Id, not of Type, to be correct and general in cases
+  -- such as  int &a, b, &c  or int *a , b, *c , Watch out for counterexmaples!
+
+--ARefNoname. Arg ::= Type "&" ;
+  -- grammar 48, prototype with & noname args. getting too specific, I know
 
 separator Arg "," ;
-DecVar. Var ::= Type [Id] ;
+
+-- Variable declaration
+VDecl. Var ::= Type [Id] ;
+VInit. Var ::= Init ;
+
 separator nonempty  Id "," ;
 
--- statements
-SExpr.    Stm ::= Exp ";" ;
-SVar.     Stm ::= Var ";" ;
-SRet.     Stm ::= "return" Exp ";" ;
-SDecl.    Stm ::= Type Id ;
-SBlock.   Stm ::= "{" [Stm] "}" ;
-SWhile.   Stm ::= "while" "(" Exp ")" Stm ;
-STDef.    Stm ::= TyDef;
+-- Statements
+SExpr.      Stm ::= Exp ";" ;
+SVar.       Stm ::= Var ";" ;
+SRet.       Stm ::= "return" Exp ";" ;
+--SDecl.    Stm ::= Type Id ;
+SBlock.     Stm ::= "{" [Stm] "}" ;
+SWhile.     Stm ::= "while" "(" Exp ")" Stm ;
+SFor.       Stm ::= "for" "(" Var ";" Exp ";" Exp ")" Stm ;
+STDef.      Stm ::= TyDef;
 --STDef.    Stm ::= "typedef" QConst Id;
-SIfpart.  IfHead ::= "if" "(" Exp ")" Stm ; --more compact
-SIfElse.  Stm ::= IfHead "else" Stm ; --book  34, grammar.cc 68-70 -adds else option
-SIf.      Stm ::= IfHead; -- if without else
+SIfElse.    Stm ::= IfHead "else" Stm ; --book  34, grammar.cc 68-70 -adds else option
+SIf.        Stm ::= IfHead; -- if without else
+-- special category to deal with `dangling` else
+SIfHead.    IfHead ::= "if" "(" Exp ")" Stm ; -- more compact
 --terminator Function ""  ;
 terminator Stm	    "" ;
 
 
 
--- expressions
-EInt.    Exp16 ::= Integer ;
-EDbl.    Exp16 ::= Double ;
-EChar.   Exp16 ::= Char ; --book 31 built in BNFC type, solves grammar.cc 61 '<'
---EString. Exp16 ::= String ;
-EStrLit. Exp16 ::= [String] ;
-EConst.  Exp15 ::= QConst ;
+-- Expressions
+EParenth.   Exp   ::= "(" Exp ")" ; -- general parenthesis rule
+EInt.       Exp16 ::= Integer ;
+EDbl.       Exp16 ::= Double ;
+EChar.      Exp16 ::= Char ; --book 31 built in BNFC type, solves grammar.cc 61 '<'
+--EString.  Exp16 ::= String ;
+EStrLit.    Exp16 ::= [String] ;
+EConst.     Exp15 ::= QConst ;
 --EIndex.   Exp15 ::= Exp16 "[" Exp "]" ;
-EIndex. Exp15 ::= Id "[" Exp "]" ;
-EFunCall. Exp15 ::= Id "("[Exp]")" ;
-EStrDot. Exp14 ::= Exp15"."Exp15 ;
-EStrArr. Exp14 ::= Exp15"->"Exp15 ;
+EIndex.     Exp15 ::= Id "[" Exp "]" ;
+EFunCall.   Exp15 ::= Id "("[Exp]")" ;
+EStrDot.    Exp14 ::= Exp15"."Exp15 ;
+EStrArr.    Exp14 ::= Exp15"->"Exp15 ;
 --Exp14 e++, e--, *e 
 --Exp13 ++e, --e, !e
 --Exp12 *,/,%
+ENegate.    Exp13  ::= "!" Exp12;
+  -- I put this lowest, figure it can negate any higher level exp -- grammar.cc line 40
+  -- contradicts the spec
+  -- arithmetic
+EMul.       Exp12 ::= Exp12 "*"  Exp13 ;  --from book p35
+EAdd.       Exp11 ::= Exp11 "+"  Exp12 ;
+ESub.       Exp11 ::= Exp11 "-"  Exp12 ;
+EDiv.       Exp12 ::= Exp13 "/"  Exp13 ;
+EMod.       Exp12 ::= Exp13 "%"  Exp13 ;
+  -- bitwise
+ELShift.    Exp10 ::= Exp10 "<<" Exp11 ; --left-associativity
+ERShift.    Exp10 ::= Exp11 ">>" Exp10 ;
+  -- comparison
+ELt.        Exp9  ::= Exp9  "<"  Exp10 ;
+EGt.        Exp9  ::= Exp9  ">"  Exp10 ; --book 35  grammar.cc 61
+ELtEq.      Exp9  ::= Exp9  "<=" Exp10 ;
+EGtEq.      Exp9  ::= Exp9  ">=" Exp10 ;
+EEqual.     Exp8  ::= Exp9  "==" Exp9 ;
+EIneq.      Exp8  ::= Exp9  "!=" Exp9 ;
+  -- logical
+EAnd.       Exp4  ::= Exp4  "&&" Exp5 ; -- book p36,  grammar.cc 61
+EOr.        Exp3  ::= Exp3  "||" Exp5 ;
+  -- assignment
+EAssign.    Exp2  ::= Exp3  "="  Exp2 ;
 
-EMul.    Exp12 ::= Exp12 "*" Exp13 ;  --from book p35
-EAdd.    Exp11 ::= Exp11 "+" Exp12 ;
-ESub.    Exp11 ::= Exp11 "-" Exp12 ;
-EDiv.    Exp12 ::= Exp13 "/" Exp13 ;
-EMod.    Exp12 ::= Exp13 "%" Exp13 ;
---Exp11 +,-
-ELShift.  Exp10 ::= Exp10 "<<" Exp11 ; --left-associativity
-ERShift.  Exp10 ::= Exp11 ">>" Exp10 ;
-EGt.      Exp9  ::= Exp9 ">" Exp10; --book 35  grammar.cc 61
---EComp.  Exp9
-EEqual.   Exp8  ::= Exp9 "==" Exp9 ;
-EIneq.    Exp8  ::= Exp9 "!=" Exp9 ;
-EAnd.     Exp4  ::= Exp4 "&&" Exp5 ; -- book p36,  grammar.cc 61
-EAssign.  Exp2  ::= Exp3 "=" Exp2 ;
-ETernary. Exp2  ::= Exp3 "?" Exp3 ":" Exp3 ;
-ENegate.  Exp1  ::= "!" Exp2; --I put this lowest, figure it can negate any higher level exp -- grammar.cc line 40
+ETernary.   Exp2  ::= Exp3  "?"  Exp3 ":" Exp3 ;
+EThrtow.    Exp1  ::= "throw" Exp2 ; 
+
 separator Exp "," ;
 separator String "" ;
 
@@ -98,10 +130,12 @@ CId.    Const ::= Id ;
 separator nonempty Type "," ;
 
 --TT.     TType ::= Type ;
---types
+
+-- Types
 TInt.   Type  ::= "int" ;
 TDoube. Type  ::= "double" ;
 TConst. Type  ::= QConst ;
+TRef.   Type  ::= Type "&" ; -- reference types
 
 --names : Ident allows \', we should not!
 token Id (letter (letter | digit | '_')*) ;
