@@ -5,7 +5,6 @@ entrypoints Program ;
 Prog. Program  ::= [Def] ;
 terminator Def "" ;
 
-
 -- Defnitions
 DFun.        Def ::= Fun ;
 DTDef.       Def ::= TDef ";" ;
@@ -14,16 +13,9 @@ DStruct.     Def ::= Str ";" ;
 DUsing.      Def ::= "using" QConst ";" ;
 
 -- Functions
-FProto.  Fun ::= Type Id "(" [Arg] ")" ";" ; -- function prototype grammar.cc 48
+FProto.  Fun ::= Type Id "(" [Arg] ")" ";" ; -- prototype 
 FDef.    Fun ::= Type Id "(" [Arg] ")" "{" [Stm] "}" ; -- function definition
 Finline. Fun ::= "inline" Fun ;
---DFunBody. Body ::= "{" [Stm] "}" ;
-
-
---DTypedefdef. Def ::= TyDef ";" ;
--- The problem with grammar.cc is that it has typedefs outside of any function,
--- they become statements but not defs.
--- this solution looks kinda ugly, but allows a single definition of the typedef statement to be used outside of functions as defs, and also inside functions as statements (below).  I moved the definition of typedef outside, and then allowed it to be a statement or a def, adding ";" for the def
 
 -- Typedefs and structs
 -- 2 separate categories both as top-level definitions and statements
@@ -37,6 +29,10 @@ DecConst.      Dec ::= "const" Type Id ;
 DecInit.       Dec ::= Type Id "=" Exp ;
 DecInitConst.  Dec ::= "const" Type Id "=" Exp ;
 
+--Emil suggestion reduce to 3 rules the above?
+--DecConst.      Dec  ::= "const" Dec
+--DecSingle.     Dec ::= Type Id;
+--DecInit.       Dec ::= Type Id "=" Exp;
 
 
 -- Function arguments
@@ -48,33 +44,9 @@ ANonameConst. Arg ::= "const" Type ;
 separator Arg "," ;
 
 
---AConst.     Arg ::= "const" Dec;
---AConst.     Arg ::= "const" Type ;
-
-
---AInit.      Arg ::= Arg "=" Exp ;
---ADecl.      Arg ::= Init;
-
-  -- special case declarations
-
-
-
-   -- arguments in function prototypes do not have to have names (grammar.cc line 48)
-
---ARef. Arg ::= Type "&" Id; 
-  -- probably want to make & part of Id, not of Type, to be correct and general in cases
-  -- such as  int &a, b, &c  or int *a , b, *c , Watch out for counterexmaples!
-
---ARefNoname. Arg ::= Type "&" ;
-  -- grammar 48, prototype with & noname args. getting too specific, I know
-
-
-
 -- Variable declaration
 VDec.   Var ::= Dec ;
---VConst. Var ::= "const" Dec ;
 VMult.  Var ::= Type [Id] ;
---VInit. Var ::= Var "=" Exp ;
 
 separator nonempty  Id "," ;
 
@@ -88,11 +60,12 @@ SDoWhile.   Stm ::= "do" Stm "while" "(" Exp ")" ";" ;
 SFor.       Stm ::= "for" "(" Var ";" Exp ";" Exp ")" Stm ;
 STDef.      Stm ::= TDef ";" ;
 SStruct.    Stm ::= Str ";" ;
---STDef.    Stm ::= "typedef" QConst Id;
 SIfElse.    Stm ::= IfHead "else" Stm ; --book  34, grammar.cc 68-70 -adds else option
 SIf.        Stm ::= IfHead; -- if without else
 -- special category to deal with `dangling` else
 SIfHead.    IfHead ::= "if" "(" Exp ")" Stm ; -- more compact
+--140204 can we remove the IfHead category altogether? I wanted to not copy identical expressions, but now I think this is just 1 unneeded rule 
+
 --terminator Function ""  ;
 
 terminator Stm	    "" ;
