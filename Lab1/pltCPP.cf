@@ -5,23 +5,26 @@ entrypoints Program ;
 Prog. Program  ::= [Def] ;
 terminator Def "" ;
 
--- Defnitions
-DFun.        Def ::= Fun ;
-DTDef.       Def ::= TDef ";" ;
-DVar.        Def ::= Var ";" ;
-DStruct.     Def ::= Str ";" ;
-DUsing.      Def ::= "using" QConst ";" ;
+
+-- Definitions
+DFun.          Def ::= Fun ;
+DTDef.         Def ::= TDef ";" ;
+DVar.          Def ::= Var ";" ;
+DStruct.       Def ::= Str ";" ;
+DUsing.        Def ::= "using" QConst ";" ;
 
 -- Functions
-FProto.  Fun ::= Type Id "(" [Arg] ")" ";" ; -- prototype 
-FDef.    Fun ::= Type Id "(" [Arg] ")" "{" [Stm] "}" ; -- function definition
-Finline. Fun ::= "inline" Fun ;
+FProto.        Fun ::= Type Id "(" [Arg] ")" ";" ;  -- functionprototype 
+FDef.          Fun ::= Type Id "(" [Arg] ")" "{" [Stm] "}" ;  -- function definition
+Finline.       Fun ::= "inline" Fun ;
+separator Arg "," ;
 
 -- Typedefs and structs
--- 2 separate categories both as top-level definitions and statements
-Typedef.    TDef ::= "typedef" Type Id ;
-Struct.     Str  ::= "struct" Id "{" [Dec] "}" ; -- with [Dec] inside curly brackets grammar won`t compile 
+-- 2 separate categories used as both top-level definitions and function statements
+Typedef.       TDef ::= "typedef" Type Id ;
+Struct.        Str  ::= "struct" Id "{" [Dec] "}" ;
 terminator Dec ";" ;
+
 
 -- Generic declarations, used both for arguments and variables
 DecSingle.     Dec ::= Type Id ;
@@ -29,123 +32,98 @@ DecConst.      Dec ::= "const" Type Id ;
 DecInit.       Dec ::= Type Id "=" Exp ;
 DecInitConst.  Dec ::= "const" Type Id "=" Exp ;
 
---Emil suggestion reduce to 3 rules the above?
---DecConst.      Dec  ::= "const" Dec
---DecSingle.     Dec ::= Type Id;
---DecInit.       Dec ::= Type Id "=" Exp;
-
-
 -- Function arguments
-ADec.         Arg ::= Dec ;
+ADec.          Arg ::= Dec ;
    -- special cases - arguments only
-ANoname.      Arg ::= Type ;
-ANonameConst. Arg ::= "const" Type ;
-
-separator Arg "," ;
-
+ANoname.       Arg ::= Type ;
+ANonameConst.  Arg ::= "const" Type ;
 
 -- Variable declaration
-VDec.   Var ::= Dec ;
-VMult.  Var ::= Type [Id] ;
-
+VDec.          Var ::= Dec ;
+   -- special case - variables only
+VMult.         Var ::= Type [Id] ;
 separator nonempty  Id "," ;
 
+
 -- Statements
-SExpr.      Stm ::= Exp ";" ;
-SVar.       Stm ::= Var ";" ;
-SRet.       Stm ::= "return" Exp ";" ;
-SBlock.     Stm ::= "{" [Stm] "}" ;
-SWhile.     Stm ::= "while" "(" Exp ")" Stm ;
-SDoWhile.   Stm ::= "do" Stm "while" "(" Exp ")" ";" ;
-SFor.       Stm ::= "for" "(" Var ";" Exp ";" Exp ")" Stm ;
-STDef.      Stm ::= TDef ";" ;
-SStruct.    Stm ::= Str ";" ;
-SIfElse.    Stm ::= IfHead "else" Stm ; --book  34, grammar.cc 68-70 -adds else option
-SIf.        Stm ::= IfHead; -- if without else
--- special category to deal with `dangling` else
-SIfHead.    IfHead ::= "if" "(" Exp ")" Stm ; -- more compact
---140204 can we remove the IfHead category altogether? I wanted to not copy identical expressions, but now I think this is just 1 unneeded rule 
-
---terminator Function ""  ;
-
-terminator Stm	    "" ;
---terminator Stm ";" ;
+SExpr.         Stm ::= Exp ";" ;
+SVar.          Stm ::= Var ";" ;
+SRet.          Stm ::= "return" Exp ";" ;
+SBlock.        Stm ::= "{" [Stm] "}" ;
+SWhile.        Stm ::= "while" "(" Exp ")" Stm ;
+SDoWhile.      Stm ::= "do" Stm "while" "(" Exp ")" ";" ;
+SFor.          Stm ::= "for" "(" Var ";" Exp ";" Exp ")" Stm ;
+STDef.         Stm ::= TDef ";" ;
+SStruct.       Stm ::= Str ";" ;
+SIf.           Stm ::= "if" "(" Exp ")" Stm ;
+SIfElse.       Stm ::= "if" "(" Exp ")" Stm "else" Stm ;
+terminator Stm "" ;
 
 
 -- Expressions
-EParenth.   Exp   ::= "(" Exp ")" ; -- general parenthesis rule
-EInt.       Exp16 ::= Integer ;
-EDbl.       Exp16 ::= Double ;
-EChar.      Exp16 ::= Char ; --book 31 built in BNFC type, solves grammar.cc 61 '<'
---EString.  Exp16 ::= String ;
-EStrLit.    Exp16 ::= [String] ;
-EConst.     Exp15 ::= QConst ;
---EIndex.   Exp15 ::= Exp16 "[" Exp "]" ;
-EIndex.     Exp15 ::= Id "[" Exp "]" ;
-EFunCall.   Exp15 ::= Id "("[Exp]")" ;
-EStrDot.    Exp14 ::= Exp15"."Exp15 ;
-EStrArr.    Exp14 ::= Exp15"->"Exp15 ;
---Exp14 e++, e--, *e
-EPostInc.   Exp14 ::= Exp15 "++" ;
-EDeref.     Exp14 ::= "*" Exp15 ;
---Exp13 ++e, --e, !e
-EPreInc.    Exp13 ::= "++" Exp14 ;
-
---Exp12 *,/,%
-
-ENegate.    Exp13  ::= "!" Exp12;
-  -- I put this lowest, figure it can negate any higher level exp -- grammar.cc line 40
-  -- contradicts the spec
+EInt.          Exp16 ::= Integer ;
+EDbl.          Exp16 ::= Double ;
+EChar.         Exp16 ::= Char ;
+EStrLit.       Exp16 ::= [String] ;
+EConst.        Exp15 ::= QConst ;
+EIndex.        Exp15 ::= Id "[" Exp "]" ;
+EFunCall.      Exp15 ::= Id "("[Exp]")" ;
+EStrDot.       Exp14 ::= Exp15"."Exp15 ;
+EStrArr.       Exp14 ::= Exp15"->"Exp15 ;
+EPostInc.      Exp14 ::= Exp15 "++" ;
+EDeref.        Exp14 ::= "*" Exp15 ;
+EPreInc.       Exp13 ::= "++" Exp14 ;
+ENegate.       Exp13  ::= "!" Exp12;
   -- arithmetic
-EMul.       Exp12 ::= Exp12 "*"  Exp13 ;  --from book p35
-EAdd.       Exp11 ::= Exp11 "+"  Exp12 ;
-ESub.       Exp11 ::= Exp11 "-"  Exp12 ;
-EDiv.       Exp12 ::= Exp13 "/"  Exp13 ;
-EMod.       Exp12 ::= Exp13 "%"  Exp13 ;
+EMul.          Exp12 ::= Exp12 "*"  Exp13 ;
+EDiv.          Exp12 ::= Exp13 "/"  Exp13 ;
+EMod.          Exp12 ::= Exp13 "%"  Exp13 ;
+EAdd.          Exp11 ::= Exp11 "+"  Exp12 ;
+ESub.          Exp11 ::= Exp11 "-"  Exp12 ;
   -- bitwise
-ELShift.    Exp10 ::= Exp10 "<<" Exp11 ; --left-associativity
-ERShift.    Exp10 ::= Exp11 ">>" Exp10 ;
+ELShift.       Exp10 ::= Exp10 "<<" Exp11 ; --left-associativity
+ERShift.       Exp10 ::= Exp11 ">>" Exp10 ;
   -- comparison
-ELt.        Exp9  ::= Exp9  "<"  Exp10 ;
-EGt.        Exp9  ::= Exp9  ">"  Exp10 ; --book 35  grammar.cc 61
-ELtEq.      Exp9  ::= Exp9  "<=" Exp10 ;
-EGtEq.      Exp9  ::= Exp9  ">=" Exp10 ;
-EEqual.     Exp8  ::= Exp9  "==" Exp9 ;
-EIneq.      Exp8  ::= Exp9  "!=" Exp9 ;
+ELt.           Exp9  ::= Exp9  "<"  Exp10 ;
+EGt.           Exp9  ::= Exp9  ">"  Exp10 ;
+ELtEq.         Exp9  ::= Exp9  "<=" Exp10 ;
+EGtEq.         Exp9  ::= Exp9  ">=" Exp10 ;
+EEqual.        Exp8  ::= Exp9  "==" Exp9 ;
+EIneq.         Exp8  ::= Exp9  "!=" Exp9 ;
   -- logical
-EAnd.       Exp4  ::= Exp4  "&&" Exp5 ; -- book p36,  grammar.cc 61
-EOr.        Exp3  ::= Exp3  "||" Exp5 ;
+EAnd.          Exp4  ::= Exp4  "&&" Exp5 ; 
+EOr.           Exp3  ::= Exp3  "||" Exp5 ;
   -- assignment
-EAssign.    Exp2  ::= Exp3  "="  Exp2 ;
-EAssignInc. Exp2  ::= Exp3  "+=" Exp2 ;
-EAssignDec. Exp2  ::= Exp3  "-=" Exp2 ;
+EAssign.       Exp2  ::= Exp3  "="  Exp2 ;
+EAssignInc.    Exp2  ::= Exp3  "+=" Exp2 ;
+EAssignDec.    Exp2  ::= Exp3  "-=" Exp2 ;
 
-ETernary.   Exp2  ::= Exp3  "?"  Exp3 ":" Exp3 ;
-EThrtow.    Exp1  ::= "throw" Exp2 ; 
+ETernary.      Exp2  ::= Exp3  "?"  Exp3 ":" Exp3 ;
+EThrtow.       Exp1  ::= "throw" Exp2 ; 
 
 separator Exp "," ;
 separator nonempty String "" ;
-
 coercions Exp 16 ;
 
---qualified constants
-QCon.  QConst ::= [Const] ;
-separator nonempty Const "::" ;
 
-CTempl. Const ::= Id"<"[Type]">" ;
-CId.    Const ::= Id ;
+-- Constants and qualified constants
+CTempl.        Const  ::= Id"<"[Type]">" ;
+CId.           Const  ::= Id ;
+QCon.          QConst ::= [Const] ;
+separator nonempty Const "::" ;
 separator nonempty Type "," ;
 
 
 -- Types
-TVoid.  Type  ::= "void" ;
-TBool.  Type  ::= "bool" ;
-TInt.   Type  ::= "int" ;
-TDoube. Type  ::= "double" ;
-TConst. Type  ::= QConst ;
-TRef.   Type  ::= Type "&" ; -- reference types
+TVoid.         Type  ::= "void" ;
+TBool.         Type  ::= "bool" ;
+TInt.          Type  ::= "int" ;
+TDoube.        Type  ::= "double" ;
+TConst.        Type  ::= QConst ;
+TRef.          Type  ::= Type "&" ; -- reference types
 
 
+-- Custom identifier (without \') 
 token Id (letter (letter | digit | '_')*) ;
 
 
