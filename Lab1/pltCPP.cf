@@ -28,10 +28,8 @@ Finline. Fun ::= "inline" Fun ;
 -- Typedefs and structs
 -- 2 separate categories both as top-level definitions and statements
 Typedef.    TDef ::= "typedef" QConst Id ;
-Struct.     Str  ::= "struct" Id "{" "}" ; -- with [Dec] inside curly brackets grammar won`t compile 
-
-
-
+Struct.     Str  ::= "struct" Id "{" [Dec] "}" ; -- with [Dec] inside curly brackets grammar won`t compile 
+terminator Dec ";" ;
 
 -- Generic declarations, used both for arguments and variables
 DecSingle.     Dec ::= Type Id ;
