@@ -27,7 +27,7 @@ Finline. Fun ::= "inline" Fun ;
 
 -- Typedefs and structs
 -- 2 separate categories both as top-level definitions and statements
-Typedef.    TDef ::= "typedef" QConst Id ;
+Typedef.    TDef ::= "typedef" Type Id ;
 Struct.     Str  ::= "struct" Id "{" [Dec] "}" ; -- with [Dec] inside curly brackets grammar won`t compile 
 terminator Dec ";" ;
 
