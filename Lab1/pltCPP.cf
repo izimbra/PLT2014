@@ -45,7 +45,8 @@ ANonameConst.  Arg ::= "const" Type ;
 -- Variable declaration
 VDec.          Var ::= Dec ;
    -- special case - variables only
-VMult.         Var ::= Type [Id] ;
+--VMult.         Var ::= Type [Id] ;
+VMult.         Var ::= Type Id "," [Id]; --force at least 2 to avoid conflict
 separator nonempty  Id "," ;
 
 
