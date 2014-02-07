@@ -16,11 +16,12 @@ DTDef.         Def ::= TDef ";" ;
 DVar.          Def ::= Var ";" ;
 DStruct.       Def ::= Str ";" ;
 DUsing.        Def ::= "using" QConst ";" ;
+DInline.       Def ::= "inline" Fun ; --according to feedback rejection
 
 -- Functions
 FProto.        Fun ::= Type Id "(" [Arg] ")" ";" ;  -- functionprototype 
 FDef.          Fun ::= Type Id "(" [Arg] ")" "{" [Stm] "}" ;  -- function definition
-Finline.       Fun ::= "inline" Fun ;
+--Finline.       Def ::= "inline" Fun ;
 separator Arg "," ;
 
 -- Typedefs and structs
@@ -49,7 +50,6 @@ VDec.          Var ::= Dec ;
 VMult.         Var ::= Type Id "," [Id]; --force at least 2 to avoid conflict
 separator nonempty  Id "," ;
 
-
 -- Statements
 SExpr.         Stm ::= Exp ";" ;
 SVar.          Stm ::= Var ";" ;
@@ -73,16 +73,16 @@ EStrLit.       Exp16 ::= [String] ;
 EConst.        Exp15 ::= QConst ;
 EIndex.        Exp15 ::= Id "[" Exp "]" ;
 EFunCall.      Exp15 ::= Id "("[Exp]")" ;
-EStrDot.       Exp14 ::= Exp15"."Exp15 ;
-EStrArr.       Exp14 ::= Exp15"->"Exp15 ;
+EStrDot.       Exp14 ::= Exp14"."Exp15 ; --left-associativity
+EStrArr.       Exp14 ::= Exp14"->"Exp15 ;--left-associativity
 EPostInc.      Exp14 ::= Exp15 "++" ;
 EDeref.        Exp14 ::= "*" Exp15 ;
 EPreInc.       Exp13 ::= "++" Exp14 ;
-ENegate.       Exp13  ::= "!" Exp12;
+ENegate.       Exp13  ::= "!" Exp14;
   -- arithmetic
 EMul.          Exp12 ::= Exp12 "*"  Exp13 ;
-EDiv.          Exp12 ::= Exp13 "/"  Exp13 ;
-EMod.          Exp12 ::= Exp13 "%"  Exp13 ;
+EDiv.          Exp12 ::= Exp12 "/"  Exp13 ; --left-associativity
+EMod.          Exp12 ::= Exp12 "%"  Exp13 ; --left-associativity
 EAdd.          Exp11 ::= Exp11 "+"  Exp12 ;
 ESub.          Exp11 ::= Exp11 "-"  Exp12 ;
   -- bitwise
@@ -93,11 +93,11 @@ ELt.           Exp9  ::= Exp9  "<"  Exp10 ;
 EGt.           Exp9  ::= Exp9  ">"  Exp10 ;
 ELtEq.         Exp9  ::= Exp9  "<=" Exp10 ;
 EGtEq.         Exp9  ::= Exp9  ">=" Exp10 ;
-EEqual.        Exp8  ::= Exp9  "==" Exp9 ;
-EIneq.         Exp8  ::= Exp9  "!=" Exp9 ;
+EEqual.        Exp8  ::= Exp8  "==" Exp9 ;
+EIneq.         Exp8  ::= Exp8  "!=" Exp9 ;
   -- logical
 EAnd.          Exp4  ::= Exp4  "&&" Exp5 ; 
-EOr.           Exp3  ::= Exp3  "||" Exp5 ;
+EOr.           Exp3  ::= Exp3  "||" Exp4 ;
   -- assignment
 EAssign.       Exp2  ::= Exp3  "="  Exp2 ;
 EAssignInc.    Exp2  ::= Exp3  "+=" Exp2 ;
