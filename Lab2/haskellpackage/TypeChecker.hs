@@ -29,7 +29,7 @@ inferExp env x = case x of
     EInt n  -> return Type_int
     EId id  -> lookupVar env id
     EAdd exp1 exp2 ->
-        inferBin [Type_int, Type_double, Type_string] env exp1 exp2
+        inferBin [Type_int, Type_double] env exp1 exp2
         
 inferBin :: [Type] -> Env -> Exp -> Exp -> Err Type
 inferBin types env exp1 exp2 = do
