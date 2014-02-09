@@ -28,7 +28,7 @@ inferExp env x = case x of
     ETrue   -> return Type_bool
     EInt n  -> return Type_int
     EId id  -> lookupVar env id
-    EAdd exp1 exp2 ->
+    EPlus exp1 exp2 ->
         inferBin [Type_int, Type_double] env exp1 exp2
         
 inferBin :: [Type] -> Env -> Exp -> Exp -> Err Type
@@ -58,7 +58,7 @@ checkStm env val x = case x of
     SExp exp -> do
         inferExp env exp
         return env
-    SDecl typ x -> 
+    SDecls typ x -> 
         updateVar env id typ
     SWhile exp stm -> do
         checkExp env Type_bool exp
