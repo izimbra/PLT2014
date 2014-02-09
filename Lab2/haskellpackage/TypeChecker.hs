@@ -4,6 +4,7 @@ import AbsCPP
 import PrintCPP
 import ErrM
 import Data.Map   --need to import this manually
+import Control.Monad --needed for foldM, which doesn't work however?
 
 type Env     = (Sig, [Context])      --functions and context stack -- book p72
 type Sig     = Map Id ([Type], Type) --function type signature
@@ -11,10 +12,13 @@ type Context = Map Id Type       --variables with their types
 
 --function definitions from p72
 lookupVar :: Env -> Id -> Err Type
-lookupVar env id = return Type_bool --dummy body for compiling. WRITE REAL
+lookupVar env id = fail "dummy" --dummy body for compiling. WRITE REAL
 
 --lookupFun :: Env -> Id -> Err ([Type],Type) --and we should write the code for each
---updateVar :: Env -> Id -> Type -> Err Env
+updateVar :: Env -> Id -> Type -> Err Env
+updateVar env id typ = fail "dummy"   --dummy body for compiling  WRITE REAL
+
+
 --updateFun :: Env -> Id -> ([Type],Type) -> Err Env
 --newBlock  :: Env -> Env
 --emptyEnv  :: Env
@@ -43,16 +47,16 @@ inferBin types env exp1 exp2 = do
 -- BNFC generated function printTree :: a -> String
 
 --given p73
-checkExp :: Env -> Type -> Exp -> Err ()
-checkExp env typ exp = do
+checkExp :: Env -> Exp -> Type -> Err Env  --book says Err () which doesnt match inferbin function type. also order of types changed to match inferExp
+checkExp env exp typ = do
     typ2 <- inferExp env exp
     if (typ2 == typ) then
-        return ()
+        fail "dummy" --return () 
       else
         fail $ "type of "   ++ printTree exp ++
                "expected "  ++ printTree typ ++
                "but found " ++ printTree typ2
-               
+                
 checkStm :: Env -> Type -> Stm -> Err Env
 checkStm env val x = case x of
     SExp exp -> do
@@ -61,12 +65,13 @@ checkStm env val x = case x of
     SDecls typ x -> 
         updateVar env id typ
     SWhile exp stm -> do
-        checkExp env Type_bool exp
+        checkExp env exp Type_bool
         checkStm env val stm
-        
-checkStms :: Env -> [Stm] -> Err Env
-checkStms env stms = case stms of
-    [] -> return env
-    x : rest -> do
-        env' <- checkStm env x
-        checkStms env' rest
+  
+checkStms = foldM checkStm      
+--checkStms :: Env -> [Stm] -> Err Env
+--checkStms env stms = case stms of
+--    [] -> return env
+--    x : rest -> do
+--        env' <- checkStm env x
+--        checkStms env' rest
