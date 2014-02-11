@@ -1,0 +1,13 @@
+open Mini.cf in a text editor
+open CPP.cp in a text editor
+open an example file like core003.cc in a text editor
+
+run the ./runmini core003.cc  for example
+see what goes wrong
+compare the mini grammar with teh CPP grammar, expand the mini grammar so that
+it can handle the test file. 
+expand the type checker to handle types etc
+iterate
+iterate
+
+
