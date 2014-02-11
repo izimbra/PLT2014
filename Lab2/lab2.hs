@@ -1,6 +1,5 @@
 import System.Environment (getArgs)
 import System.Exit (exitFailure)
-
 import AbsCPP
 import LexCPP
 import ParCPP
