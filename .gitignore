@@ -18,6 +18,8 @@ cabal-dev
 *.tar
 *.gz
 Lab1/TestpltCPP*
+Lab1/lab1-testsuite-larger/lab1-test-dir/*
+Lab1/lab1-testsuite-larger/runtests
 
 # temporarily disable Haskell source files
 *.hs
