@@ -10,4 +10,6 @@ expand the type checker to handle types etc
 iterate
 iterate
 
+Gregor recommends: open ghci  and :l TypeChecker.hs 
+just this finds some errors and is much faster than compiling and running the test suite every time. 
 
