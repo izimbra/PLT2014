@@ -1,6 +1,13 @@
 -- Mini.cf
 
-Prog. Program ::= [Stm] ;
+--Prog. Program ::= [Stm] ;
+Prog. Program ::= [Def] ; --expand to handle functions
+
+DFun. Def ::= Type Id "(" [Arg] ")" "{" [Stm] "}" ; --expand 
+terminator Def ""; --expand
+
+ADecl. Arg ::= Type Id; --expand
+separator Arg "," ;    --expand
 
 terminator Stm "" ;
 
@@ -17,4 +24,6 @@ EAdd.    Exp  ::= Exp "+" Exp1 ;
 coercions Exp 1 ;
 
 TInt.    Type ::= "int" ;
-TDouble. Type ::= "double" ;
+TDouble. Type ::= "double" ; 
+
+token Id (letter (letter | digit | '_')*) ;
