@@ -3,8 +3,22 @@ module TypeChecker where
 import AbsMini
 import PrintMini
 import ErrM
+import qualified Data.Map as Map
 
+type Env = (Sig , [Context] )
+type Sig = Map.Map Id ([Type] , Type]
+type Context = Map.Map Id Type
+--type Env = [[(Ident, Type)]]
+--emptyEnv :: Env
+--emptyEnv = [[]]
 
+emptyEnv :: Env
+emptyEnv =  (emptySig, [] )
+
+emptySig :: Sig
+emptySig =  Map.empty
+
+-- until here added from book p72 and self-made empty functions. 
 
 typecheck :: Program -> Err ()
 typecheck (Prog stms) = checkStms emptyEnv stms
@@ -48,10 +62,6 @@ inferExp env e =
                                          ++ " but " ++ printTree e2 
                                          ++ " has type " ++ printTree t2)
 
-type Env = [[(Ident, Type)]]
-
-emptyEnv :: Env
-emptyEnv = [[]]
 
 addVar :: Env -> Ident -> Type -> Err Env
 addVar (scope:rest) x t = 
