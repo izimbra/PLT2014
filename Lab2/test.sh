@@ -8,5 +8,5 @@ make
 
 ghc --make -o lab2 lab2.hs
 
-lab2 $TESTS
+./lab2 $TESTS
 
