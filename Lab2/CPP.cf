@@ -49,7 +49,7 @@ SExp.    Stm    ::= Exp ";" ;
 SDecls.  Stm    ::= Type [Id] ";" ;
 SInit.   Stm    ::= Type Id "=" Exp ";" ;
  SReturn. Stm    ::= "return" Exp ";" ;
--- SWhile.  Stm    ::= "while" "(" Exp ")" Stm ;
+ SWhile.  Stm    ::= "while" "(" Exp ")" Stm ;
 -- SBlock.  Stm    ::= "{" [Stm] "}" ;
 -- SIfElse. Stm    ::= "if" "(" Exp ")" Stm "else" Stm ;
 
@@ -57,9 +57,9 @@ SInit.   Stm    ::= Type Id "=" Exp ";" ;
 
 -- ETrue.   Exp15  ::= "true" ;
 -- EFalse.  Exp15  ::= "false" ;
--- EInt.    Exp15  ::= Integer ;
+ EInt.    Exp15  ::= Integer ;
 -- EDouble. Exp15  ::= Double ;
--- EId.     Exp15  ::= Id ;
+EId.     Exp15  ::= Id ;
 
 EApp.    Exp15  ::= Id "(" [Exp] ")" ;
 
@@ -69,12 +69,12 @@ EApp.    Exp15  ::= Id "(" [Exp] ")" ;
 -- EIncr.   Exp13  ::= "++" Exp14 ;
 -- EDecr.   Exp13  ::= "--" Exp14 ;
 
--- ETimes.  Exp12  ::= Exp12 "*"  Exp13 ;
+ ETimes.  Exp12  ::= Exp12 "*"  Exp13 ;
 -- EDiv.    Exp12  ::= Exp12 "/"  Exp13 ;
 -- EPlus.   Exp11  ::= Exp11 "+"  Exp12 ;
--- EMinus.  Exp11  ::= Exp11 "-"  Exp12 ;
+ EMinus.  Exp11  ::= Exp11 "-"  Exp12 ;
 -- ELt.     Exp9   ::= Exp9  "<"  Exp10 ;
--- EGt.     Exp9   ::= Exp9  ">"  Exp10 ;
+ EGt.     Exp9   ::= Exp9  ">"  Exp10 ;
 -- ELtEq.   Exp9   ::= Exp9  "<=" Exp10 ;
 -- EGtWq.   Exp9   ::= Exp9  ">=" Exp10 ;
 -- EEq.     Exp8   ::= Exp8  "==" Exp9 ;
