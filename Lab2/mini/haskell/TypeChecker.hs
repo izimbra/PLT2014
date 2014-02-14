@@ -5,6 +5,8 @@ import PrintMini
 import ErrM
 import qualified Data.Map as Map
 
+import BuiltInFuncs
+
 type Env = (Sig , [Context] )
 type Sig = Map.Map Id ([Type] , Type)
 type Context = Map.Map Id Type
@@ -33,7 +35,7 @@ s = emptySig
 -- until here added from book p72 and self-made empty functions. 
 
 typecheck :: Program -> Sig  -- first pass. get the signatures of functions by running through 
-typecheck (Prog defs)  = getSignatures emptySig defs
+typecheck (Prog defs)  = getSignatures emptySig (defs ++ builtInFunctions)
 
 getSignatures :: Sig -> [Def] -> Sig
 getSignatures sig []        = sig  --base case returns finished sig

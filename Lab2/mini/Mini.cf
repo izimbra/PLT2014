@@ -25,5 +25,7 @@ coercions Exp 1 ;
 
 TInt.    Type ::= "int" ;
 TDouble. Type ::= "double" ; 
+TVoid.   Type ::= "void" ;
+
 
 token Id (letter (letter | digit | '_')*) ;
