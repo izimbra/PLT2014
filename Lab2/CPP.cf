@@ -48,7 +48,7 @@ token Id (letter (letter | digit | '_')*) ;
 -- SExp.    Stm    ::= Exp ";" ;
 -- SDecls.  Stm    ::= Type [Id] ";" ;
 -- SInit.   Stm    ::= Type Id "=" Exp ";" ;
--- SReturn. Stm    ::= "return" Exp ";" ;
+ SReturn. Stm    ::= "return" Exp ";" ;
 -- SWhile.  Stm    ::= "while" "(" Exp ")" Stm ;
 -- SBlock.  Stm    ::= "{" [Stm] "}" ;
 -- SIfElse. Stm    ::= "if" "(" Exp ")" Stm "else" Stm ;
