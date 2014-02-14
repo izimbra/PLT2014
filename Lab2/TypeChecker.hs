@@ -60,7 +60,7 @@ buildFunTable env (d:ds) =
     case d of
       Func ftype id args _ -> do env' <- updateFun env id (map argType args, ftype)
                                  buildFunTable env' ds                                 
-      _                    -> fail "Bad function definition"
+      _                    -> fail "Bad function definition, buildFunTable"
     
                     
 argType :: Arg -> Type
@@ -71,12 +71,27 @@ checkDefs env []     = return ()
 checkDefs env (d:ds) = do env' <- checkDef env d
                           checkDefs env' ds
 
-checkDef :: Env -> Def -> Err Env
+
+--data Def =
+--   Func Type Id [Arg] [Stm]
+
+checkDef :: Env -> Def -> Err Env -- we only have 1 function definition
 checkDef env d =
     case d of
-      Func t f args _ -> undefined
+      Func t i args stms -> do env' <- addArgs env args
+                               checkStms env' stms 
+                        
+      --undefined --the args are added to the context
+                                       --then go to statementss
+      _               -> fail "Bad function definition, checkDef"
 
-checkStms :: Env -> [Stm] -> Err () -- (Env!)
+
+addArgs :: Env -> [Arg] -> Err Env
+addArgs env [] = return env --base case 
+addArgs env ( (ADecl typ id) :as) = do env' <- updateVar env id typ
+                                       addArgs env' as
+
+checkStms :: Env -> [Stm] -> Err Env
 checkStms env [] = return ()
 checkStms env (st:stms) = do env' <- checkStm env st
                              checkStms env' stms
