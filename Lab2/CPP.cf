@@ -49,10 +49,10 @@ token Id (letter (letter | digit | '_')*) ;
 SExp.    Stm    ::= Exp ";" ;
 SDecls.  Stm    ::= Type [Id] ";" ;
 SInit.   Stm    ::= Type Id "=" Exp ";" ;
- SReturn. Stm    ::= "return" Exp ";" ;
- SWhile.  Stm    ::= "while" "(" Exp ")" Stm ;
+SReturn. Stm    ::= "return" Exp ";" ;
+SWhile.  Stm    ::= "while" "(" Exp ")" Stm ;
 -- SBlock.  Stm    ::= "{" [Stm] "}" ;
- SIfElse. Stm    ::= "if" "(" Exp ")" Stm "else" Stm ;
+SIfElse. Stm    ::= "if" "(" Exp ")" Stm "else" Stm ;
 
 -- terminator Stm "" ;
 
@@ -70,18 +70,18 @@ EApp.    Exp15  ::= Id "(" [Exp] ")" ;
 -- EIncr.   Exp13  ::= "++" Exp14 ;
 -- EDecr.   Exp13  ::= "--" Exp14 ;
 
- ETimes.  Exp12  ::= Exp12 "*"  Exp13 ;
+ETimes.  Exp12  ::= Exp12 "*"  Exp13 ;
 EDiv.    Exp12  ::= Exp12 "/"  Exp13 ;
 -- EPlus.   Exp11  ::= Exp11 "+"  Exp12 ;
- EMinus.  Exp11  ::= Exp11 "-"  Exp12 ;
--- ELt.     Exp9   ::= Exp9  "<"  Exp10 ;
- EGt.     Exp9   ::= Exp9  ">"  Exp10 ;
+EMinus.  Exp11  ::= Exp11 "-"  Exp12 ;
+ELt.     Exp9   ::= Exp9  "<"  Exp10 ;
+EGt.     Exp9   ::= Exp9  ">"  Exp10 ;
 ELtEq.   Exp9   ::= Exp9  "<=" Exp10 ;
 -- EGtWq.   Exp9   ::= Exp9  ">=" Exp10 ;
--- EEq.     Exp8   ::= Exp8  "==" Exp9 ;
--- ENEq.    Exp8   ::= Exp8  "!=" Exp9 ;
--- EAnd.    Exp4   ::= Exp4  "&&" Exp5 ;
--- EOr.     Exp3   ::= Exp3  "||" Exp4 ;
+EEq.     Exp8   ::= Exp8  "==" Exp9 ;
+ENEq.    Exp8   ::= Exp8  "!=" Exp9 ;
+EAnd.    Exp4   ::= Exp4  "&&" Exp5 ;
+EOr.     Exp3   ::= Exp3  "||" Exp4 ;
 --EAss.    Exp2   ::= Exp3 "=" Exp2 ;
 
 coercions Exp 15 ;

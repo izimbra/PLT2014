@@ -1,7 +1,8 @@
 #!/bin/bash
 
-TESTS="testsuite/good/core002.cc"
+TESTS="testsuite/good/core017.cc"
 
+# 2, 3, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16
 bnfc --make CPP.cf
 
 make all
