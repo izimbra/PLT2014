@@ -30,6 +30,7 @@ coercions Exp 1 ;
 TInt.    Type ::= "int" ;
 TDouble. Type ::= "double" ;
 TVoid.   Type ::= "void" ;
+TBool.   Type ::= "bool" ;
 
 token Id (letter (letter | digit | '_')*) ;
 
@@ -51,7 +52,7 @@ SInit.   Stm    ::= Type Id "=" Exp ";" ;
  SReturn. Stm    ::= "return" Exp ";" ;
  SWhile.  Stm    ::= "while" "(" Exp ")" Stm ;
 -- SBlock.  Stm    ::= "{" [Stm] "}" ;
--- SIfElse. Stm    ::= "if" "(" Exp ")" Stm "else" Stm ;
+ SIfElse. Stm    ::= "if" "(" Exp ")" Stm "else" Stm ;
 
 -- terminator Stm "" ;
 
@@ -70,12 +71,12 @@ EApp.    Exp15  ::= Id "(" [Exp] ")" ;
 -- EDecr.   Exp13  ::= "--" Exp14 ;
 
  ETimes.  Exp12  ::= Exp12 "*"  Exp13 ;
--- EDiv.    Exp12  ::= Exp12 "/"  Exp13 ;
+EDiv.    Exp12  ::= Exp12 "/"  Exp13 ;
 -- EPlus.   Exp11  ::= Exp11 "+"  Exp12 ;
  EMinus.  Exp11  ::= Exp11 "-"  Exp12 ;
 -- ELt.     Exp9   ::= Exp9  "<"  Exp10 ;
  EGt.     Exp9   ::= Exp9  ">"  Exp10 ;
--- ELtEq.   Exp9   ::= Exp9  "<=" Exp10 ;
+ELtEq.   Exp9   ::= Exp9  "<=" Exp10 ;
 -- EGtWq.   Exp9   ::= Exp9  ">=" Exp10 ;
 -- EEq.     Exp8   ::= Exp8  "==" Exp9 ;
 -- ENEq.    Exp8   ::= Exp8  "!=" Exp9 ;
