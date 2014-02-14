@@ -18,12 +18,14 @@ emptyEnv =  (emptySig, [] )
 emptySig :: Sig
 emptySig =  Map.empty
 
+ar = ADecl TDouble (Id "troll")
+
 def :: Def
-def = DFun TInt (Id "hej") [] []
+def = DFun TInt (Id "hej") [ar,ar] []
 def2 :: Def
-def2 = DFun TInt (Id "hej2") [] []
+def2 = DFun TInt (Id "hej2") [ar ] []
 def3 :: Def
-def3 = DFun TInt (Id "hej3") [] []
+def3 = DFun TInt (Id "hej3") [ar] []
 
 ds = [def, def2, def3]
 s = emptySig
@@ -42,8 +44,10 @@ getSignatures sig (de:defs) = getSignatures sig' defs
 --                                 getSignatures sig' defs
                                  
 getSign :: Sig -> Def -> Sig --get a Sig and update with given Def
-getSign sig (DFun typ id args stms) = Map.insert id ([] , typ) sig
+getSign sig (DFun typ id args stms) = Map.insert id (map argExtract args , typ) sig
 
+argExtract :: Arg -> Type
+argExtract (ADecl typ id) = typ
 
 --typecheck :: Program -> Err ()
 --typecheck (Prog stms) = checkStms emptyEnv stms
