@@ -46,7 +46,7 @@ token Id (letter (letter | digit | '_')*) ;
 -- separator Arg "," ;
 
 SExp.    Stm    ::= Exp ";" ;
--- SDecls.  Stm    ::= Type [Id] ";" ;
+SDecls.  Stm    ::= Type [Id] ";" ;
 -- SInit.   Stm    ::= Type Id "=" Exp ";" ;
  SReturn. Stm    ::= "return" Exp ";" ;
 -- SWhile.  Stm    ::= "while" "(" Exp ")" Stm ;
@@ -91,7 +91,7 @@ coercions Exp 15 ;
 
 -- token Id (letter (letter | digit | '_')*) ;
 
--- separator nonempty Id "," ;
+separator nonempty Id "," ;
 
 comment "#" ;
 comment "//" ;
