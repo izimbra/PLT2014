@@ -22,7 +22,7 @@ terminator Stm "" ;
 
 EVar.    Exp1 ::= Id ;
 EInt.    Exp1 ::= Integer ;
-EDouble. Exp1 ::= Double ;
+--EDouble. Exp1 ::= Double ;
 EAdd.    Exp  ::= Exp "+" Exp1 ;
 
 coercions Exp 1 ;
@@ -59,7 +59,7 @@ SIfElse. Stm    ::= "if" "(" Exp ")" Stm "else" Stm ;
 -- ETrue.   Exp15  ::= "true" ;
 -- EFalse.  Exp15  ::= "false" ;
  EInt.    Exp15  ::= Integer ;
--- EDouble. Exp15  ::= Double ;
+ EDouble. Exp15  ::= Double ;
 EId.     Exp15  ::= Id ;
 
 EApp.    Exp15  ::= Id "(" [Exp] ")" ;
