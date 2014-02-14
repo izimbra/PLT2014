@@ -92,7 +92,7 @@ addArgs env ( (ADecl typ id) :as) = do env' <- updateVar env id typ
                                        addArgs env' as
 
 checkStms :: Env -> [Stm] -> Err Env
-checkStms env [] = return ()
+checkStms env [] = return env
 checkStms env (st:stms) = do env' <- checkStm env st
                              checkStms env' stms
 
