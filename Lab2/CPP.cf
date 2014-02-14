@@ -2,20 +2,25 @@
 
 Prog. Program ::= [Def] ;
 
-Func. Def     ::= Type Id "(" ")" "{"[Stm]"}" ; -- [Arg] ")" "{" [Stm] "}" ;
+Func. Def     ::= Type Id "(" [Arg] ")" "{" [Stm] "}" ;
+
+ADecl.   Arg    ::= Type Id ;
+
+separator Arg "," ;
+
 
 terminator Def "" ;
 
 
 SDecl.  Stm ::= Type Id ";"  ;
-SAss.   Stm ::= Ident "=" Exp ";" ;
+SAss.   Stm ::= Id "=" Exp ";" ;
 SBlock. Stm ::= "{" [Stm] "}" ;
 SPrint. Stm ::= "print" Exp  ";" ;
 
 terminator Stm "" ;
 
 
-EVar.    Exp1 ::= Ident ;
+EVar.    Exp1 ::= Id ;
 EInt.    Exp1 ::= Integer ;
 EDouble. Exp1 ::= Double ;
 EAdd.    Exp  ::= Exp "+" Exp1 ;
@@ -24,6 +29,7 @@ coercions Exp 1 ;
 
 TInt.    Type ::= "int" ;
 TDouble. Type ::= "double" ;
+TVoid.   Type ::= "void" ;
 
 token Id (letter (letter | digit | '_')*) ;
 
