@@ -67,7 +67,7 @@ EApp.    Exp15  ::= Id "(" [Exp] ")" ;
 EPIncr.  Exp14  ::= Exp15 "++" ;
 EPDecr.  Exp14  ::= Exp15 "--" ;
 
--- EIncr.   Exp13  ::= "++" Exp14 ;
+ EIncr.   Exp13  ::= "++" Exp14 ;
 -- EDecr.   Exp13  ::= "--" Exp14 ;
  
 ETimes.  Exp12  ::= Exp12 "*"  Exp13 ;
