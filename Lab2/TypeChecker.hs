@@ -50,8 +50,8 @@ type Context =  M.Map Id Type
 typecheck :: Program -> Err () -- Program
 typecheck (Prog defs) = do
             env <- buildFunTable emptyEnv (defs ++ builtInFunctions)
-            return ()
-  --checkDefs emptyEnv defs
+            --return ()
+            checkDefs env defs
 
 -- | Builds a symbol table for functions in the environment.
 buildFunTable :: Env -> [Def] -> Err Env -- or just SigTab
@@ -71,19 +71,21 @@ checkDefs env []     = return ()
 checkDefs env (d:ds) = do env' <- checkDef env d
                           checkDefs env' ds
 
+checkDef :: Env -> Def -> Err Env 
+checkDef env (Func typ id args stms) = do env'  <- addArgs  (addScope env) args
+                                          env'' <- updateVar env' (Id "return") typ --since return i a reserved word, there will never be a variable with that as id
+--so we can use it to store the function type in every scope
+                                          checkStms env'' stms
 
---data Def =
---   Func Type Id [Arg] [Stm]
 
-checkDef :: Env -> Def -> Err Env -- we only have 1 function definition
-checkDef env d =
-    case d of
-      Func t i args stms -> do env' <- addArgs env args
-                               checkStms env' stms 
+--checkDef env d =
+--    case d of
+--      Func t i args stms -> do env' <- addArgs env args
+--                               checkStms env' stms 
                         
       --undefined --the args are added to the context
                                        --then go to statementss
-      _               -> fail "Bad function definition, checkDef"
+--      _               -> fail "Bad function definition, checkDef"
 
 
 addArgs :: Env -> [Arg] -> Err Env
@@ -99,14 +101,35 @@ checkStms env (st:stms) = do env' <- checkStm env st
 checkStm :: Env -> Stm -> Err Env
 checkStm env s = 
     case s of
-      SDecl t x       -> updateVar env x t
-      SAss x e        -> do t <- lookupVar env x
-                            checkExp env e t
-                            return env      
-      SBlock stms     -> do checkStms (addScope env) stms
-                            return env
-      SPrint e        -> do inferExp env e
-                            return env
+      SDecl t x         -> updateVar env x t
+      SAss x e          -> do t <- lookupVar env x
+                              checkExp env e t
+                              return env      
+      SBlock stms       -> do checkStms (addScope env) stms
+                              return env
+      SPrint e          -> do inferExp env e
+                              return env
+      SDecls typ []     -> return env
+      SDecls typ (i:is) -> do env' <- checkStm env (SDecl typ i)
+                              checkStm env' (SDecls typ is)
+      SReturn exp       -> do retType <- lookupVar env (Id "return") 
+                              checkExp env exp retType
+                              return env
+      SExp exp          -> do t <- inferExp env exp
+                              return env --is there anything to actually do with an exp?
+      SInit typ id exp  -> do env' <- checkStm env (SDecl typ id)  --first declare
+                              checkStm env' (SAss id exp)   --then assign
+      SIfElse exp s1 s2 -> do checkExp env exp TBool
+                              env'  <- checkStm env s1
+                              env'' <- checkStm env s2
+                              return env
+      SWhile exp stm    -> do checkExp env exp TBool
+                              env'  <- checkStm env stm
+                              return env
+                              
+      
+      --updateVars env ids typ
+      _                 -> fail ( "case not exhaustive in checkstm  \n" ++ show s ++ " \n  " ++ printTree s) 
 
 checkExp :: Env -> Exp -> Type -> Err () -- Err Exp
 checkExp env e t = 
@@ -125,15 +148,63 @@ inferExp env e =
       EVar x         -> lookupVar env x
       EInt _         -> return TInt
       EDouble _      -> return TDouble
-      EAdd e1 e2     -> do t1 <- inferExp env e1
+      ENEq  e1 e2    -> inferExp env (ELtEq e1 e2) --
+      EEq   e1 e2    -> inferExp env (ELtEq e1 e2) --identical type check
+      EGt   e1 e2    -> inferExp env (ELtEq e1 e2) --identical type check
+      ELt   e1 e2    -> inferExp env (ELtEq e1 e2) 
+      EGtEq e1 e2    -> inferExp env (ELtEq e1 e2)
+      ELtEq e1 e2    -> do t0 <- inferExp env (EAdd e1 e2)
+                           return TBool
+      EDiv   e1 e2   -> inferExp env (EAdd e1 e2) --identical type check
+      ETimes e1 e2   -> inferExp env (EAdd e1 e2) --identical type check
+      EMinus e1 e2   -> inferExp env (EAdd e1 e2) --identical type check
+      EAdd   e1 e2   -> do t1 <- inferExp env (EAss e1 e2)
+                           if t1 == TBool || t1 == TVoid
+                             then fail "Arithmetic operation on bool or void type" 
+                             else return t1
+      EAss e1 e2     -> do t1 <- inferExp env e1
                            t2 <- inferExp env e2
                            if t1 == t2 
-                             then return t1
-                             else fail (printTree e1 ++ " has type " ++ printTree t1
+                                    then return t1
+                                    else fail (printTree e1 ++ " has type " ++ printTree t1
                                          ++ " but " ++ printTree e2 
                                          ++ " has type " ++ printTree t2)
+      EApp id exps   -> inferFun env e
+--                           type Sig = ([Type], Type)
+      EAnd e1 e2     -> do checkExp env e1 TBool
+                           checkExp env e2 TBool
+                           return TBool
+      EOr  e1 e2     -> inferExp env (EAnd e1 e2)
+      ETrue          -> return TBool
+      EFalse         -> return TBool
+      EPDecr exp     -> inferExp env (EIncr exp)
+      EPIncr exp     -> inferExp env (EIncr exp)
+      EIncr exp      -> do t <- inferExp env exp
+                           if t == TBool || t == TVoid
+                             then fail "Increment operation on bool/void"
+                           else return t
+       
+      
+                           
+      _ -> fail ("inferExp has a non exhaustive case pattern \n" ++ show e ++ " \n  " ++ printTree e) 
 
 
+
+inferFun :: Env -> Exp -> Err Type
+inferFun env (EApp id exps) = do (types, ftype)  <- lookupFun env id
+                                 inferFunHelper env exps types
+                                 return ftype
+                                 
+                                
+inferFunHelper :: Env -> [Exp] -> [Type] -> Err ()
+inferFunHelper env [] []         = return ()
+inferFunHelper env [] types      = fail "too few  args in function call"
+inferFunHelper env exps []       = fail "too many args in function call"
+inferFunHelper env (e:es) (t:ts) = do etyp <- inferExp env e
+                                      if etyp == t
+                                        then inferFunHelper env es ts
+                                        else fail "type error in argument of function call" 
+inferFunHelper _ _ _             = fail "inferFunHelper has non exhaustive case pattern"                  
 
 emptyEnv :: Env
 emptyEnv = (M.empty, [])
@@ -158,6 +229,7 @@ updateVar (funs, scope:rest) x t =
     case M.lookup x scope of
       Nothing -> return (funs, (M.insert x t scope):rest)
       Just _  -> fail ("Variable " ++ printTree x ++ " already declared.")
+
 
 -- | Looks up a variable in the environment
 lookupVar :: Env -> Id -> Err Type
