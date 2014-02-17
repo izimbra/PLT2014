@@ -1,11 +1,14 @@
 all:
+	bnfc CPP.cf
 	happy -gca ParCPP.y
 	alex -g LexCPP.x
-	latex DocCPP.tex; dvips DocCPP.dvi -o DocCPP.ps
-	ghc --make TestCPP.hs -o TestCPP
+	ghc --make lab2.hs -o lab2
+
 clean:
+	-rm -f lab2
 	-rm -f *.log *.aux *.hi *.o *.dvi
 	-rm -f DocCPP.ps
+
 distclean: clean
-	-rm -f DocCPP.* LexCPP.* ParCPP.* LayoutCPP.* SkelCPP.* PrintCPP.* TestCPP.* AbsCPP.* TestCPP ErrM.* SharedString.* CPP.dtd XMLCPP.* Makefile*
+	-rm -f DocCPP.* LexCPP.* ParCPP.* LayoutCPP.* SkelCPP.* PrintCPP.* TestCPP.* AbsCPP.* TestCPP ErrM.* SharedString.* CPP.dtd XMLCPP.*
 
