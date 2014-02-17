@@ -5,9 +5,14 @@ import AbsCPP
 import PrintCPP
 import ErrM
 
+-- | Variable context - map of variable ids to their types
+type Context =  M.Map Id Type
+type IContext = M.Map Id Value
+
 -- | The environment of the type checker.
 -- Includes symbol table for functions and list of variable contexts.
 type Env = (SigTab, [Context]) -- mini version: [[(Id, Type)]]
+type IEnv = (SigTab, [IContext])
 
 -- | Symbol table for functions .
 -- A map of function ids and their type signatures.
@@ -16,10 +21,8 @@ type SigTab = M.Map Id Sig
 -- | Function type signature. Includes argument types and return type.
 type Sig = ([Type], Type)
 
--- | Variable context - map of variable ids to their types
-type Context =  M.Map Id Type
 
-
+data Value = VInt Integer | VDouble Double | VUndef
 
 -- | Looks up a function definition in the environment
 lookupFun :: Env -> Id -> Err Sig
