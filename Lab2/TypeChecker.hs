@@ -50,8 +50,8 @@ type Context =  M.Map Id Type
 typecheck :: Program -> Err () -- Program
 typecheck (Prog defs) = do
             env <- buildFunTable emptyEnv (defs ++ builtInFunctions)
-            return ()
-  --checkDefs emptyEnv defs
+            --return ()
+            checkDefs env defs
 
 -- | Builds a symbol table for functions in the environment.
 buildFunTable :: Env -> [Def] -> Err Env -- or just SigTab
@@ -71,19 +71,19 @@ checkDefs env []     = return ()
 checkDefs env (d:ds) = do env' <- checkDef env d
                           checkDefs env' ds
 
+checkDef :: Env -> Def -> Err Env 
+checkDef env (Func typ id args stms) = do env'  <- addArgs  (addScope env) args
+                                          checkStms env' stms
 
---data Def =
---   Func Type Id [Arg] [Stm]
 
-checkDef :: Env -> Def -> Err Env -- we only have 1 function definition
-checkDef env d =
-    case d of
-      Func t i args stms -> do env' <- addArgs env args
-                               checkStms env' stms 
+--checkDef env d =
+--    case d of
+--      Func t i args stms -> do env' <- addArgs env args
+--                               checkStms env' stms 
                         
       --undefined --the args are added to the context
                                        --then go to statementss
-      _               -> fail "Bad function definition, checkDef"
+--      _               -> fail "Bad function definition, checkDef"
 
 
 addArgs :: Env -> [Arg] -> Err Env
@@ -99,14 +99,22 @@ checkStms env (st:stms) = do env' <- checkStm env st
 checkStm :: Env -> Stm -> Err Env
 checkStm env s = 
     case s of
-      SDecl t x       -> updateVar env x t
-      SAss x e        -> do t <- lookupVar env x
-                            checkExp env e t
-                            return env      
-      SBlock stms     -> do checkStms (addScope env) stms
-                            return env
-      SPrint e        -> do inferExp env e
-                            return env
+      SDecl t x         -> updateVar env x t
+      SAss x e          -> do t <- lookupVar env x
+                              checkExp env e t
+                              return env      
+      SBlock stms       -> do checkStms (addScope env) stms
+                              return env
+      SPrint e          -> do inferExp env e
+                              return env
+      SDecls typ []     -> return env
+      SDecls typ (i:is) -> do env' <- checkStm env (SDecl typ i)
+                              checkStm env' (SDecls typ is)
+      SReturn exp       -> fail "return statement unhandled"
+      
+      
+      --updateVars env ids typ
+      _                 -> fail "case not exhaustive in checkstm"
 
 checkExp :: Env -> Exp -> Type -> Err () -- Err Exp
 checkExp env e t = 
@@ -132,7 +140,7 @@ inferExp env e =
                              else fail (printTree e1 ++ " has type " ++ printTree t1
                                          ++ " but " ++ printTree e2 
                                          ++ " has type " ++ printTree t2)
-
+      _ -> fail "inferExp has a non exhaustive case pattern"
 
 
 emptyEnv :: Env
@@ -158,6 +166,13 @@ updateVar (funs, scope:rest) x t =
     case M.lookup x scope of
       Nothing -> return (funs, (M.insert x t scope):rest)
       Just _  -> fail ("Variable " ++ printTree x ++ " already declared.")
+
+--helper for multiple variable declaration statements
+--updateVars :: Env -> [Id] -> Type -> Err Env
+--updateVars env [] _       = env
+--updateVars env id:ids typ = do env' <- updateVar env id typ
+--                               updateVars env' ids typ
+
 
 -- | Looks up a variable in the environment
 lookupVar :: Env -> Id -> Err Type
