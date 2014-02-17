@@ -156,11 +156,13 @@ inferExp env e =
       EEq   e1 e2    -> inferExp env (ELtEq e1 e2) --identical type check
       EGt   e1 e2    -> inferExp env (ELtEq e1 e2) --identical type check
       ELt   e1 e2    -> inferExp env (ELtEq e1 e2) 
+      EGtEq e1 e2    -> inferExp env (ELtEq e1 e2)
       ELtEq e1 e2    -> do t0 <- inferExp env (EAdd e1 e2)
                            return TBool
       EDiv   e1 e2   -> inferExp env (EAdd e1 e2) --identical type check
       ETimes e1 e2   -> inferExp env (EAdd e1 e2) --identical type check
       EMinus e1 e2   -> inferExp env (EAdd e1 e2) --identical type check
+      EAss   e1 e2   -> inferExp env (EAdd e1 e2)
       EAdd e1 e2     -> do t1 <- inferExp env e1
                            t2 <- inferExp env e2
                            if t1 == t2 
@@ -177,6 +179,10 @@ inferExp env e =
       ETrue          -> return TBool
       EFalse         -> return TBool
       EPDecr exp     -> inferExp env exp
+      EPIncr exp     -> inferExp env exp
+      EIncr exp      -> inferExp env exp
+       
+      
                            
       _ -> fail ("inferExp has a non exhaustive case pattern \n" ++ show e ++ " \n  " ++ printTree e) 
 
