@@ -60,3 +60,27 @@ updateFun :: Env -> Id -> Sig -> Err Env
 updateFun (funs, scopes) id sig = let funs' = M.insert id sig funs
                                   in  return (funs', scopes)
 
+
+--Interpreter functions
+
+addVar :: IEnv -> Id -> IEnv
+addVar (scope:rest) x = (((x,VUndef):scope):rest)
+
+setVar :: IEnv -> Id -> Value -> IEnv
+setVar [] x _ = error $ "Unknown variable " ++ printTree x ++ "."
+setVar ([]:rest) x v = []:setVar rest x v
+setVar ((p@(y,_):scope):rest) x v 
+    | y == x = ((x,v):scope):rest
+    | otherwise = let scope':rest' = setVar (scope:rest) x v
+                   in (p:scope'):rest'
+
+evalVar :: IEnv -> Id -> Value
+evalVar [] x = error $ "Unknown variable " ++ printTree x ++ "."
+evalVar (scope:rest) x = case lookup x scope of
+                             Nothing -> evalVar rest x
+                             Just v  -> v
+enterScope :: IEnv -> IEnv
+enterScope env = []:env
+
+leaveScope :: IEnv -> IEnv
+leaveScope (_:env) = env

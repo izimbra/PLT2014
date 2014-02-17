@@ -52,7 +52,7 @@ execStm env s =
 evalExp :: IEnv -> Exp -> Value
 evalExp env e = 
     case e of
-      EId x         -> lookupVar env x
+      EId x         -> evalVar env x
       EInt i         -> VInt i
       EDouble d      -> VDouble d
       EPlus e1 e2     -> let v1 = evalExp env e1
@@ -62,24 +62,3 @@ evalExp env e =
                               (VDouble d1, VDouble d2) -> VDouble (d1+d2)
 
 
-addVar :: IEnv -> Id -> IEnv
-addVar (scope:rest) x = (((x,VUndef):scope):rest)
-
-setVar :: IEnv -> Id -> Value -> IEnv
-setVar [] x _ = error $ "Unknown variable " ++ printTree x ++ "."
-setVar ([]:rest) x v = []:setVar rest x v
-setVar ((p@(y,_):scope):rest) x v 
-    | y == x = ((x,v):scope):rest
-    | otherwise = let scope':rest' = setVar (scope:rest) x v
-                   in (p:scope'):rest'
-
-lookupVar :: IEnv -> Id -> Value
-lookupVar [] x = error $ "Unknown variable " ++ printTree x ++ "."
-lookupVar (scope:rest) x = case lookup x scope of
-                             Nothing -> lookupVar rest x
-                             Just v  -> v
-enterScope :: IEnv -> IEnv
-enterScope env = []:env
-
-leaveScope :: IEnv -> IEnv
-leaveScope (_:env) = env
