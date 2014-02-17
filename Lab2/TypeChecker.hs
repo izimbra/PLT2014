@@ -181,9 +181,12 @@ inferExp env e =
       EOr  e1 e2     -> inferExp env (EAnd e1 e2)
       ETrue          -> return TBool
       EFalse         -> return TBool
-      EPDecr exp     -> inferExp env exp
-      EPIncr exp     -> inferExp env exp
-      EIncr exp      -> inferExp env exp
+      EPDecr exp     -> inferExp env (EIncr exp)
+      EPIncr exp     -> inferExp env (EIncr exp)
+      EIncr exp      -> do t <- inferExp env exp
+                           if t == TBool || t == TVoid
+                             then fail "Increment operation on bool/void"
+                           else return t
        
       
                            
