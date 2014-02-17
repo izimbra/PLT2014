@@ -147,6 +147,9 @@ inferExp env e =
       EVar x         -> lookupVar env x
       EInt _         -> return TInt
       EDouble _      -> return TDouble
+      ELtEq e1 e2    -> do t0 <- inferExp env (EAdd e1 e2)
+                           return TBool
+      
       EAdd e1 e2     -> do t1 <- inferExp env e1
                            t2 <- inferExp env e2
                            if t1 == t2 
@@ -162,7 +165,20 @@ inferExp env e =
 
 inferFun :: Env -> Exp -> Err Type
 inferFun env (EApp id []) = sigType $ lookupFun env id
-inferFun env (EApp id exps) = fail "function call with arguments not yet handled" ----do    argtypes <- map (inferExp env) exps
+inferFun env (EApp id exps) = do (types, ftype)  <- lookupFun env id
+                                 inferFunHelper env exps types
+                                 return ftype
+                                 
+                                
+inferFunHelper :: Env -> [Exp] -> [Type] -> Err ()
+inferFunHelper env [] [] = return ()
+inferFunHelper env (e:es) (t:ts) = do etyp <- inferExp env e
+                                      if etyp == t
+                                        then inferFunHelper env es ts
+                                        else fail "type error in argument of function call"
+                                
+
+--inferFun env (EApp id exps) = fail "function call with arguments not yet handled" ----do    argtypes <- map (inferExp env) exps
                                  -- -  fe <- map fromErr argtypes
                                  --   if fe == args
                                  --     then return ftype
