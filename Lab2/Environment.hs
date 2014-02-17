@@ -11,7 +11,7 @@ type IContext = M.Map Id Value
 
 -- | The environment of the type checker.
 -- Includes symbol table for functions and list of variable contexts.
-type Env = (SigTab, [Context]) -- mini version: [[(Id, Type)]]
+type Env =  (SigTab, [Context]) -- mini version: [[(Id, Type)]]
 type IEnv = (SigTab, [IContext])
 
 -- | Symbol table for functions .
@@ -22,7 +22,13 @@ type SigTab = M.Map Id Sig
 type Sig = ([Type], Type)
 
 
-data Value = VInt Integer | VDouble Double | VUndef
+data Value = VInt Integer | VDouble Double | VVoid | VUndef 
+
+instance Show Value where
+    show (VInt i)    = show i
+    show (VDouble d) = show d
+    show VVoid       = "void"
+    show VUndef      = "undefined"
 
 -- | Looks up a function definition in the environment
 lookupFun :: Env -> Id -> Err Sig
