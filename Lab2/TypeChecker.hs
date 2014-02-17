@@ -162,12 +162,14 @@ inferExp env e =
       EDiv   e1 e2   -> inferExp env (EAdd e1 e2) --identical type check
       ETimes e1 e2   -> inferExp env (EAdd e1 e2) --identical type check
       EMinus e1 e2   -> inferExp env (EAdd e1 e2) --identical type check
-      EAss   e1 e2   -> inferExp env (EAdd e1 e2)
+      EAss   e1 e2   -> inferExp env (EAdd e1 e2) --need CHANGE CHANGE
       EAdd e1 e2     -> do t1 <- inferExp env e1
                            t2 <- inferExp env e2
-                           if t1 == t2 
-                             then return t1
-                             else fail (printTree e1 ++ " has type " ++ printTree t1
+                           if t1 == TBool || t1 == TVoid
+                             then fail "Arithmetic operation on bool or void type"
+                             else if t1 == t2 
+                                    then return t1
+                                    else fail (printTree e1 ++ " has type " ++ printTree t1
                                          ++ " but " ++ printTree e2 
                                          ++ " has type " ++ printTree t2)
       EApp id exps   -> inferFun env e
