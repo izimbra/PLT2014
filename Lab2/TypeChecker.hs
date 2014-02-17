@@ -155,6 +155,7 @@ inferExp env e =
       ENEq  e1 e2    -> inferExp env (ELtEq e1 e2) --
       EEq   e1 e2    -> inferExp env (ELtEq e1 e2) --identical type check
       EGt   e1 e2    -> inferExp env (ELtEq e1 e2) --identical type check
+      ELt   e1 e2    -> inferExp env (ELtEq e1 e2) 
       ELtEq e1 e2    -> do t0 <- inferExp env (EAdd e1 e2)
                            return TBool
       EDiv   e1 e2   -> inferExp env (EAdd e1 e2) --identical type check
@@ -169,6 +170,13 @@ inferExp env e =
                                          ++ " has type " ++ printTree t2)
       EApp id exps   -> inferFun env e
 --                           type Sig = ([Type], Type)
+      EAnd e1 e2     -> do checkExp env e1 TBool
+                           checkExp env e2 TBool
+                           return TBool
+      EOr  e1 e2     -> inferExp env (EAnd e1 e2)
+      ETrue          -> return TBool
+      EFalse         -> return TBool
+      EPDecr exp     -> inferExp env exp
                            
       _ -> fail ("inferExp has a non exhaustive case pattern \n" ++ show e ++ " \n  " ++ printTree e) 
 
