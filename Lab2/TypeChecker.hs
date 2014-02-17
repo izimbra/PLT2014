@@ -123,11 +123,12 @@ checkStm env s =
                               return env --is there anything to actually do with an exp?
       SInit typ id exp  -> do env' <- checkStm env (SDecl typ id)  --first declare
                               checkStm env' (SAss id exp)   --then assign
-                                                   
-      
+      SIfElse exp s1 s2 -> do checkExp env exp TBool
+                              env' <- checkStm env s1
+                              checkStm env' s2    
       
       --updateVars env ids typ
-      _                 -> fail "case not exhaustive in checkstm"
+      _                 -> fail ( "case not exhaustive in checkstm  \n" ++ show s ++ " \n  " ++ printTree s) 
 
 checkExp :: Env -> Exp -> Type -> Err () -- Err Exp
 checkExp env e t = 
@@ -156,7 +157,7 @@ inferExp env e =
       EApp id exps   -> inferFun env e
 --                           type Sig = ([Type], Type)
                            
-      _ -> fail "inferExp has a non exhaustive case pattern"
+      _ -> fail ("inferExp has a non exhaustive case pattern \n" ++ show e ++ " \n  " ++ printTree e) 
 
 
 inferFun :: Env -> Exp -> Err Type
