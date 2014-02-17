@@ -152,9 +152,14 @@ inferExp env e =
       EVar x         -> lookupVar env x
       EInt _         -> return TInt
       EDouble _      -> return TDouble
+      ENEq  e1 e2    -> inferExp env (ELtEq e1 e2) --
+      EEq   e1 e2    -> inferExp env (ELtEq e1 e2) --identical type check
+      EGt   e1 e2    -> inferExp env (ELtEq e1 e2) --identical type check
       ELtEq e1 e2    -> do t0 <- inferExp env (EAdd e1 e2)
                            return TBool
-      
+      EDiv   e1 e2   -> inferExp env (EAdd e1 e2) --identical type check
+      ETimes e1 e2   -> inferExp env (EAdd e1 e2) --identical type check
+      EMinus e1 e2   -> inferExp env (EAdd e1 e2) --identical type check
       EAdd e1 e2     -> do t1 <- inferExp env e1
                            t2 <- inferExp env e2
                            if t1 == t2 
