@@ -27,6 +27,8 @@ SIfElse. Stm    ::= "if" "(" Exp ")" Stm "else" Stm ;
 
 EInt.    Exp15  ::= Integer ;
 EDouble. Exp15  ::= Double ;
+ETrue.   Exp16 ::= "true";
+EFalse.  Exp16 ::= "false";
 EVar.    Exp16 ::= Id ;
 EInt.    Exp16 ::= Integer ;
 EAdd.    Exp11  ::= Exp11 "+" Exp12 ;
