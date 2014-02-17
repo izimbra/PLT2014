@@ -73,7 +73,9 @@ checkDefs env (d:ds) = do env' <- checkDef env d
 
 checkDef :: Env -> Def -> Err Env 
 checkDef env (Func typ id args stms) = do env'  <- addArgs  (addScope env) args
-                                          checkStms env' stms
+                                          env'' <- updateVar env' (Id "return") typ --since return i a reserved word, there will never be a variable with that as id
+--so we can use it to store the function type in every scope
+                                          checkStms env'' stms
 
 
 --checkDef env d =
@@ -110,7 +112,9 @@ checkStm env s =
       SDecls typ []     -> return env
       SDecls typ (i:is) -> do env' <- checkStm env (SDecl typ i)
                               checkStm env' (SDecls typ is)
-      SReturn exp       -> fail "return statement unhandled"
+      SReturn exp       -> do retType <- lookupVar env (Id "return") 
+                              checkExp env exp retType
+                              return env
       
       
       --updateVars env ids typ
