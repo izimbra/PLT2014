@@ -6,10 +6,6 @@ import PrintCPP
 import ErrM
 import BuiltInFuncs
 
-
-fromErr :: Err a -> a
-fromErr (Bad s) = error "fromErr on a Bad"
-fromErr (Ok x) = x
 -- We get Printer and ErrM monad from BNFC.
 --
 -- Type checker --
@@ -195,7 +191,6 @@ inferExp env e =
 
 
 inferFun :: Env -> Exp -> Err Type
---inferFun env (EApp id []) = sigType $ lookupFun env id
 inferFun env (EApp id exps) = do (types, ftype)  <- lookupFun env id
                                  inferFunHelper env exps types
                                  return ftype
@@ -219,9 +214,6 @@ emptyEnv = (M.empty, [])
 updateFun :: Env -> Id -> Sig -> Err Env
 updateFun (funs, scopes) id sig = let funs' = M.insert id sig funs
                                   in  return (funs', scopes)
-
-sigType :: Err Sig -> Err Type
-sigType s = return $ snd $ fromErr s
 
 -- | Looks up a function definition in the environment
 lookupFun :: Env -> Id -> Err Sig
