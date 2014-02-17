@@ -8,13 +8,16 @@ Arg.       Arg     ::= Type Id ;
 
 separator  Arg "," ;
 
+SAss.      Stm    ::= Id "=" Exp ";" ;  --is this necessary or can it be left out and parsed as SExp where Exp has the same effect?
 SExp.      Stm    ::= Exp ";" ;
+SDecl.     Stm    ::= Type Id ";"  ;  --is it a bad idea to have both these? Feels like it shoudl cause R/R conflicts the way its written now 
 SDecls.    Stm    ::= Type [Id] ";" ;
 SInit.     Stm    ::= Type Id "=" Exp ";" ;
 SReturn.   Stm    ::= "return" Exp ";" ;
 SWhile.    Stm    ::= "while" "(" Exp ")" Stm ;
 SBlock.    Stm    ::= "{" [Stm] "}" ;
 SIfElse.   Stm    ::= "if" "(" Exp ")" Stm "else" Stm ;
+SPrint.    Stm    ::= "print" Exp  ";" ;  --for built in functions? typ checker uses it
 
 terminator Stm "" ;
 
@@ -39,7 +42,7 @@ EMinus.    Exp11  ::= Exp11 "-"  Exp12 ;
 ELt.       Exp9   ::= Exp9  "<"  Exp10 ;
 EGt.       Exp9   ::= Exp9  ">"  Exp10 ;
 ELtEq.     Exp9   ::= Exp9  "<=" Exp10 ;
-EGtWq.     Exp9   ::= Exp9  ">=" Exp10 ;
+EGtEq.     Exp9   ::= Exp9  ">=" Exp10 ;
 EEq.       Exp8   ::= Exp8  "==" Exp9 ;
 ENEq.      Exp8   ::= Exp8  "!=" Exp9 ;
 EAnd.      Exp4   ::= Exp4  "&&" Exp5 ;
@@ -50,7 +53,13 @@ coercions  Exp 15 ;
 
 separator  Exp "," ;
 
-rules Type   ::= "bool" | "int" | "double" | "void" ;
+--rules Type   ::= "bool" | "int" | "double" | "void" ;
+
+
+TInt.    Type ::= "int" ;
+TDouble. Type ::= "double" ;
+TVoid.   Type ::= "void" ;
+TBool.   Type ::= "bool" ;
 
 token Id (letter (letter | digit | '_')*) ;
 

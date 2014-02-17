@@ -58,13 +58,13 @@ buildFunTable :: Env -> [Def] -> Err Env -- or just SigTab
 buildFunTable env []   = return env
 buildFunTable env (d:ds) =
     case d of
-      Func ftype id args _ -> do env' <- updateFun env id (map argType args, ftype)
-                                 buildFunTable env' ds                                 
+      Fun ftype id args _ -> do env' <- updateFun env id (map argType args, ftype)
+                                buildFunTable env' ds                                 
       _                    -> fail "Bad function definition, buildFunTable"
     
                     
 argType :: Arg -> Type
-argType (ADecl atype _) = atype
+argType (Arg atype _) = atype
 
 checkDefs :: Env -> [Def] -> Err () -- Err Type?
 checkDefs env []     = return ()
@@ -72,10 +72,10 @@ checkDefs env (d:ds) = do env' <- checkDef env d
                           checkDefs env' ds
 
 checkDef :: Env -> Def -> Err Env 
-checkDef env (Func typ id args stms) = do env'  <- addArgs  (addScope env) args
-                                          env'' <- updateVar env' (Id "return") typ --since return i a reserved word, there will never be a variable with that as id
+checkDef env (Fun typ id args stms) = do env'  <- addArgs  (addScope env) args
+                                         env'' <- updateVar env' (Id "return") typ --since return i a reserved word, there will never be a variable with that as id
 --so we can use it to store the function type in every scope
-                                          checkStms env'' stms
+                                         checkStms env'' stms
 
 
 --checkDef env d =
@@ -90,8 +90,8 @@ checkDef env (Func typ id args stms) = do env'  <- addArgs  (addScope env) args
 
 addArgs :: Env -> [Arg] -> Err Env
 addArgs env [] = return env --base case 
-addArgs env ( (ADecl typ id) :as) = do env' <- updateVar env id typ
-                                       addArgs env' as
+addArgs env ( (Arg typ id) :as) = do env' <- updateVar env id typ
+                                     addArgs env' as
 
 checkStms :: Env -> [Stm] -> Err Env
 checkStms env [] = return env
@@ -145,7 +145,7 @@ checkExp env e t =
 inferExp :: Env -> Exp -> Err Type
 inferExp env e = 
     case e of
-      EVar x         -> lookupVar env x
+      EId x          -> lookupVar env x
       EInt _         -> return TInt
       EDouble _      -> return TDouble
       ENEq  e1 e2    -> inferExp env (ELtEq e1 e2) --
@@ -153,12 +153,12 @@ inferExp env e =
       EGt   e1 e2    -> inferExp env (ELtEq e1 e2) --identical type check
       ELt   e1 e2    -> inferExp env (ELtEq e1 e2) 
       EGtEq e1 e2    -> inferExp env (ELtEq e1 e2)
-      ELtEq e1 e2    -> do t0 <- inferExp env (EAdd e1 e2)
+      ELtEq e1 e2    -> do t0 <- inferExp env (EPlus e1 e2)
                            return TBool
-      EDiv   e1 e2   -> inferExp env (EAdd e1 e2) --identical type check
-      ETimes e1 e2   -> inferExp env (EAdd e1 e2) --identical type check
-      EMinus e1 e2   -> inferExp env (EAdd e1 e2) --identical type check
-      EAdd   e1 e2   -> do t1 <- inferExp env (EAss e1 e2)
+      EDiv   e1 e2   -> inferExp env (EPlus e1 e2) --identical type check
+      ETimes e1 e2   -> inferExp env (EPlus e1 e2) --identical type check
+      EMinus e1 e2   -> inferExp env (EPlus e1 e2) --identical type check
+      EPlus  e1 e2   -> do t1 <- inferExp env (EAss e1 e2)
                            if t1 == TBool || t1 == TVoid
                              then fail "Arithmetic operation on bool or void type" 
                              else return t1
