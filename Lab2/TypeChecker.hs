@@ -124,8 +124,13 @@ checkStm env s =
       SInit typ id exp  -> do env' <- checkStm env (SDecl typ id)  --first declare
                               checkStm env' (SAss id exp)   --then assign
       SIfElse exp s1 s2 -> do checkExp env exp TBool
-                              env' <- checkStm env s1
-                              checkStm env' s2    
+                              env'  <- checkStm env s1
+                              env'' <- checkStm env s2
+                              return env
+      SWhile exp stm    -> do checkExp env exp TBool
+                              env'  <- checkStm env stm
+                              return env
+                              
       
       --updateVars env ids typ
       _                 -> fail ( "case not exhaustive in checkstm  \n" ++ show s ++ " \n  " ++ printTree s) 
@@ -175,15 +180,7 @@ inferFunHelper env [] [] = return ()
 inferFunHelper env (e:es) (t:ts) = do etyp <- inferExp env e
                                       if etyp == t
                                         then inferFunHelper env es ts
-                                        else fail "type error in argument of function call"
-                                
-
---inferFun env (EApp id exps) = fail "function call with arguments not yet handled" ----do    argtypes <- map (inferExp env) exps
-                                 -- -  fe <- map fromErr argtypes
-                                 --   if fe == args
-                                 --     then return ftype
-                                 --     else fail "funcall with wrong arg types" 
-  --  where (args, ftype) = lookupFun env id
+                                        else fail "type error in argument of function call"                     
 
 emptyEnv :: Env
 emptyEnv = (M.empty, [])
@@ -211,12 +208,6 @@ updateVar (funs, scope:rest) x t =
     case M.lookup x scope of
       Nothing -> return (funs, (M.insert x t scope):rest)
       Just _  -> fail ("Variable " ++ printTree x ++ " already declared.")
-
---helper for multiple variable declaration statements
---updateVars :: Env -> [Id] -> Type -> Err Env
---updateVars env [] _       = env
---updateVars env id:ids typ = do env' <- updateVar env id typ
---                               updateVars env' ids typ
 
 
 -- | Looks up a variable in the environment
