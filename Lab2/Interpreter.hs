@@ -10,7 +10,7 @@ import ParCPP
 import PrintCPP
 import ErrM
 
---data Value = VInt Integer | VDouble Double | VUndef
+import Environment
 
 instance Show Value where
     show (VInt i)    = show i
@@ -22,12 +22,12 @@ interpret :: Program -> IO ()
 interpret (Prog stms) = do execStms emptyEnv stms
                            return ()
 
-execStms :: Env -> [Stm] -> IO Env
+execStms :: IEnv -> [Stm] -> IO IEnv
 execStms env [] = return env
 execStms env (st:stms) = do env' <- execStm env st
                             execStms env' stms
 
-execStm :: Env -> Stm -> IO Env
+execStm :: IEnv -> Stm -> IO IEnv
 execStm env s = 
     case s of
       SDecl _ x       -> return (addVar env x)
@@ -37,7 +37,7 @@ execStm env s =
       SPrint e        -> do print (evalExp env e)
                             return env
 
-evalExp :: Env -> Exp -> IO (Value, Env)
+evalExp :: IEnv -> Exp -> IO (Value, Env)
 --evalExp env EId x   = lookupVar env x
 
 
@@ -52,9 +52,9 @@ evalExp env EDouble d = return (VDouble d, env)
 -- unary operations w/side effects
 evalExp env EPIncr e     = case (evalExp env e) of
                             (VInt v) -> VInt (i1+1)
-evalExp env EPDecr e     =
-evalExp env EIncr e     =
-evalExp env EDecr e     =
+evalExp env EPDecr e     = undefined
+evalExp env EIncr  e     = undefined
+evalExp env EDecr  e     = undefined
   
 -- binary arithmetic operations
 evalExp env EPlus  e1 e2 = let v1 = evalExp env e1
@@ -80,19 +80,19 @@ evalExp env EDiv   e1 e2 = let v1 = evalExp env e1
                              (VDouble d1, VDouble d2) -> return (VDouble (d1/d2), env)
                              -- add catch-all
 -- comparison operators
-evalExp env ELt   e1 e2     =                              
-evalExp env EGt   e1 e2     =
-evalExp env ELtEq e1 e2     =
+evalExp env ELt   e1 e1     = undefined
+evalExp env EGt   e1 e2     = undefined
+evalExp env ELtEq e1 e2     = undefined
   
-type Env = [[(Ident, Value)]]
+-- type Env = [[(Ident, Value)]]
 
-emptyEnv :: Env
-emptyEnv = [[]]
+-- emptyEnv :: Env
+-- emptyEnv = [[]]
 
-addVar :: Env -> Ident -> Env
+addVar :: IEnv -> Id -> IEnv
 addVar (scope:rest) x = (((x,VUndef):scope):rest)
 
-setVar :: Env -> Ident -> Value -> Env
+setVar :: IEnv -> Id -> Value -> IEnv
 setVar [] x _ = error $ "Unknown variable " ++ printTree x ++ "."
 setVar ([]:rest) x v = []:setVar rest x v
 setVar ((p@(y,_):scope):rest) x v 
@@ -100,13 +100,13 @@ setVar ((p@(y,_):scope):rest) x v
     | otherwise = let scope':rest' = setVar (scope:rest) x v
                    in (p:scope'):rest'
 
-lookupVar :: Env -> Ident -> Value
+lookupVar :: IEnv -> Id -> Value
 lookupVar [] x = error $ "Unknown variable " ++ printTree x ++ "."
 lookupVar (scope:rest) x = case lookup x scope of
                              Nothing -> lookupVar rest x
                              Just v  -> v
-enterScope :: Env -> Env
+enterScope :: IEnv -> IEnv
 enterScope env = []:env
 
-leaveScope :: Env -> Env
+leaveScope :: IEnv -> IEnv
 leaveScope (_:env) = env
