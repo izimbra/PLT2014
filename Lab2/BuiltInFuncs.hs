@@ -2,20 +2,20 @@ module BuiltInFuncs where
 
 import AbsCPP
 
-argd = ADecl TDouble (Id "dummy")
-argi = ADecl TInt    (Id "dummy")
+argd = Arg TDouble (Id "dummy")
+argi = Arg TInt    (Id "dummy")
 
 printInt    :: Def
-printInt    =  Func TVoid   (Id "printInt")    [argi] []
+printInt    =  Fun TVoid   (Id "printInt")    [argi] []
 
 printDouble :: Def
-printDouble =  Func TVoid   (Id "printDouble") [argd] []
+printDouble =  Fun TVoid   (Id "printDouble") [argd] []
 
 readInt     :: Def
-readInt     =  Func TInt    (Id "readInt")     [] []
+readInt     =  Fun TInt    (Id "readInt")     [] []
 
 readDouble  :: Def
-readDouble  =  Func TDouble (Id "readDouble")  [] []
+readDouble  =  Fun TDouble (Id "readDouble")  [] []
 
 builtInFunctions = [printInt, printDouble, readInt, readDouble]
 
