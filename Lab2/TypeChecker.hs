@@ -188,18 +188,21 @@ inferExp env e =
 
 
 inferFun :: Env -> Exp -> Err Type
-inferFun env (EApp id []) = sigType $ lookupFun env id
+--inferFun env (EApp id []) = sigType $ lookupFun env id
 inferFun env (EApp id exps) = do (types, ftype)  <- lookupFun env id
                                  inferFunHelper env exps types
                                  return ftype
                                  
                                 
 inferFunHelper :: Env -> [Exp] -> [Type] -> Err ()
-inferFunHelper env [] [] = return ()
+inferFunHelper env [] []         = return ()
+inferFunHelper env [] types      = fail "too few  args in function call"
+inferFunHelper env exps []       = fail "too many args in function call"
 inferFunHelper env (e:es) (t:ts) = do etyp <- inferExp env e
                                       if etyp == t
                                         then inferFunHelper env es ts
-                                        else fail "type error in argument of function call"                     
+                                        else fail "type error in argument of function call" 
+inferFunHelper _ _ _             = fail "inferFunHelper has non exhaustive case pattern"                  
 
 emptyEnv :: Env
 emptyEnv = (M.empty, [])
