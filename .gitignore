@@ -12,7 +12,6 @@ cabal-dev
 *.ps
 *.txt
 *.tex
-*.o
 *.x
 *.y
 *.tar

@@ -22,13 +22,18 @@ type SigTab = M.Map Id Sig
 type Sig = ([Type], Type)
 
 
-data Value = VInt Integer | VDouble Double | VVoid | VUndef 
+data Value = VInt Integer | VDouble Double | VVoid | VUndef
 
 instance Show Value where
-    show (VInt i)    = show i
-    show (VDouble d) = show d
-    show VVoid       = "void"
-    show VUndef      = "undefined"
+  show (VInt i)    = show i
+  show (VDouble d) = show d
+  show VVoid       = "void"
+  show VUndef      = "undefined"
+
+-- | Converts regular 'Bool' value to 'Value' 
+boolToVal :: Bool -> Value
+boolToVal True  = VInt 1
+boolToVal False = VInt 0
 
 -- | Looks up a function definition in the environment
 lookupFun :: Env -> Id -> Err Sig
@@ -116,8 +121,8 @@ evalVar (funs, []) x = error $ "Unknown variable " ++ printTree x ++ "." --VUnde
 evalVar (funs, (scope:rest)) x = case M.lookup x scope of
                              Nothing -> evalVar (funs, rest)  x
                              Just v  -> v
---enterScope :: IEnv -> IEnv
---enterScope env = []:env
+enterScope :: IEnv -> IEnv
+enterScope env = undefined -- []:env
 
---leaveScope :: IEnv -> IEnv
---leaveScope (_:env) = env
+leaveScope :: IEnv -> IEnv
+leaveScope = undefined --(_:env) = env
