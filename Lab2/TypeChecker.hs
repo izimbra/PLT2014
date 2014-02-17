@@ -6,6 +6,10 @@ import PrintCPP
 import ErrM
 import BuiltInFuncs
 
+
+fromErr :: Err a -> a
+fromErr (Bad s) = error "fromErr on a Bad"
+fromErr (Ok x) = x
 -- We get Printer and ErrM monad from BNFC.
 --
 -- Type checker --
@@ -115,6 +119,11 @@ checkStm env s =
       SReturn exp       -> do retType <- lookupVar env (Id "return") 
                               checkExp env exp retType
                               return env
+      SExp exp          -> do t <- inferExp env exp
+                              return env --is there anything to actually do with an exp?
+      SInit typ id exp  -> do env' <- checkStm env (SDecl typ id)  --first declare
+                              checkStm env' (SAss id exp)   --then assign
+                                                   
       
       
       --updateVars env ids typ
@@ -144,8 +153,20 @@ inferExp env e =
                              else fail (printTree e1 ++ " has type " ++ printTree t1
                                          ++ " but " ++ printTree e2 
                                          ++ " has type " ++ printTree t2)
+      EApp id exps   -> inferFun env e
+--                           type Sig = ([Type], Type)
+                           
       _ -> fail "inferExp has a non exhaustive case pattern"
 
+
+inferFun :: Env -> Exp -> Err Type
+inferFun env (EApp id []) = sigType $ lookupFun env id
+inferFun env (EApp id exps) = fail "function call with arguments not yet handled" ----do    argtypes <- map (inferExp env) exps
+                                 -- -  fe <- map fromErr argtypes
+                                 --   if fe == args
+                                 --     then return ftype
+                                 --     else fail "funcall with wrong arg types" 
+  --  where (args, ftype) = lookupFun env id
 
 emptyEnv :: Env
 emptyEnv = (M.empty, [])
@@ -155,6 +176,9 @@ emptyEnv = (M.empty, [])
 updateFun :: Env -> Id -> Sig -> Err Env
 updateFun (funs, scopes) id sig = let funs' = M.insert id sig funs
                                   in  return (funs', scopes)
+
+sigType :: Err Sig -> Err Type
+sigType s = return $ snd $ fromErr s
 
 -- | Looks up a function definition in the environment
 lookupFun :: Env -> Id -> Err Sig
