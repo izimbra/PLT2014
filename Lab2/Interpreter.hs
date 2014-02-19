@@ -4,6 +4,8 @@ import Control.Monad
 import System.Environment (getArgs)
 import System.Exit (exitFailure)
 
+import qualified Data.Map as M
+
 import AbsCPP
 import LexCPP
 import ParCPP
@@ -13,15 +15,23 @@ import ErrM
 import Environment
 
 interpret :: Program -> IO ()
-interpret (Prog defs) = do iSigTab <- buildSig M.empty defs
-                           iEnv <- (iSigTab, []) 
-                           --execStms iEnv stms
+interpret (Prog defs) =  return () --do iSigTab <- buildSig M.empty defs
+                           -- return ()
+                           --iEnv <- (iSigTab, []) 
                            --return ()
+                           --execMain iEnv
+--                           execFun (Id "main") iEnv
+                          
+
+execMain :: IEnv -> IO ()
+execMain (iSigTab, conts) = case M.lookup (Id "main") iSigTab of
+                                    Nothing -> return ()
+                                    Just (Fun _ _ _ stms)  -> return ()
+                                                      
 
 buildSig :: ISigTab -> [Def] -> ISigTab
 buildSig i [] = i  --base case
-buildSig iSigTab (d:ds) = do sig' <- addFunSig iSigTab d
-                             buildSig sig' ds
+buildSig iSigTab (d:ds) = buildSig (addFunSig iSigTab d) ds
 
 addFunSig :: ISigTab -> Def -> ISigTab
 addFunSig iSigTab (Fun t id a s) = M.insert id (Fun t id a s) iSigTab
@@ -110,9 +120,9 @@ getValuePair env e1 e2 = do (v1,_) <- evalExp env e1
 -- | Compares two numeric values using given comparison function
 -- and return @VInt 1@ for true or @VInt 0@ for false 
 --compareValues :: (Ord a, Num a) => (Value, Value) ->  (a -> a -> Bool)  -> Value
-compareValues (v1, v2) cmp = case (v1, v2) of
-                                      boolToVal (i1 `cmp` i2)
-compareValues (VDouble d1, VDouble d2) cmp = boolToVal (d1 `cmp` d2)
+--compareValues (v1, v2) cmp = case (v1, v2) of
+--                                      boolToVal (i1 `cmp` i2)
+--compareValues (VDouble d1, VDouble d2) cmp = boolToVal (d1 `cmp` d2)
 
 --(v1,v2) comparison = do (v1,
 -- type Env = [[(Ident, Value)]]
