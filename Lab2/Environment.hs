@@ -12,11 +12,12 @@ type IContext = M.Map Id Value
 -- | The environment of the type checker.
 -- Includes symbol table for functions and list of variable contexts.
 type Env =  (SigTab, [Context]) -- mini version: [[(Id, Type)]]
-type IEnv = (SigTab, [IContext])
+type IEnv = (ISigTab, [IContext])
 
 -- | Symbol table for functions .
 -- A map of function ids and their type signatures.
-type SigTab = M.Map Id Sig
+type SigTab  = M.Map Id Sig
+type ISigTab = M.Map Id Def
 
 -- | Function type signature. Includes argument types and return type.
 type Sig = ([Type], Type)
