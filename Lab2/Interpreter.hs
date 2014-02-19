@@ -13,15 +13,15 @@ import ErrM
 import Environment
 
 interpret :: Program -> IO ()
-interpret (Prog defs) = do env <- buildIEnv emptyEnv defs
-                           execStms emptyEnv stms
+interpret (Prog defs) = do iSigTab <- buildSig M.empty defs
+                           --execStms emptyEnv stms
                            return ()
 
-buildIEnv :: IEnv -> [Def] -> IEnv
-buildIEnv env [] = env --base case
-buildIEnv (iSigTab, cs) (d:ds) = do sig' <- addFunSig iSigTab d
-                                       buildIEnv (sig', cs) ds
-                                       
+buildSig :: ISigTab -> [Def] -> ISigTab
+buildSig i [] = i  --base case
+buildSig iSigTab (d:ds) = do sig' <- addFunSig iSigTab d
+                             buildSig sig' ds
+
 addFunSig :: ISigTab -> Def -> ISigTab
 addFunSig iSigTab (Fun t id a s) = M.insert id (Fun t id a s) iSigTab
 
