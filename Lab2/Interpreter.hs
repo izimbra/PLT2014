@@ -13,8 +13,18 @@ import ErrM
 import Environment
 
 interpret :: Program -> IO ()
-interpret (Prog defs) = --do execStms emptyEnv stms
+interpret (Prog defs) = do env <- buildIEnv emptyEnv defs
+                           execStms emptyEnv stms
                            return ()
+
+buildIEnv :: IEnv -> [Def] -> IEnv
+buildIEnv env [] = env --base case
+buildIEnv (iSigTab, cs) (d:ds) = do sig' <- addFunSig iSigTab d
+                                       buildIEnv (sig', cs) ds
+                                       
+addFunSig :: ISigTab -> Def -> ISigTab
+addFunSig iSigTab (Fun t id a s) = M.insert id (Fun t id a s) iSigTab
+
 
 execStms :: IEnv -> [Stm] -> IO IEnv
 execStms env [] = return env
