@@ -14,8 +14,9 @@ import Environment
 
 interpret :: Program -> IO ()
 interpret (Prog defs) = do iSigTab <- buildSig M.empty defs
-                           --execStms emptyEnv stms
-                           return ()
+                           iEnv <- (iSigTab, []) 
+                           --execStms iEnv stms
+                           --return ()
 
 buildSig :: ISigTab -> [Def] -> ISigTab
 buildSig i [] = i  --base case
