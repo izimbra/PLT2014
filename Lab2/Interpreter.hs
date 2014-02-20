@@ -15,8 +15,8 @@ import ErrM
 import Environment
 
 interpret :: Program -> IO ()
-interpret (Prog defs) =  return () --do iSigTab <- buildSig M.empty defs
-                           -- return ()
+interpret (Prog defs) =  do iSigTab <-  buildSig M.empty defs 
+                            return ()
                            --iEnv <- (iSigTab, []) 
                            --return ()
                            --execMain iEnv
@@ -26,15 +26,15 @@ interpret (Prog defs) =  return () --do iSigTab <- buildSig M.empty defs
 execMain :: IEnv -> IO ()
 execMain (iSigTab, conts) = case M.lookup (Id "main") iSigTab of
                                     Nothing -> return ()
-                                    Just (Fun _ _ _ stms)  -> return ()
-                                                      
+                                    Just (Fun _ _ _ stms)  -> do ienv <- execStms (iSigTab, conts) stms
+                                                                 return ()
 
-buildSig :: ISigTab -> [Def] -> ISigTab
-buildSig i [] = i  --base case
+buildSig :: ISigTab -> [Def] -> IO ISigTab
+buildSig i [] = return i  --base case
 buildSig iSigTab (d:ds) = buildSig (addFunSig iSigTab d) ds
 
 addFunSig :: ISigTab -> Def -> ISigTab
-addFunSig iSigTab (Fun t id a s) = M.insert id (Fun t id a s) iSigTab
+addFunSig iSigTab (Fun t id a s) =  M.insert id (Fun t id a s) iSigTab
 
 
 execStms :: IEnv -> [Stm] -> IO IEnv
