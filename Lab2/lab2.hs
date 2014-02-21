@@ -6,7 +6,7 @@ import ParCPP
 import ErrM
 
 import TypeChecker
---import Interpreter
+import Interpreter
 
 -- driver
 
@@ -19,7 +19,8 @@ check s = case pProgram (myLexer s) of
                           Bad err -> do putStrLn "TYPE ERROR"
                                         putStrLn err
                                         exitFailure 
-                          Ok _ -> putStrLn "Ok" --interpret tree -- for testing w/o interpreter
+                          --Ok _ -> putStrLn "Ok" --
+                          Ok _ -> interpret tree -- for testing w/o interpreter
 
 main :: IO ()
 main = do args <- getArgs

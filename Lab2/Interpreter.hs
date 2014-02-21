@@ -63,7 +63,7 @@ execStm env s = case s of
 	SAss x e        -> do (v, env') <- evalExp env e
                               return (setVar env' x v)
 
-	_		  -> error "not finished yet"
+	_		  -> error ("not finished yet in execStm: \n" ++ show s)
       
 
 
