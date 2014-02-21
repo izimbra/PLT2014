@@ -176,7 +176,7 @@ enterScope :: IEnv -> IEnv
 enterScope (sig, conts) = (sig, (M.empty:conts))
 
 leaveScope :: IEnv -> IEnv
-leaveScope = undefined --(_:env) = env
+leaveScope (sig, (c:cs)) = (sig, cs)
 
 
 buildSig :: SigTabI -> [Def] -> IO SigTabI
