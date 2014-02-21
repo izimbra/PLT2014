@@ -25,7 +25,7 @@ interpret (Prog defs) =  do iSigTab <-  buildSig M.empty defs
 
 execMain :: IEnv -> IO ()
 execMain (iSigTab, conts) = case M.lookup (Id "main") iSigTab of
-                                    Nothing -> error "no function main()" 
+                                    Nothing -> error "no function main()" --should not happen
                                     Just (Fun _ _ _ stms)  -> do ienv <- execStms (iSigTab, conts) stms
                                                                  return ()
 
@@ -45,16 +45,25 @@ execStms :: IEnv -> [Stm] -> IO IEnv
 execStms env [] = return env
 execStms env (st:stms) = do env' <- execStm env st
                             execStms env' stms
-
+--checkStm :: Env -> Stm -> Err Env
 execStm :: IEnv -> Stm -> IO IEnv
-execStm env s = undefined
-    -- case s of
-    --   SDecls _ x       -> return (addVar env x)
+--checkStm env s = case s of
+execStm env s = case s of
+--   SDecl t x         -> updateVar env x t
+	SDecl _ x        -> return (addVar env x) 
+--   SDecls _ x       -> return (addVar env x)
+	SDecls _ xs       -> return (addVars env xs)
     --   SAss x e        ->  return (setVar env x (evalExp env e))
     --   SBlock stms     -> do env' <- execStms (enterScope env) stms
     --                         return (leaveScope env')
     --   SPrint e        -> do print (evalExp env e)
     --                         return env
+
+
+	_		  -> error "not finished yet"
+      
+
+
 
 evalExp :: IEnv -> Exp -> IO (Value, IEnv)
 -- literal values
