@@ -1,18 +1,21 @@
 -- | This module defines data types used for constructing
 -- environments used in the different parts of compiler toolchain.
-module Environment (-- * Type Checking 
-                     Env
-                   , Context
-                    -- * Interpretation
-                   , IEnv
-                   , IContext
-                    -- * Compilation
-                    -- * Other 
-                   , TypeC
-                   , Value  
-                   , boolToVal
-                   , valToBool
-                   ) where
+
+module Environment where
+
+--module Environment (-- * Type Checking 
+--                     Env
+--                   , Context
+--                    -- * Interpretation
+--                   , IEnv
+--                   , IContext
+--                    -- * Compilation
+--                    -- * Other 
+--                   , TypeC
+--                   , Value  
+--                   , boolToVal
+--                   , valToBool
+--                   ) where
 
 import qualified Data.Map as M
 import AbsCPP
@@ -26,17 +29,18 @@ type IContext = M.Map Id Value
 -- | The environment of the type checker.
 -- Includes symbol table for functions and list of variable contexts.
 type Env =  (SigTab,  [Context]) -- mini version: [[(Id, Type)]]
-type IEnv = (SigTabI, [IContext])
-type EnvC = E {
-  addresses   :: [[(Ident,Address)]],
-  nextLabel   :: Int,
-  nextAddress :: Address,
-  maxAddress  :: Address,
-  stackSize   :: Int,
-  maxSize     :: Int,
-  code        :: [Instruction]
-  funTable    :: SigTabC
-  }
+type IEnv = (SigTabI, [IContext]) -- Interpreter version of corresponding tool
+
+--type EnvC = E {  --temp commented out because it doesnt compile
+--  addresses   :: [[(Ident,Address)]],
+--  nextLabel   :: Int,
+--  nextAddress :: Address,
+--  maxAddress  :: Address,
+--  stackSize   :: Int,
+--  maxSize     :: Int,
+--  code        :: [Instruction],
+--  funTable    :: SigTabC
+--  }
 
 
 -- | Symbol table for functions .
@@ -166,3 +170,8 @@ enterScope env = undefined -- []:env
 
 leaveScope :: IEnv -> IEnv
 leaveScope = undefined --(_:env) = env
+
+
+
+
+

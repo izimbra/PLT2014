@@ -41,10 +41,10 @@ evalExp env (EDouble d) = return (VDouble d, env)
 --evalExp env EId x       = evalVar env x 
 
 -- -- Err "uninitialized variable x"
--- unary operations w/side effects
-evalExp env (EPIncr  e)  = case (evalExp env e) of
-                             (VInt i) -> return (VInt (i+1),
-                                                 setVar env 
+-- unary operations w/side effects   --temp commented out because it doesnt compile
+--evalExp env (EPIncr  e)  = case (evalExp env e) of
+--                             (VInt i) -> return (VInt (i+1),
+--                                                 setVar env 
 evalExp env (EPDecr  e)  = undefined
 evalExp env (EIncr   e)  = undefined
 evalExp env (EDecr   e)  = undefined
