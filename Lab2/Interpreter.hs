@@ -52,8 +52,10 @@ execStm env s = case s of
 --   SDecl t x         -> updateVar env x t
 	SDecl _ x        -> return (addVar env x) 
 --   SDecls _ x       -> return (addVar env x)
-	SDecls _ xs       -> return (addVars env xs)
-    --   SAss x e        ->  return (setVar env x (evalExp env e))
+	SDecls _ xs      -> return (addVars env xs)
+
+
+    --    SAss x e         -> return (setVar env x (evalExp env e)) --type error
     --   SBlock stms     -> do env' <- execStms (enterScope env) stms
     --                         return (leaveScope env')
     --   SPrint e        -> do print (evalExp env e)

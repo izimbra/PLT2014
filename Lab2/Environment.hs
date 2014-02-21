@@ -125,6 +125,11 @@ updateFun (funs, scopes) id sig = let funs' = M.insert id sig funs
 
 -- | Adds a new variable to the current variable scope,
 -- or updates an existing variable    
+
+addVars :: IEnv -> [Id] -> IEnv  --declaration of multiple variables
+addVars ienv [] = ienv  --base case
+addVars ienv (i:is) = addVars (addVar ienv i) is
+
 addVar :: IEnv -> Id -> IEnv
 addVar (funs, scope:rest) x = (funs, (M.insert x VUndef scope):rest)
 
@@ -165,8 +170,10 @@ evalVar (funs, []) x = error $ "Unknown variable " ++ printTree x ++ "." --VUnde
 evalVar (funs, (scope:rest)) x = case M.lookup x scope of
                              Nothing -> evalVar (funs, rest)  x
                              Just v  -> v
+
+-- type IEnv = (SigTabI, [IContext])
 enterScope :: IEnv -> IEnv
-enterScope env = undefined -- []:env
+enterScope (sig, conts) = (sig, (M.empty:conts))
 
 leaveScope :: IEnv -> IEnv
 leaveScope = undefined --(_:env) = env
