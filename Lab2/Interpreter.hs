@@ -60,7 +60,8 @@ execStm env s = case s of
                               return (leaveScope env')
     --   SPrint e        -> do print (evalExp env e)
     --                         return env
-
+	SAss x e        -> do (v, env') <- evalExp env e
+                              return (setVar env' x v)
 
 	_		  -> error "not finished yet"
       
