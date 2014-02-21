@@ -4,6 +4,7 @@ import Control.Monad
 import System.Environment (getArgs)
 import System.Exit (exitFailure)
 
+import qualified Data.Map as M
 import AbsCPP
 import LexCPP
 import ParCPP
@@ -12,9 +13,33 @@ import ErrM
 
 import Environment
 
+
+--PASTE IN
+
 interpret :: Program -> IO ()
-interpret (Prog defs) = --do execStms emptyEnv stms
-                           return ()
+interpret (Prog defs) =  do iSigTab <-  buildSig M.empty defs 
+                            iEnv <- return (iSigTab, [])  --why is return neeeded here? Is this a good way to write code?
+                            execMain iEnv
+--                           execFun (Id "main") iEnv
+                          
+
+execMain :: IEnv -> IO ()
+execMain (iSigTab, conts) = case M.lookup (Id "main") iSigTab of
+                                    Nothing -> error "no function main()" 
+                                    Just (Fun _ _ _ stms)  -> do ienv <- execStms (iSigTab, conts) stms
+                                                                 return ()
+
+
+execFun :: Id -> IEnv -> [Value] -> IO()
+execFun id (iSigTab, conts) vals = case M.lookup id iSigTab of
+                                     Nothing -> error "function not found" -- should never happen since we have already typechecked, but case is needed because of lookup
+                                     Just (Fun typ _ args stms) -> return ()
+                                     --skapa context utifrån argumenten till funktionen
+                                     --kör execStms
+                                     --ska execFun returna ett IO Value?
+
+
+-- STOP PASTE IN
 
 execStms :: IEnv -> [Stm] -> IO IEnv
 execStms env [] = return env

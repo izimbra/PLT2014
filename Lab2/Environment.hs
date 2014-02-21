@@ -172,6 +172,11 @@ leaveScope :: IEnv -> IEnv
 leaveScope = undefined --(_:env) = env
 
 
+buildSig :: SigTabI -> [Def] -> IO SigTabI
+buildSig i [] = return i  --base case
+buildSig sig (d:ds) = buildSig (addFunSig sig d) ds
 
+addFunSig :: SigTabI -> Def -> SigTabI
+addFunSig sig (Fun t id a s) =  M.insert id (Fun t id a s) sig
 
 
