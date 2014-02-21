@@ -1,4 +1,18 @@
-module Environment where
+-- | This module defines data types used for constructing
+-- environments used in the different parts of compiler toolchain.
+module Environment (-- * Type Checking 
+                     Env
+                   , Context
+                    -- * Interpretation
+                   , IEnv
+                   , IContext
+                    -- * Compilation
+                    -- * Other 
+                   , TypeC
+                   , Value  
+                   , boolToVal
+                   , valToBool
+                   ) where
 
 import qualified Data.Map as M
 import AbsCPP
@@ -11,16 +25,37 @@ type IContext = M.Map Id Value
 
 -- | The environment of the type checker.
 -- Includes symbol table for functions and list of variable contexts.
-type Env =  (SigTab, [Context]) -- mini version: [[(Id, Type)]]
-type IEnv = (SigTab, [IContext])
+type Env =  (SigTab,  [Context]) -- mini version: [[(Id, Type)]]
+type IEnv = (SigTabI, [IContext])
+type EnvC = E {
+  addresses   :: [[(Ident,Address)]],
+  nextLabel   :: Int,
+  nextAddress :: Address,
+  maxAddress  :: Address,
+  stackSize   :: Int,
+  maxSize     :: Int,
+  code        :: [Instruction]
+  funTable    :: SigTabC
+  }
+
 
 -- | Symbol table for functions .
 -- A map of function ids and their type signatures.
-type SigTab = M.Map Id Sig
+type SigTab  = M.Map Id Sig
+type SigTabI = M.Map Id Def
+type SigTabC = M.Map Id SigC -- or special SigC?
 
 -- | Function type signature. Includes argument types and return type.
-type Sig = ([Type], Type)
+type Sig  = ([Type], Type)
+type SigC = ([TypeC], TypeC)
 
+type TypeC = Char
+-- | Converts 'Type' value to its JVM counterpart.
+typeToTypeC :: Type -> TypeC
+typeToTypeC TInt    = 'I'
+typeToTypeC TDouble = 'D'
+typeToTypeC TBool   = 'Z'
+typeToTypeC TVoid   = 'V'
 
 data Value = VInt Integer | VDouble Double | VVoid | VUndef
 
@@ -34,6 +69,12 @@ instance Show Value where
 boolToVal :: Bool -> Value
 boolToVal True  = VInt 1
 boolToVal False = VInt 0
+
+-- | Converts boolean 'Value' (implemented as @[ VInt 1 | VInt 0 ]@
+-- to regular 'Bool'.
+valToBool :: Value -> Bool
+valToBool (VInt 1) = True
+valToBool (VInt 0) = False
 
 -- | Looks up a function definition in the environment
 lookupFun :: Env -> Id -> Err Sig
@@ -80,7 +121,6 @@ updateFun (funs, scopes) id sig = let funs' = M.insert id sig funs
 
 -- | Adds a new variable to the current variable scope,
 -- or updates an existing variable    
-
 addVar :: IEnv -> Id -> IEnv
 addVar (funs, scope:rest) x = (funs, (M.insert x VUndef scope):rest)
 
