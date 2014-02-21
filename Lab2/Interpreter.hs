@@ -56,8 +56,8 @@ execStm env s = case s of
 
 
     --    SAss x e         -> return (setVar env x (evalExp env e)) --type error
-    --   SBlock stms     -> do env' <- execStms (enterScope env) stms
-    --                         return (leaveScope env')
+        SBlock stms     -> do env' <- execStms (enterScope env) stms
+                              return (leaveScope env')
     --   SPrint e        -> do print (evalExp env e)
     --                         return env
 
