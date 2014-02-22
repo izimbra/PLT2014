@@ -54,20 +54,24 @@ execStm :: IEnv -> Stm -> IO IEnv
 --checkStm env s = case s of
 execStm env s = case s of
 --   SDecl t x         -> updateVar env x t
-	SDecl _ x        -> return (addVar env x) 
+	SDecl _ x          -> return (addVar env x) 
 --   SDecls _ x       -> return (addVar env x)
-	SDecls _ xs      -> return (addVars env xs)
+	SDecls _ xs        -> return (addVars env xs)
 
 
     --    SAss x e         -> return (setVar env x (evalExp env e)) --type error
-        SBlock stms     -> do env' <- execStms (enterScope env) stms
-                              return (leaveScope env')
+        SBlock stms        -> do env' <- execStms (enterScope env) stms
+                                 return (leaveScope env')
     --   SPrint e        -> do print (evalExp env e)
     --                         return env
-	SAss x e        -> do (v, env') <- evalExp env e
-                              return (setVar env' x v)
-        SInit typ id exp-> do env' <- execStm env (SDecl typ id)
-                              execStm env' (SAss id exp)
+	SAss x e           -> do (v, env') <- evalExp env e
+                                 return (setVar env' x v)
+        SInit typ id exp   -> do env' <- execStm env (SDecl typ id)
+                                 execStm env' (SAss id exp)
+        SIfElse exp s1 s2  -> do ((VInt b),env') <- evalExp env exp
+                                 if ( b == 1)
+                                   then execStm env' s1
+                                   else execStm env' s2
 	--SReturn exp 	return statement has special treatment since it ends the execution of a series of statements, therefore pattern matching early in the function
 
                               
@@ -128,7 +132,7 @@ evalExp env (EEq   e1 e2)     = do (v1,v2) <- getValuePair env e1 e2
                                    return ((compareValues (v1,v2) (==)),env)
 evalExp env (ENEq  e1 e2)     = do (v1,v2) <- getValuePair env e1 e2
                                    return ((compareValues (v1,v2) (/=)),env)
-
+evalExp env e                 = error ("not finished yet in execStm: \n" ++ show e)
 -- helper functions
 -- | Extract values of a pair of expression, returns them in monadic 'IO' context.
 -- Used to easier work with values in expressions that are free of side effects. 
