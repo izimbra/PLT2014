@@ -55,44 +55,29 @@ execStms env (st:stms) = do env' <- execStm env st
 execStm :: IEnv -> Stm -> IO IEnv
 --checkStm env s = case s of
 execStm env s = case s of
---   SDecl t x         -> updateVar env x t
-	SDecl _ x          -> do --(funs, conts) <- return env --debug code with printing
-                                 --print $ "before addVar: " ++ show conts
-                                 --(funs', conts') <- return (addVar env x)
-                                 --print $ "after addVar: " ++ show conts' 
-                                 --return (funs', conts')-- end debug code with printing
-                                 return  (addVar env x)  -- ORIGINAL CODE ONLY THIS LINE
---   SDecls _ x       -> return (addVar env x)
+	SDecl _ x          -> return  (addVar env x)  -- ORIGINAL CODE ONLY THIS LINE
 	SDecls _ xs        -> return (addVars env xs)
-
-
-    --    SAss x e         -> return (setVar env x (evalExp env e)) --type error
         SBlock stms        -> do env' <- execStms (enterScope env) stms
                                  return (leaveScope env')
-    --   SPrint e        -> do print (evalExp env e)
-    --                         return env
 	SAss x e           -> do   (v,env' ) <- evalExp env e
                                    return (setVar env' x v)
---                                 (funs, conts) <- return env  debug code with printing
---                                 print $ "before setVar: " ++ show conts
---                                 (v, env') <- evalExp env e
---                                 (funs', conts') <- return (setVar env' x v)
---                                 print $ "after setVar: " ++ show conts'
---                                 return (funs', conts') .. end debug code with printing
-
         SInit typ id exp   -> do env' <- execStm env (SDecl typ id)
                                  execStm env' (SAss id exp)
-        SIfElse exp s1 s2  -> do --error ("execStm ifelse \n " ++ show exp ++ "\n" ++ show s1 ++ "\n" ++ show s2)
-                                 --(b ,env') <- evalExp env exp
-                                 --error ("execStm ifelse " ++ show b)
-                                 ((VInt b) ,env') <- evalExp env exp
+        SExp exp           -> do (v,env') <- evalExp env exp
+                                 return env'
+        SIfElse exp s1 s2  -> do ((VInt b) ,env') <- evalExp env exp
                                  if (b==1)
                                    then execStm env' s1
                                    else execStm env' s2
-	--SReturn exp 	return statement has special treatment since it ends the execution of a series of statements, therefore pattern matching early in the function
-        SExp exp            -> do (v,env') <- evalExp env exp
-                                  return env'
-                              
+        SWhile exp stm     -> do ((VInt b) , env') <- evalExp env exp
+                                 if (b==1)
+                                   then do env'' <- execStm env' stm
+                                           execStm env'' (SWhile exp stm)
+                                   else return env'
+
+    --   SPrint e        -> do print (evalExp env e)
+    --                         return env
+	--SReturn exp 	return statement has special treatment in execStms
 	_		-> error ("not finished yet in execStm: \n" ++ show s)
       
 
