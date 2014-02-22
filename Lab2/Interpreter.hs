@@ -130,7 +130,9 @@ evalExp env (EMinus e1 e2) = do
     case (v1,v2) of
         (VInt i1, VInt i2)       -> return (VInt (i1-i2), env)
         (VDouble d1, VDouble d2) -> return (VDouble (d1-d2), env)
-
+        (VInt i, VDouble d)      -> return (VDouble (fromIntegral i - d), env)
+        (VDouble d, VInt i)      -> return (VDouble (d - fromIntegral i), env)
+        _                        -> error $ "Error EMinus non exhaustive case: " ++ show (EMinus e1 e2) ++ "    " ++ show v1 ++ "   " ++ show v2
 evalExp env (ETimes e1 e2) = do 
     (v1,v2) <- getValuePair env e1 e2
     case (v1,v2) of
