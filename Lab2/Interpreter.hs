@@ -55,30 +55,29 @@ execStms env (st:stms) = do env' <- execStm env st
 execStm :: IEnv -> Stm -> IO IEnv
 --checkStm env s = case s of
 execStm env s = case s of
-	SDecl _ x          -> return  (addVar env x)  -- ORIGINAL CODE ONLY THIS LINE
-	SDecls _ xs        -> return (addVars env xs)
-        SBlock stms        -> do env' <- execStms (enterScope env) stms
-                                 return (leaveScope env')
-	SAss x e           -> do   (v,env' ) <- evalExp env e
-                                   return (setVar env' x v)
-        SInit typ id exp   -> do env' <- execStm env (SDecl typ id)
-                                 execStm env' (SAss id exp)
-        SExp exp           -> do (v,env') <- evalExp env exp
-                                 return env'
-        SIfElse exp s1 s2  -> do ((VInt b) ,env') <- evalExp env exp
-                                 if (b==1)
+    SDecl _ x          -> return (addVar env x)  -- ORIGINAL CODE ONLY THIS LINE
+    SDecls _ xs        -> return (addVars env xs)
+    SAss x e           -> do (v,env' ) <- evalExp env e
+                             return (setVar env' x v)
+    SBlock stms        -> do env' <- execStms (enterScope env) stms
+                             return (leaveScope env')
+    SInit typ id exp   -> do env' <- execStm env (SDecl typ id)
+                             execStm env' (SAss id exp)
+    SExp exp           -> do (v,env') <- evalExp env exp
+                             return env'
+    SIfElse exp s1 s2  -> do ((VInt b) ,env') <- evalExp env exp
+                             if (b==1)
                                    then execStm env' s1
                                    else execStm env' s2
-        SWhile exp stm     -> do ((VInt b) , env') <- evalExp env exp
-                                 if (b==1)
+    SWhile exp stm     -> do ((VInt b) , env') <- evalExp env exp
+                             if (b==1)
                                    then do env'' <- execStm env' stm
                                            execStm env'' (SWhile exp stm)
                                    else return env'
-
     --   SPrint e        -> do print (evalExp env e)
     --                         return env
-	--SReturn exp 	return statement has special treatment in execStms
-	_		-> error ("not finished yet in execStm: \n" ++ show s)
+    --SReturn exp   return statement has special treatment in execStms
+    _       -> error ("not finished yet in execStm: \n" ++ show s)
       
 
 
@@ -103,6 +102,12 @@ evalExp env (EPIncr (EId id)) = case (evalVar env id) of
     (VInt i)    -> return (VInt i , setVar env id (VInt (i+1)))
     (VDouble i) -> return (VDouble i , setVar env id (VDouble (i+1)))
 
+evalExp env (EAss (EId id) e2) = do
+    (v, env') <- evalExp env e2
+    return (v, (setVar env' id v))
+
+--	SAss x e           -> do   (v,env' ) <- evalExp env e
+--                                   return (setVar env' x v)
 
 
 --evalExp env (EPDecr id) = return ((vtyp, v), env') 
