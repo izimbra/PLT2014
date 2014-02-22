@@ -153,12 +153,25 @@ evalExp env (ENEq  e1 e2)     = do (v1,v2) <- getValuePair env e1 e2
                                    return ((compareValues (v1,v2) (/=)),env)
 
 --- same but different
-evalExp env (EAnd e1 e2)      = do 
+evalExp env (EAnd e1 e2)      = do    --remember evaluation order! we cannot generalise too much
     ((VInt b1) , env')  <- evalExp env  e1
-    ((VInt b2) , env'') <- evalExp env' e2
-    if (b1 == 1 && b2 == 1)
-        then return ((VInt 1) , env'')
-        else return ((VInt 0) , env'') 
+    if (b1 == 0)
+        then return ((VInt 0) , env')
+        else do
+            ((VInt b2), env'') <- evalExp env' e2
+            if (b2 == 0)
+                then return ((VInt 0), env'')
+                else return ((VInt 1), env'')
+
+evalExp env (EOr e1 e2)       = do --remember evaluation order! we cannot generalise too much
+    ((VInt b1) , env')  <- evalExp env  e1
+    if (b1 == 1) 
+        then return ((VInt 1), env')
+        else do
+            ((VInt b2) , env'') <- evalExp env' e2
+            if (b2 == 1)
+                then return ((VInt 1) , env'')
+                else return ((VInt 0) , env'') 
 
 -- SIfElse exp s1 s2  -> do ((VInt b) ,env') <- evalExp env exp
 --                                 if (b==1)
