@@ -76,7 +76,8 @@ execStm env s = case s of
                                    then execStm env' s1
                                    else execStm env' s2
 	--SReturn exp 	return statement has special treatment since it ends the execution of a series of statements, therefore pattern matching early in the function
-
+        SExp exp            -> do (v,env') <- evalExp env exp
+                                  return env'
                               
 	_		-> error ("not finished yet in execStm: \n" ++ show s)
       
@@ -138,6 +139,16 @@ evalExp env (EEq   e1 e2)     = do --error (" evalExp EEq e1 e2 \n" ++ show e1 +
                                    return ((compareValues (v1,v2) (==)),env)
 evalExp env (ENEq  e1 e2)     = do (v1,v2) <- getValuePair env e1 e2
                                    return ((compareValues (v1,v2) (/=)),env)
+evalExp env (EApp f a)        = return (VUndef, env)
+--evalExp (sig, conts) (EApp fid args)    = do --starta ett scope
+--                                   env' <- enterScope (sig, conts) --env
+                                   --hitta funktionen
+--                                   error "troll"
+--                                   (Fun t id args stms) <- M.lookup fid sig
+                                   
+                                   --initiera arg-variabler för funktionen i scopet
+                                   --kör dess statements
+--                                   return ( evalVar (Id "return") env'' , env'')
 evalExp env e                 = error ("not finished yet in evalexp: \n" ++ show e)
 -- helper functions
 -- | Extract values of a pair of expression, returns them in monadic 'IO' context.
