@@ -156,7 +156,10 @@ evalExp env (EApp (Id "printInt") [exp]) = do --(funs, conts) <- return env ..de
                                               (v, env') <- evalExp env exp
                                               print ( show v )
                                               return (VVoid, env') --printInt has type void
-                                                     
+evalExp env (EApp (Id "printDouble") [exp]) = do
+    (v,env') <- evalExp env exp
+    print (show v)
+    return (VVoid, env')                                                      
                                                         
 evalExp (sig, conts) (EApp callId callArgExps) = case M.lookup callId sig of
     Nothing -> error $ "function id not exist: " ++ show callId --should never 
