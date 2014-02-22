@@ -214,7 +214,13 @@ evalExp env (EApp (Id "printDouble") [exp]) = do
     (v,env') <- evalExp env exp
     print (show v)
     return (VVoid, env')                                                      
-                                                        
+                                  
+evalExp env (EApp (Id "readInt") exps) = do
+    print "Input an integer:"
+    numberString <- getLine
+    let number = read numberString
+    return (VInt number, env)                      
+
 evalExp (sig, conts) (EApp callId callArgExps) = case M.lookup callId sig of
     Nothing -> error $ "function id not exist: " ++ show callId --should never 
     Just (Fun t id args stms) -> do --jag har en funktion
@@ -283,3 +289,23 @@ applyBool v1 boolOp v2 = boolToVal $ (valToBool v1) `boolOp` (valToBool v2)
 
 -- emptyEnv :: Env
 -- emptyEnv = [[]]
+
+
+
+-- For good practice, the code could (should) be rewritten using let for all pure bindings
+--http://learnyouahaskell.com/input-and-output
+--
+--import Data.Char  
+--  
+--main = do  
+--    putStrLn "What's your first name?"  
+--    firstName <- getLine  
+--    putStrLn "What's your last name?"  
+--    lastName <- getLine  
+--    let bigFirstName = map toUpper firstName  
+--        bigLastName = map toUpper lastName  
+--    putStrLn $ "hey " ++ bigFirstName ++ " " ++ bigLastName ++ ", how are you?"  
+--See how the I/O actions in the do block are lined up? Also notice how the let is lined up with the I/O actions and the -names of the let are lined up with each other? That's good practice, because indentation is important in Haskell. Now,- we did map toUpper firstName, which turns something like "John" into a much cooler string like "JOHN". We bound that- uppercased string to a name and then used it in a string later on that we printed to the terminal.-
+
+--You may be wondering when to use <- and when to use let bindings? Well, remember, <- is (for now) for performing I/O actions and binding their results to names. map toUpper firstName, however, isn't an I/O action. It's a pure expression in Haskell. So use <- when you want to bind results of I/O actions to names and you can use let bindings to bind pure expressions to names. Had we done something like let firstName = getLine, we would have just called the getLine I/O action a different name and we'd still have to run it through a <- to perform it.
+--
