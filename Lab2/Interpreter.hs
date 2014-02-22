@@ -26,7 +26,7 @@ interpret (Prog defs) =  do iSigTab <-  buildSig M.empty defs
 execMain :: IEnv -> IO ()
 execMain (iSigTab, conts) = case M.lookup (Id "main") iSigTab of
                                     Nothing -> error "no function main()" --should not happen
-                                    Just (Fun _ _ _ stms)  -> do print $ show (iSigTab, conts)
+                                    Just (Fun _ _ _ stms)  -> do --print $ show (iSigTab, conts)
                                                                  ienv <- execStms (iSigTab, conts) stms
                                                                  return ()
 
@@ -46,7 +46,8 @@ execFun id (iSigTab, conts) vals = case M.lookup id iSigTab of
 execStms :: IEnv -> [Stm] -> IO IEnv
 execStms env [] = return env
 execStms env ((SReturn exp):stms) = do (v,env') <- evalExp env exp --evaluate exp
-                                       return (setVar env' (Id "return") v) --sets the return variable and creates a new environment with that, which is returned to the caller who can take it out and continue
+                                       env'' <- return $ addVar env' (Id "return")
+                                       return $ setVar env'' (Id "return") v --sets the return variable and creates a new environment with that, which is returned to the caller who can take it out and continue
                                        
 execStms env (st:stms) = do env' <- execStm env st
                             execStms env' stms

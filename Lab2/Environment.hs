@@ -99,7 +99,7 @@ updateVar (funs, scope:rest) x t =
 -- | Looks up a variable in the environment
 lookupVar :: Env -> Id -> Err Type
 lookupVar (_, scopes) = lookup_ scopes 
-lookup_ [] x = fail $ "Unknown variable " ++ printTree x ++ "."
+lookup_ [] x = fail $ "lookupVar: Unknown variable " ++ printTree x ++ ". Error, exiting program."
 lookup_ (scope:rest) x = case M.lookup x scope of
                              Nothing -> lookup_ rest x
                              Just t  -> return t
@@ -148,7 +148,7 @@ setVars env (i:is) (v:vs) = setVars (setVar env i v) is vs --self recursive
 
 
 setVar :: IEnv -> Id -> Value -> IEnv
-setVar (funs, []) x v = error $ "Unknown variable " ++ printTree x ++ "." --no scope at all : all scopes are empty
+setVar (funs, []) x v = error $ "setVar: Unknown variable " ++ printTree x ++ ".Error, exiting program." --no scope at all : all scopes are empty
 --setVar [] x _ = error $ "Unknown variable " ++ printTree x ++ "."
 --setVar ([]:rest) x v = []:setVar rest x v -- current scope is empty list
 setVar (funs, (scope:rest)) x v 
@@ -173,7 +173,7 @@ setVar (funs, (scope:rest)) x v
 --                   in (p:scope'):rest'
 
 evalVar :: IEnv -> Id -> Value
-evalVar (funs, []) x = error $ "Unknown variable " ++ printTree x ++ "." --VUndef
+evalVar (funs, []) x = error $ "evalVar: Unknown variable " ++ printTree x ++ ". Error, exiting program." --VUndef
 evalVar (funs, (scope:rest)) x = --error ("evalVar of : " ++ show x) 
                          case M.lookup x scope of
                              Nothing -> evalVar (funs, rest)  x
