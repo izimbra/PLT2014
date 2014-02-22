@@ -26,7 +26,8 @@ interpret (Prog defs) =  do iSigTab <-  buildSig M.empty defs
 execMain :: IEnv -> IO ()
 execMain (iSigTab, conts) = case M.lookup (Id "main") iSigTab of
                                     Nothing -> error "no function main()" --should not happen
-                                    Just (Fun _ _ _ stms)  -> do ienv <- execStms (iSigTab, conts) stms
+                                    Just (Fun _ _ _ stms)  -> do print $ show (iSigTab, conts)
+                                                                 ienv <- execStms (iSigTab, conts) stms
                                                                  return ()
 
 --execfun in itself is not needed since it will not happen
@@ -159,22 +160,25 @@ evalExp env (EApp (Id "printInt") [exp]) = do --(funs, conts) <- return env ..de
                                               return (VVoid, env') --printInt has type void
                                                      
                                                         
-evalExp (sig, conts) (EApp callId callArgs)      = do env' <- return (enterScope (sig, conts))
-                                                      case M.lookup callId sig of
-                                                         Nothing -> error $ "function id not exist: " ++ show callId --should never 
-                                                         Just (Fun t id args stms) -> do --jag har ett scope och en funktion
-                                                                                --extrahera variabelvärden
-                                                                                argIds <- return (map (\(Arg t id) -> id) args)
-                                                                                env'' <- return (addVars env' argIds)
-                                                                                (env''' , callValues) <- return ( evalArgs env'' callArgs [])
-                                                                                --sätt variabelvärden
-                                                                                env'''' <- return ( setVars env''' argIds callValues)
-                                                                                --kör statements
-                                                                                --ta hand om returvärde
+evalExp (sig, conts) (EApp callId callArgExps) = case M.lookup callId sig of
+    Nothing -> error $ "function id not exist: " ++ show callId --should never 
+    Just (Fun t id args stms) -> do --jag har en funktion
+        --extrahera variabelNamn
+        argIds <- return (map (\(Arg t id) -> id) args)
+        --evaluera alla arguments
+        (env' , callValues) <- ( evalArgs (sig, conts) callArgExps [])
+        callValues' <- return (reverse callValues) -- fix order of arguments
+        --öka scope
+        --env'' <- return (enterScope env')
+        --skapa variabler
+        --env''' <- return (addVars env'' argIds)
+        env'' <- return (addVars (enterScope env') argIds)
+        --sätt variabelvärden
+        env''' <- return ( setVars env'' argIds callValues')
+        env'''' <- execStms env''' stms                                       --kör statements
+        returnValue <- return (evalVar env''''  (Id "return"))                          --ta hand om returvärde
                                                                                 --en funktion ses inte som ett block i normal mening fast den kanske kunde gjort det. 
-                                                                                return (VUndef, env')
-                                                
-
+        return (returnValue, leaveScope env'''')
 
 --evalExp (sig, conts) (EApp fid args)    = do --starta ett scope
 --                                   env' <- enterScope (sig, conts) --env
@@ -190,9 +194,14 @@ evalExp env e                 = error ("not finished yet in evalexp: \n" ++ show
 -- | Extract values of a pair of expression, returns them in monadic 'IO' context.
 -- Used to easier work with values in expressions that are free of side effects. 
 
-evalArgs :: IEnv -> [Exp] -> [Value] -> (IEnv, [Value])  --must be called with an empty value list from outside
-evalArgs env [] vs = (env, vs)  --base case
+evalArgs :: IEnv -> [Exp] -> [Value] -> IO (IEnv, [Value])  --Helper function to evaluate arguments in a function call. must be called with an empty value list from outside
+evalArgs env [] vs = return (env, vs)  --base case, when there are no more args (exps) to evaluate
+evalArgs env (e:es) vs = do --warning : list of values will be reversed. will be reversed before use in the evalExp code
+        (v, env') <- evalExp env e
+        evalArgs env' es (v:vs)
 
+--evalArgs env' es (v:vs)
+--    where (v, env') = return (evalExp env e )
 
 --How do you know if they are free of side effects? What about things like
 --  if ( x = 5 < y = 3 )   
