@@ -29,7 +29,8 @@ execMain (iSigTab, conts) = case M.lookup (Id "main") iSigTab of
                                     Just (Fun _ _ _ stms)  -> do ienv <- execStms (iSigTab, conts) stms
                                                                  return ()
 
-
+--execfun in itself is not needed since it will not happen
+--what will happen is a function call as a statement or as an expression
 execFun :: Id -> IEnv -> [Value] -> IO()
 execFun id (iSigTab, conts) vals = case M.lookup id iSigTab of
                                      Nothing -> error "function not found" -- should never happen since we have already typechecked, but case is needed because of lookup
@@ -43,6 +44,9 @@ execFun id (iSigTab, conts) vals = case M.lookup id iSigTab of
 
 execStms :: IEnv -> [Stm] -> IO IEnv
 execStms env [] = return env
+execStms env ((SReturn exp):stms) = do (v,env') <- evalExp env exp --evaluate exp
+                                       return (setVar env' (Id "return") v) --sets the return variable and creates a new environment with that, which is returned to the caller who can take it out and continue
+                                       
 execStms env (st:stms) = do env' <- execStm env st
                             execStms env' stms
 --checkStm :: Env -> Stm -> Err Env
@@ -62,8 +66,10 @@ execStm env s = case s of
     --                         return env
 	SAss x e        -> do (v, env') <- evalExp env e
                               return (setVar env' x v)
+	--SReturn exp 	return statement has special treatment since it ends the execution of a series of statements, therefore pattern matching early in the function
 
-	_		  -> error ("not finished yet in execStm: \n" ++ show s)
+                              
+	_		-> error ("not finished yet in execStm: \n" ++ show s)
       
 
 
