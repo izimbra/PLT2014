@@ -68,8 +68,11 @@ execStm env s = case s of
                                  return (setVar env' x v)
         SInit typ id exp   -> do env' <- execStm env (SDecl typ id)
                                  execStm env' (SAss id exp)
-        SIfElse exp s1 s2  -> do ((VInt b),env') <- evalExp env exp
-                                 if ( b == 1)
+        SIfElse exp s1 s2  -> do --error ("execStm ifelse \n " ++ show exp ++ "\n" ++ show s1 ++ "\n" ++ show s2)
+                                 --(b ,env') <- evalExp env exp
+                                 --error ("execStm ifelse " ++ show b)
+                                 ((VInt b) ,env') <- evalExp env exp
+                                 if (b==1)
                                    then execStm env' s1
                                    else execStm env' s2
 	--SReturn exp 	return statement has special treatment since it ends the execution of a series of statements, therefore pattern matching early in the function
@@ -88,6 +91,8 @@ evalExp env (EInt i)    = return (VInt i,    env)
 evalExp env (EDouble d) = return (VDouble d, env)
 -- variables, assignments, function calls
 --evalExp env EId x       = evalVar env x 
+
+evalExp env (EId id) = return (evalVar env id  , env)--error ("evalExp with id " ++ show id) -- 
 
 -- -- Err "uninitialized variable x"
 -- unary operations w/side effects   --temp commented out because it doesnt compile
@@ -128,17 +133,26 @@ evalExp env (ELtEq e1 e2)     = do (v1,v2) <- getValuePair env e1 e2
                                    return ((compareValues (v1,v2) (<=)),env)
 evalExp env (EGtEq e1 e2)     = do (v1,v2) <- getValuePair env e1 e2
                                    return ((compareValues (v1,v2) (>=)),env)
-evalExp env (EEq   e1 e2)     = do (v1,v2) <- getValuePair env e1 e2
+evalExp env (EEq   e1 e2)     = do --error (" evalExp EEq e1 e2 \n" ++ show e1 ++ "\n" ++ show e2)
+                                   (v1,v2) <- getValuePair env e1 e2
                                    return ((compareValues (v1,v2) (==)),env)
 evalExp env (ENEq  e1 e2)     = do (v1,v2) <- getValuePair env e1 e2
                                    return ((compareValues (v1,v2) (/=)),env)
-evalExp env e                 = error ("not finished yet in execStm: \n" ++ show e)
+evalExp env e                 = error ("not finished yet in evalexp: \n" ++ show e)
 -- helper functions
 -- | Extract values of a pair of expression, returns them in monadic 'IO' context.
 -- Used to easier work with values in expressions that are free of side effects. 
+
+--How do you know if they are free of side effects? What about things like
+--  if ( x = 5 < y = 3 )   
+--  if ( x++  == y--   ) 
 getValuePair :: IEnv -> Exp -> Exp -> IO (Value, Value)
-getValuePair env e1 e2 = do (v1,_) <- evalExp env e1
+getValuePair env e1 e2 = do --error ("getValuePair \n " ++ show e1 ++ "\n " ++ show e2 )
+                            (v1,_) <- evalExp env e1
+                            --error happens before this line
                             (v2,_) <- evalExp env e2
+                            --error happens before this 
+--                            error ("getValuePair \n " ++ show v1 ++ "\n " ++ show v2 )
                             return (v1,v2)
 
 -- | Compares two numeric values using given comparison function

@@ -131,8 +131,11 @@ addVars ienv [] = ienv  --base case
 addVars ienv (i:is) = addVars (addVar ienv i) is
 
 addVar :: IEnv -> Id -> IEnv
+addVar (funs, [] ) x          = (funs,[ (M.fromList [ (x, VUndef) ] ) ] )
+--coming into an empty scope, creating the first IContext with a fromlist
+--addVar (funs, [scope]   ) x = (funs, [(M.insert x VUndef scope)]) -- when coming into empty scope
 addVar (funs, scope:rest) x = (funs, (M.insert x VUndef scope):rest)
-
+addVar env id = error $ "pattern incomplete in addvar: \n" ++ show id ++ "\n" ++ show env
 --updateVar :: Env -> Id -> Type -> Err Env
 --updateVar (funs, scope:rest) x t = 
 --    case M.lookup x scope of
@@ -167,7 +170,8 @@ setVar (funs, (scope:rest)) x v
 
 evalVar :: IEnv -> Id -> Value
 evalVar (funs, []) x = error $ "Unknown variable " ++ printTree x ++ "." --VUndef
-evalVar (funs, (scope:rest)) x = case M.lookup x scope of
+evalVar (funs, (scope:rest)) x = --error ("evalVar of : " ++ show x) 
+                         case M.lookup x scope of
                              Nothing -> evalVar (funs, rest)  x
                              Just v  -> v
 
