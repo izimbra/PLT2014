@@ -66,6 +66,8 @@ execStm env s = case s of
     --                         return env
 	SAss x e        -> do (v, env') <- evalExp env e
                               return (setVar env' x v)
+        SInit typ id exp-> do env' <- execStm env (SDecl typ id)
+                              execStm env' (SAss id exp)
 	--SReturn exp 	return statement has special treatment since it ends the execution of a series of statements, therefore pattern matching early in the function
 
                               
