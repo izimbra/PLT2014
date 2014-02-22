@@ -108,6 +108,8 @@ evalExp env (EPlus  e1 e2) = do (v1,v2) <- getValuePair env e1 e2
                                 case (v1,v2) of
                                   (VInt i1, VInt i2)       -> return (VInt (i1+i2), env)
                                   (VDouble d1, VDouble d2) -> return (VDouble (d1+d2), env)
+                                  (VInt i, VDouble d)      -> return (VDouble (fromIntegral i + d), env)
+                                  _                        -> error $ "Error EPlus non exhaustive case: " ++ show (EPlus e1 e2) ++ "    " ++ show v1 ++ "   " ++ show v2
 evalExp env (EMinus e1 e2) = do (v1,v2) <- getValuePair env e1 e2
                                 case (v1,v2) of
                                   (VInt i1, VInt i2)       -> return (VInt (i1-i2), env)
@@ -123,6 +125,7 @@ evalExp env (EDiv  e1 e2)  = do (v1,v2) <- getValuePair env e1 e2
                                                                          fromInteger i1/
                                                                          fromInteger i2), env)
                                   (VDouble d1, VDouble d2) -> return (VDouble (d1/d2), env)
+                                  _                        -> error $ "Error EDiv non exhaustive case: " ++ show (EDiv e1 e2) ++ "    " ++ show v1 ++ "   " ++ show v2
                              -- add catch-all
 -- comparison operators
 evalExp env (ELt   e1 e2)     = do (v1,v2) <- getValuePair env e1 e2
