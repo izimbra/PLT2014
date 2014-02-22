@@ -94,14 +94,26 @@ evalExp env (EDouble d) = return (VDouble d, env)
 
 evalExp env (EId id) = return (evalVar env id  , env)--error ("evalExp with id " ++ show id) -- 
 
+evalExp env (EPDecr (EId id)) = case (evalVar env id) of  --pattern matching directly on variable. The only cases we will get are for variables, as told in the instructions. And it could be changed in the grammar, but at this point feels too risky to change the grammar, so I made this shortcut
+    --(vtyp i) -> return (vtyp i , setVar env id (vtyp (i+1))) --this doesn't work, but how can it be made to work? would be nice
+    (VInt i)    -> return (VInt i , setVar env id (VInt (i-1)))
+    (VDouble i) -> return (VDouble i , setVar env id (VDouble (i-1)))
+
+--evalExp env (EPDecr id) = return ((vtyp, v), env') 
+--    where 
+--        (vtyp, v) = evalVar env id
+--        env' = setVar env id (vtyp (v+1))
+--case (evalVar env id) of
+  --  (VInt i)    -> 
+    --(VDouble i) ->    
 -- -- Err "uninitialized variable x"
 -- unary operations w/side effects   --temp commented out because it doesnt compile
 --evalExp env (EPIncr  e)  = case (evalExp env e) of
 --                             (VInt i) -> return (VInt (i+1),
 --                                                 setVar env 
-evalExp env (EPDecr  e)  = undefined
-evalExp env (EIncr   e)  = undefined
-evalExp env (EDecr   e)  = undefined
+--evalExp env (EPDecr  e)  = undefined
+--evalExp env (EIncr   e)  = undefined
+--evalExp env (EDecr   e)  = undefined
   
 -- binary arithmetic operations
 evalExp env (EPlus  e1 e2) = do 
