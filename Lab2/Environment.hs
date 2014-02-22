@@ -142,6 +142,9 @@ addVar env id = error $ "pattern incomplete in addvar: \n" ++ show id ++ "\n" ++
 --      Nothing -> return (funs, (M.insert x t scope):rest)
 --      Just _  -> fail ("Variable " ++ printTree x ++ " already declared.")
 
+setVars :: IEnv -> [Id] -> [Value] -> IEnv
+setVars env [] _ = env  --base case. could also have base case for other list, but since they should have equal length or else it is an error of the caller, I didnt make that base case
+setVars env (i:is) (v:vs) = setVars (setVar env i v) is vs --self recursive 
 
 
 setVar :: IEnv -> Id -> Value -> IEnv
