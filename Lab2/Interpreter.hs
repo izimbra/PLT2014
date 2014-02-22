@@ -139,10 +139,16 @@ evalExp env (EEq   e1 e2)     = do --error (" evalExp EEq e1 e2 \n" ++ show e1 +
                                    return ((compareValues (v1,v2) (==)),env)
 evalExp env (ENEq  e1 e2)     = do (v1,v2) <- getValuePair env e1 e2
                                    return ((compareValues (v1,v2) (/=)),env)
+--Calls of the four built-in functions can be hard-coded as special cases in the expression evaluation code. 
+evalExp env (EApp (Id "printInt") [exp]) = do (v, env') <- evalExp env exp
+                                              print ( show v )
+                                              return (VUndef, env')
+                                                     
+                                                        
 evalExp (sig, conts) (EApp fid a)      = do env' <- return (enterScope (sig, conts))
                                             case M.lookup fid sig of
                                                 Just (Fun t id args stms) -> return (VUndef, env')
-                                                Nothing -> error "function id not exist" --should never happen
+                                                Nothing -> error $ "function id not exist: " ++ show fid --should never happen
 
 --evalExp (sig, conts) (EApp fid args)    = do --starta ett scope
 --                                   env' <- enterScope (sig, conts) --env
