@@ -137,6 +137,7 @@ evalExp env (EDiv  e1 e2)  = do
         _                        -> error $ "Error EDiv non exhaustive case: " ++ show (EDiv e1 e2) ++ "    " ++ show v1 ++ "   " ++ show v2
                              -- add catch-all
 -- comparison operators
+--how can you skip evaluating the expressions and updating the environment here?
 evalExp env (ELt   e1 e2)     = do (v1,v2) <- getValuePair env e1 e2
                                    return ((compareValues (v1,v2) (<)),env)
 evalExp env (EGt   e1 e2)     = do (v1,v2) <- getValuePair env e1 e2
@@ -150,6 +151,21 @@ evalExp env (EEq   e1 e2)     = do --error (" evalExp EEq e1 e2 \n" ++ show e1 +
                                    return ((compareValues (v1,v2) (==)),env)
 evalExp env (ENEq  e1 e2)     = do (v1,v2) <- getValuePair env e1 e2
                                    return ((compareValues (v1,v2) (/=)),env)
+
+--- same but different
+evalExp env (EAnd e1 e2)      = do 
+    ((VInt b1) , env')  <- evalExp env  e1
+    ((VInt b2) , env'') <- evalExp env' e2
+    if (b1 == 1 && b2 == 1)
+        then return ((VInt 1) , env'')
+        else return ((VInt 0) , env'') 
+
+-- SIfElse exp s1 s2  -> do ((VInt b) ,env') <- evalExp env exp
+--                                 if (b==1)
+--                                   then execStm env' s1
+--                                   else execStm env' s2
+
+
 --Calls of the four built-in functions can be hard-coded as special cases in the expression evaluation code. 
 evalExp env (EApp (Id "printInt") [exp]) = do --(funs, conts) <- return env ..debug
                                               --print $ "evalExp printInt . " ++ show conts  ..debug
@@ -169,27 +185,14 @@ evalExp (sig, conts) (EApp callId callArgExps) = case M.lookup callId sig of
         --evaluera alla arguments
         (env' , callValues) <- ( evalArgs (sig, conts) callArgExps [])
         callValues' <- return (reverse callValues) -- fix order of arguments
-        --öka scope
-        --env'' <- return (enterScope env')
-        --skapa variabler
-        --env''' <- return (addVars env'' argIds)
         env'' <- return (addVars (enterScope env') argIds)
         --sätt variabelvärden
         env''' <- return ( setVars env'' argIds callValues')
         env'''' <- execStms env''' stms                                       --kör statements
         returnValue <- return (evalVar env''''  (Id "return"))                          --ta hand om returvärde
-                                                                                --en funktion ses inte som ett block i normal mening fast den kanske kunde gjort det. 
         return (returnValue, leaveScope env'''')
+                                                                                --en funktion ses inte som ett block i normal mening fast den kanske kunde gjort det. 
 
---evalExp (sig, conts) (EApp fid args)    = do --starta ett scope
---                                   env' <- enterScope (sig, conts) --env
-                                   --hitta funktionen
---                                   error "troll"
---                                   (Fun t id args stms) <- M.lookup fid sig
-                                   
-                                   --initiera arg-variabler för funktionen i scopet
-                                   --kör dess statements
---                                   return ( evalVar (Id "return") env'' , env'')
 evalExp env e                 = error ("not finished yet in evalexp: \n" ++ show e)
 -- helper functions
 -- | Extract values of a pair of expression, returns them in monadic 'IO' context.
