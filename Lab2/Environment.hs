@@ -149,9 +149,10 @@ setVar (funs, []) x v = error $ "Unknown variable " ++ printTree x ++ "." --no s
 --setVar [] x _ = error $ "Unknown variable " ++ printTree x ++ "."
 --setVar ([]:rest) x v = []:setVar rest x v -- current scope is empty list
 setVar (funs, (scope:rest)) x v 
-      | M.null(scope) == True = setVar (funs, rest) x v 
+--      | M.null(scope) == True = setVar (funs, rest) x v -- I think this is wrong. It throws away the empty scope, which gives trouble in cases such as core005.cc. Just because the scope is empty doesn't mean you can throw it out, because the next leavescope will always throw out the top scope, and now all our values disappear. 
       | otherwise = case M.lookup x scope of--lookup: sucess -> set ,  fail -> go deeper
-            Nothing -> setVar (funs, rest) x v
+            Nothing -> (funs, (scope:rest')) 
+                where (funs', rest') = setVar (funs, rest) x v
             Just _  -> (funs, (M.insert x v scope):rest)  
       
       
