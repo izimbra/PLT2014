@@ -54,12 +54,12 @@ execStm :: IEnv -> Stm -> IO IEnv
 --checkStm env s = case s of
 execStm env s = case s of
 --   SDecl t x         -> updateVar env x t
-	SDecl _ x          -> do (funs, conts) <- return env
-                                 print $ "before addVar: " ++ show conts
-                                 (funs', conts') <- return (addVar env x)
-                                 print $ "after addVar: " ++ show conts' 
-                                 return (funs', conts')
---                                 return  (addVar env x)  -- ORIGINAL CODE ONLY THIS LINE
+	SDecl _ x          -> do --(funs, conts) <- return env --debug code with printing
+                                 --print $ "before addVar: " ++ show conts
+                                 --(funs', conts') <- return (addVar env x)
+                                 --print $ "after addVar: " ++ show conts' 
+                                 --return (funs', conts')-- end debug code with printing
+                                 return  (addVar env x)  -- ORIGINAL CODE ONLY THIS LINE
 --   SDecls _ x       -> return (addVar env x)
 	SDecls _ xs        -> return (addVars env xs)
 
@@ -69,12 +69,14 @@ execStm env s = case s of
                                  return (leaveScope env')
     --   SPrint e        -> do print (evalExp env e)
     --                         return env
-	SAss x e           -> do (funs, conts) <- return env
-                                 print $ "before setVar: " ++ show conts
-                                 (v, env') <- evalExp env e
-                                 (funs', conts') <- return (setVar env' x v)
-                                 print $ "after setVar: " ++ show conts'
-                                 return (funs', conts')
+	SAss x e           -> do   (v,env' ) <- evalExp env e
+                                   return (setVar env' x v)
+--                                 (funs, conts) <- return env  debug code with printing
+--                                 print $ "before setVar: " ++ show conts
+--                                 (v, env') <- evalExp env e
+--                                 (funs', conts') <- return (setVar env' x v)
+--                                 print $ "after setVar: " ++ show conts'
+--                                 return (funs', conts') .. end debug code with printing
 
         SInit typ id exp   -> do env' <- execStm env (SDecl typ id)
                                  execStm env' (SAss id exp)
@@ -150,8 +152,8 @@ evalExp env (EEq   e1 e2)     = do --error (" evalExp EEq e1 e2 \n" ++ show e1 +
 evalExp env (ENEq  e1 e2)     = do (v1,v2) <- getValuePair env e1 e2
                                    return ((compareValues (v1,v2) (/=)),env)
 --Calls of the four built-in functions can be hard-coded as special cases in the expression evaluation code. 
-evalExp env (EApp (Id "printInt") [exp]) = do (funs, conts) <- return env
-                                              print $ "evalExp printInt . " ++ show conts
+evalExp env (EApp (Id "printInt") [exp]) = do --(funs, conts) <- return env ..debug
+                                              --print $ "evalExp printInt . " ++ show conts  ..debug
                                               (v, env') <- evalExp env exp
                                               print ( show v )
                                               return (VVoid, env') --printInt has type void
