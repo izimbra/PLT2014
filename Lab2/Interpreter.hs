@@ -99,6 +99,12 @@ evalExp env (EPDecr (EId id)) = case (evalVar env id) of  --pattern matching dir
     (VInt i)    -> return (VInt i , setVar env id (VInt (i-1)))
     (VDouble i) -> return (VDouble i , setVar env id (VDouble (i-1)))
 
+evalExp env (EPIncr (EId id)) = case (evalVar env id) of
+    (VInt i)    -> return (VInt i , setVar env id (VInt (i+1)))
+    (VDouble i) -> return (VDouble i , setVar env id (VDouble (i+1)))
+
+
+
 --evalExp env (EPDecr id) = return ((vtyp, v), env') 
 --    where 
 --        (vtyp, v) = evalVar env id
