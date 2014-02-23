@@ -196,10 +196,13 @@ evalExp env (ENEq  e1 e2)     = do print $ "debug evalExp ENEQ e1 e2: "
                                    print $ "ENEQ e1: " ++ show e1
                                    print $ "ENEQ e2: " ++ show e2
                                    print $ "Variables when entering ENEQ: " ++ show ((\(f,c)->c) env)
-                                   (v1,v2) <- getValuePair env e1 e2
-                                   print $ "ENEQ v1: " ++ show v1
-                                   print $ "ENEQ v2: " ++ show v2
-                                   return ((compareValues (v1,v2) (/=)),env)
+                                   (vLeft, env') <- evalExp env e1
+                                   (vRight, env'') <- evalExp env' e2
+--                                   (v1,v2) <- getValuePair env e1 e2
+
+                                   print $ "ENEQ v1: " ++ show vLeft
+                                   print $ "ENEQ v2: " ++ show vRight
+                                   return ((compareValues (vLeft,vRight) (/=)),env'')
 
 --- same but different
 evalExp env (EAnd e1 e2)      = do    --remember evaluation order! we cannot generalise too much
