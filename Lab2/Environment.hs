@@ -66,8 +66,8 @@ data Value = VInt Integer | VDouble Double | VVoid | VUndef
 instance Show Value where
   show (VInt i)    = show i
   show (VDouble d) = show d
-  show VVoid       = "void"
-  show VUndef      = "undefined"
+  show VVoid       = "(void variable value)"
+  show VUndef      = "(undefined variable value)"
 
 -- | Converts regular 'Bool' value to 'Value' 
 boolToVal :: Bool -> Value

@@ -124,13 +124,7 @@ evalExp env (EAss (EId id) e2) = do
     --(VDouble i) ->    
 -- -- Err "uninitialized variable x"
 -- unary operations w/side effects   --temp commented out because it doesnt compile
---evalExp env (EPIncr  e)  = case (evalExp env e) of
---                             (VInt i) -> return (VInt (i+1),
---                                                 setVar env 
---evalExp env (EPDecr  e)  = undefined
---evalExp env (EIncr   e)  = undefined
---evalExp env (EDecr   e)  = undefined
-  
+
 -- binary arithmetic operations
 evalExp env (EPlus  e1 e2) = do 
     (v1,v2) <- getValuePair env e1 e2
