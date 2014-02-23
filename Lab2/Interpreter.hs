@@ -102,6 +102,11 @@ evalExp env (EPIncr (EId id)) = case (evalVar env id) of
     (VInt i)    -> return (VInt i , setVar env id (VInt (i+1)))
     (VDouble i) -> return (VDouble i , setVar env id (VDouble (i+1)))
 
+evalExp env (EIncr (EId id)) = case (evalVar env id) of
+    (VInt i)    -> return (VInt (i+1) , setVar env id (VInt (i+1)))
+    (VDouble i) -> return (VDouble (i+1) , setVar env id (VDouble (i+1)))
+
+
 evalExp env (EAss (EId id) e2) = do
     (v, env') <- evalExp env e2
     return (v, (setVar env' id v))
