@@ -57,15 +57,15 @@ execStm :: IEnv -> Stm -> IO IEnv
 execStm env s = case s of
     SDecl _ x          -> return (addVar env x)  -- ORIGINAL CODE ONLY THIS LINE
     SDecls _ xs        -> return (addVars env xs)
-    SAss x e           -> do print $ "DP : SAss : " ++ show (SAss x e)
+    SAss x e           -> do -- print $ "DP : SAss : " ++ show (SAss x e)
                              let (funs, conts) = env
-                             print $ "DP : SAss2 : conts before " ++ show conts
+                             -- print $ "DP : SAss2 : conts before " ++ show conts
                              (v,env' ) <- evalExp env e
                              let (funs', conts') = env'
-                             print $ "DP : SAss3 : conts after  " ++ show conts'
+                             -- print $ "DP : SAss3 : conts after  " ++ show conts'
                              eee <- return (setVar env' x v)
                              let (funs'', conts'' ) = eee
-                             print $ "DP : SAss4 : conts after after " ++ show conts''
+                             -- print $ "DP : SAss4 : conts after after " ++ show conts''
                              --return (setVar env' x v)
                              return eee
     SBlock stms        -> do env' <- execStms (enterScope env) stms
@@ -78,14 +78,14 @@ execStm env s = case s of
                              if (b==1)
                                    then execStm env' s1
                                    else execStm env' s2
-    SWhile exp stm     -> do print $ "debug SWhile EXP: " ++ show exp
-                             print $ "debug SWhile STM: " ++ show stm
+    SWhile exp stm     -> do -- print $ "debug SWhile EXP: " ++ show exp
+                             -- print $ "debug SWhile STM: " ++ show stm
                              let (funs, conts) = env 
-                             print $ "debug SWhile: " ++  show conts
+                             -- print $ "debug SWhile: " ++  show conts
                              ((VInt b) , env') <- evalExp env exp
-                             print $ "debug SHile : " ++ show b
+                             -- print $ "debug SHile : " ++ show b
                              let (f', c') = env'
-                             print $ "debug SWhile : " ++ show c'
+                             -- print $ "debug SWhile : " ++ show c'
                              if (b/=0)
                                    then do env'' <- execStm env' stm
                                            execStm env'' (SWhile exp stm)
@@ -124,13 +124,13 @@ evalExp env (EIncr (EId id)) = case (evalVar env id) of
 
 
 evalExp env (EAss (EId id) e2) = do
-    print $ "DP : evalExp EAss1 : " ++ show (EAss (EId id) e2)
+    -- print $ "DP : evalExp EAss1 : " ++ show (EAss (EId id) e2)
     (v, env') <- evalExp env e2
     let (funs', conts') = env'
-    print $ "DP : evalExp EAss2 (v, env') : " ++ show v ++ " , " ++ show conts'
+    -- print $ "DP : evalExp EAss2 (v, env') : " ++ show v ++ " , " ++ show conts'
     (v', env'') <- return (v, (setVar env' id v))
     let (funs'', conts'') =  env''
-    print $ "DP : evalExp EAss3 :" ++ show v ++ " , " ++ show conts''
+    -- print $ "DP : evalExp EAss3 :" ++ show v ++ " , " ++ show conts''
     return (v', env'')
 
 --evalExp env (EPDecr id) = return ((vtyp, v), env') 
@@ -192,16 +192,16 @@ evalExp env (EGtEq e1 e2)     = do (v1,v2) <- getValuePair env e1 e2
 evalExp env (EEq   e1 e2)     = do --error (" evalExp EEq e1 e2 \n" ++ show e1 ++ "\n" ++ show e2)
                                    (v1,v2) <- getValuePair env e1 e2
                                    return ((compareValues (v1,v2) (==)),env)
-evalExp env (ENEq  e1 e2)     = do print $ "debug evalExp ENEQ e1 e2: "
-                                   print $ "ENEQ e1: " ++ show e1
-                                   print $ "ENEQ e2: " ++ show e2
-                                   print $ "Variables when entering ENEQ: " ++ show ((\(f,c)->c) env)
+evalExp env (ENEq  e1 e2)     = do -- print $ "debug evalExp ENEQ e1 e2: "
+                                   -- print $ "ENEQ e1: " ++ show e1
+                                   -- print $ "ENEQ e2: " ++ show e2
+                                   -- print $ "Variables when entering ENEQ: " ++ show ((\(f,c)->c) env)
                                    (vLeft, env') <- evalExp env e1
                                    (vRight, env'') <- evalExp env' e2
 --                                   (v1,v2) <- getValuePair env e1 e2
 
-                                   print $ "ENEQ v1: " ++ show vLeft
-                                   print $ "ENEQ v2: " ++ show vRight
+                                   -- print $ "ENEQ v1: " ++ show vLeft
+                                   -- print $ "ENEQ v2: " ++ show vRight
                                    return ((compareValues (vLeft,vRight) (/=)),env'')
 
 --- same but different
@@ -246,7 +246,7 @@ evalExp env (EApp (Id "readInt") exps) = do
     print "Input an integer:"
     numberString <- getLine
     let number = read numberString
-    print $ "debug print evalExp readInt : " ++ show (VInt number) 
+    -- print $ "debug print evalExp readInt : " ++ show (VInt number) 
     return (VInt number, env)                      
 
 evalExp (sig, conts) (EApp callId callArgExps) = case M.lookup callId sig of
@@ -285,10 +285,10 @@ evalArgs env (e:es) vs = do --warning : list of values will be reversed. will be
 getValuePair :: IEnv -> Exp -> Exp -> IO (Value, Value)
 getValuePair env e1 e2 = do --error ("getValuePair \n " ++ show e1 ++ "\n " ++ show e2 )
                             (v1,_) <- evalExp env e1
-                            print $ "debug print valuepair v1 : " ++ show v1
+                            -- print $ "debug print valuepair v1 : " ++ show v1
                             --error happens before this line
                             (v2,_) <- evalExp env e2
-                            print $ "debug print valuepair v2 : " ++ show v2
+                            -- print $ "debug print valuepair v2 : " ++ show v2
 
 
                             --error happens before this 
