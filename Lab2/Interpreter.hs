@@ -57,8 +57,17 @@ execStm :: IEnv -> Stm -> IO IEnv
 execStm env s = case s of
     SDecl _ x          -> return (addVar env x)  -- ORIGINAL CODE ONLY THIS LINE
     SDecls _ xs        -> return (addVars env xs)
-    SAss x e           -> do (v,env' ) <- evalExp env e
-                             return (setVar env' x v)
+    SAss x e           -> do print $ "DP : SAss : " ++ show (SAss x e)
+                             let (funs, conts) = env
+                             print $ "DP : SAss2 : conts before " ++ show conts
+                             (v,env' ) <- evalExp env e
+                             let (funs', conts') = env'
+                             print $ "DP : SAss3 : conts after  " ++ show conts'
+                             eee <- return (setVar env' x v)
+                             let (funs'', conts'' ) = eee
+                             print $ "DP : SAss4 : conts after after " ++ show conts''
+                             --return (setVar env' x v)
+                             return eee
     SBlock stms        -> do env' <- execStms (enterScope env) stms
                              return (leaveScope env')
     SInit typ id exp   -> do env' <- execStm env (SDecl typ id)
@@ -69,8 +78,14 @@ execStm env s = case s of
                              if (b==1)
                                    then execStm env' s1
                                    else execStm env' s2
-    SWhile exp stm     -> do ((VInt b) , env') <- evalExp env exp
-                             if (b==1)
+    SWhile exp stm     -> do print $ "debug SWhile: " ++ show exp
+                             let (funs, conts) = env 
+                             print $ "debug SWhile: " ++  show conts
+                             ((VInt b) , env') <- evalExp env exp
+                             print $ "debug SHile : " ++ show b
+                             let (f', c') = env'
+                             print $ "debug SWhile : " ++ show c'
+                             if (b/=0)
                                    then do env'' <- execStm env' stm
                                            execStm env'' (SWhile exp stm)
                                    else return env'
@@ -108,12 +123,14 @@ evalExp env (EIncr (EId id)) = case (evalVar env id) of
 
 
 evalExp env (EAss (EId id) e2) = do
+    print $ "DP : evalExp EAss1 : " ++ show (EAss (EId id) e2)
     (v, env') <- evalExp env e2
-    return (v, (setVar env' id v))
-
---	SAss x e           -> do   (v,env' ) <- evalExp env e
---                                   return (setVar env' x v)
-
+    let (funs', conts') = env'
+    print $ "DP : evalExp EAss2 (v, env') : " ++ show v ++ " , " ++ show conts'
+    (v', env'') <- return (v, (setVar env' id v))
+    let (funs'', conts'') =  env''
+    print $ "DP : evalExp EAss3 :" ++ show v ++ " , " ++ show conts''
+    return (v', env'')
 
 --evalExp env (EPDecr id) = return ((vtyp, v), env') 
 --    where 
@@ -219,6 +236,7 @@ evalExp env (EApp (Id "readInt") exps) = do
     print "Input an integer:"
     numberString <- getLine
     let number = read numberString
+    print $ "debug print evalExp readInt : " ++ show (VInt number) 
     return (VInt number, env)                      
 
 evalExp (sig, conts) (EApp callId callArgExps) = case M.lookup callId sig of
@@ -257,8 +275,12 @@ evalArgs env (e:es) vs = do --warning : list of values will be reversed. will be
 getValuePair :: IEnv -> Exp -> Exp -> IO (Value, Value)
 getValuePair env e1 e2 = do --error ("getValuePair \n " ++ show e1 ++ "\n " ++ show e2 )
                             (v1,_) <- evalExp env e1
+                            print $ "debug print valuepair v1 : " ++ show v1
                             --error happens before this line
                             (v2,_) <- evalExp env e2
+                            print $ "debug print valuepair v2 : " ++ show v2
+
+
                             --error happens before this 
 --                            error ("getValuePair \n " ++ show v1 ++ "\n " ++ show v2 )
                             return (v1,v2)
