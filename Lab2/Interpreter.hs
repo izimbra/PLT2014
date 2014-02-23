@@ -78,7 +78,8 @@ execStm env s = case s of
                              if (b==1)
                                    then execStm env' s1
                                    else execStm env' s2
-    SWhile exp stm     -> do print $ "debug SWhile: " ++ show exp
+    SWhile exp stm     -> do print $ "debug SWhile EXP: " ++ show exp
+                             print $ "debug SWhile STM: " ++ show stm
                              let (funs, conts) = env 
                              print $ "debug SWhile: " ++  show conts
                              ((VInt b) , env') <- evalExp env exp
@@ -191,7 +192,13 @@ evalExp env (EGtEq e1 e2)     = do (v1,v2) <- getValuePair env e1 e2
 evalExp env (EEq   e1 e2)     = do --error (" evalExp EEq e1 e2 \n" ++ show e1 ++ "\n" ++ show e2)
                                    (v1,v2) <- getValuePair env e1 e2
                                    return ((compareValues (v1,v2) (==)),env)
-evalExp env (ENEq  e1 e2)     = do (v1,v2) <- getValuePair env e1 e2
+evalExp env (ENEq  e1 e2)     = do print $ "debug evalExp ENEQ e1 e2: "
+                                   print $ "ENEQ e1: " ++ show e1
+                                   print $ "ENEQ e2: " ++ show e2
+                                   print $ "Variables when entering ENEQ: " ++ show ((\(f,c)->c) env)
+                                   (v1,v2) <- getValuePair env e1 e2
+                                   print $ "ENEQ v1: " ++ show v1
+                                   print $ "ENEQ v2: " ++ show v2
                                    return ((compareValues (v1,v2) (/=)),env)
 
 --- same but different
