@@ -164,6 +164,7 @@ evalExp env (EDiv  e1 e2)  = do
         (VInt i1, VInt i2)       -> return (VDouble (fromInteger i1/fromInteger i2), env)
         (VDouble d1, VDouble d2) -> return (VDouble (d1/d2), env)
         (VDouble d,  VInt i)     -> return (VDouble (d / (fromIntegral i)),env)
+        (VInt i, VDouble d)      -> return (VDouble (fromIntegral i / d), env)
         _                        -> error $ "Error EDiv non exhaustive case: " ++ show (EDiv e1 e2) ++ "    " ++ show v1 ++ "   " ++ show v2
                              -- add catch-all
 -- comparison operators
