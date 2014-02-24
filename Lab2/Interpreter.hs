@@ -235,7 +235,8 @@ evalExp env (EOr e1 e2)       = do --remember evaluation order! we cannot genera
 evalExp env (EApp (Id "printInt") [exp]) = do --(funs, conts) <- return env ..debug
                                               --print $ "evalExp printInt . " ++ show conts  ..debug
                                               (v, env') <- evalExp env exp
-                                              print ( show v )
+                                              let i = (\(VInt x)-> x) v
+                                              print i
                                               return (VVoid, env') --printInt has type void
 evalExp env (EApp (Id "printDouble") [exp]) = do
     (v,env') <- evalExp env exp
