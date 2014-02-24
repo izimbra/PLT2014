@@ -232,15 +232,18 @@ evalExp env (EOr e1 e2)       = do --remember evaluation order! we cannot genera
 
 
 --Calls of the four built-in functions can be hard-coded as special cases in the expression evaluation code. 
+
+
 evalExp env (EApp (Id "printInt") [exp]) = do --(funs, conts) <- return env ..debug
                                               --print $ "evalExp printInt . " ++ show conts  ..debug
                                               (v, env') <- evalExp env exp
-                                              let i = (\(VInt x)-> x) v
-                                              print i
+--                                              let i = (\(VInt x)-> x) v
+                                              print $ unwrapInt v
                                               return (VVoid, env') --printInt has type void
 evalExp env (EApp (Id "printDouble") [exp]) = do
     (v,env') <- evalExp env exp
-    print (show v)
+--    let d = (\(VDouble x) -> x) v
+    print $ unwrapDouble v
     return (VVoid, env')                                                      
                                   
 evalExp env (EApp (Id "readInt") exps) = do
@@ -270,6 +273,18 @@ evalExp env e                 = error ("not finished yet in evalexp: \n" ++ show
 -- helper functions
 -- | Extract values of a pair of expression, returns them in monadic 'IO' context.
 -- Used to easier work with values in expressions that are free of side effects. 
+
+
+
+unwrapInt :: Value -> Integer
+unwrapInt (VInt x) = x
+unwrapInt (VDouble x) = floor x
+unwrapInt e = error $ "troll unwrap on integer failed because: " ++  show e
+
+unwrapDouble :: Value -> Double
+unwrapDouble (VDouble x) = x
+unwrapDouble e = error $ "troll unwrap on double failed because: " ++  show e
+
 
 evalArgs :: IEnv -> [Exp] -> [Value] -> IO (IEnv, [Value])  --Helper function to evaluate arguments in a function call. must be called with an empty value list from outside
 evalArgs env [] vs = return (env, vs)  --base case, when there are no more args (exps) to evaluate
