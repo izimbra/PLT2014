@@ -1,23 +1,36 @@
--- | This module defines data types used for constructing
+-- | This module defines data types and functions
+-- used for constructing and manipulating
 -- environments used in the different parts of compiler toolchain.
 
-module Environment where
+--module Environment where
 
---module Environment (-- * Type Checking 
---                     Env
---                   , Context
---                    -- * Interpretation
---                   , IEnv
---                   , IContext
---                    -- * Compilation
---                    -- * Other 
---                   , TypeC
---                   , Value  
---                   , boolToVal
---                   , valToBool
---                   ) where
+module Environment (-- * Type Checking 
+                    Env
+                  , Context
+                   -- * Interpretation
+                  , IEnv
+                  , IContext
+                   -- * Compilation
+                  , EnvC(..)
+                  , Address
+                  , Instruction
+                  , emptyEnvC
+                  , emit
+                  , addVarC
+                  , lookupVarC
+                  , newBlockC
+                  , exitBlockC
+                  , TypeC
+                  , typeToTypeC
+                  , typeSize
+                   -- * Other 
+                  , Value  
+                  , boolToVal
+                  , valToBool ) where
 
 import qualified Data.Map as M
+import Control.Monad.State
+
 import AbsCPP
 import PrintCPP
 import ErrM
@@ -31,35 +44,101 @@ type IContext = M.Map Id Value
 type Env =  (SigTab,  [Context]) -- mini version: [[(Id, Type)]]
 type IEnv = (SigTabI, [IContext]) -- Interpreter version of corresponding tool
 
---type EnvC = E {  --temp commented out because it doesnt compile
---  addresses   :: [[(Ident,Address)]],
---  nextLabel   :: Int,
---  nextAddress :: Address,
---  maxAddress  :: Address,
---  stackSize   :: Int,
---  maxSize     :: Int,
---  code        :: [Instruction],
---  funTable    :: SigTabC
---  }
+-- | Compilation environment.
+data EnvC = E {  --temp commented out because it doesnt compile
+ addresses   :: [[(Id,Address)]],
+ nextLabel   :: Int,
+ nextAddress :: Address,
+ maxAddress  :: Address,
+ stackSize   :: Int,
+ maxSize     :: Int,
+ code        :: [Instruction],
+ funTable    :: SigTabC
+}
+
+-- | Jasmin assembly instruction 
+type Instruction = String
+-- | Variable storage address 
+type Address = Int
+
+-- | Constructs an empty compilation environment
+emptyEnvC :: EnvC
+emptyEnvC = E {
+  addresses = [[]],
+  nextLabel = 0,
+  nextAddress = 1,
+  maxAddress = 1,
+  stackSize = 0,
+  maxSize = 1,
+  code = [],
+  funTable = M.empty       
+  }
+
+-- | Emits a Jasmin assembly instruction.
+emit :: Instruction -> State EnvC ()
+emit i = modify (\env -> env{ code = i : code env })
+
+-- | Adds a variable to current scope of variable storage.
+addVarC :: Id -> Type -> State EnvC ()
+addVarC x t = modify (\env -> env {
+  addresses = case addresses env of (scope:rest) -> (((x,nextAddress env):scope):rest),
+  nextAddress = nextAddress env + typeSize t
+  })
+
+-- | Looks up variable value in the variable storage.
+lookupVarC :: Id -> State EnvC Address
+lookupVarC x = do
+  env <- get
+  return $ look (addresses env) x 
+ where
+   look [] x = error $ "Unknown variable " ++ printTree x ++ "."
+   look (scope:rest) x = case lookup x scope of
+     Nothing -> look rest x
+     Just a  -> a
+
+-- | Creates a new scope in the variable storage.
+newBlockC :: State EnvC Address
+newBlockC = do
+  modify (\env -> env {addresses = [] : addresses env})
+  env <- get
+  return $ nextAddress env
+
+-- | Exits and remnoves the current scope of the variable storage.
+exitBlockC :: Address -> State EnvC ()
+exitBlockC a = modify (\env -> env {
+   addresses = tail (addresses env),
+   nextAddress = a
+   })
 
 
 -- | Symbol table for functions .
 -- A map of function ids and their type signatures.
 type SigTab  = M.Map Id Sig
 type SigTabI = M.Map Id Def
+-- | Compile-time function table, which uses JVM representations of
+-- argument and return types.
 type SigTabC = M.Map Id SigC -- or special SigC?
 
 -- | Function type signature. Includes argument types and return type.
-type Sig  = ([Type], Type)
+type Sig  = ([Type],  Type)
 type SigC = ([TypeC], TypeC)
 
+-- | Jasmin assembly represenation of basic Java types 
 type TypeC = Char
--- | Converts 'Type' value to its JVM counterpart.
+-- | Converts 'Type' value to its Jasmin counterpart.
 typeToTypeC :: Type -> TypeC
 typeToTypeC TInt    = 'I'
 typeToTypeC TDouble = 'D'
 typeToTypeC TBool   = 'Z'
 typeToTypeC TVoid   = 'V'
+
+-- | Return size of the 'Type' value in bytes.
+typeSize :: Type -> Int
+typeSize t = case t of
+  TInt    -> 1
+  TDouble -> 2
+  TBool   -> 1 -- booleans are represented by integers at runtime
+
 
 data Value = VInt Integer | VDouble Double | VVoid | VUndef
 
