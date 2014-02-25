@@ -89,8 +89,39 @@ compileExp e = case e of
     emit ("iload " ++ show a)
   EInt i    -> emit ("bipush " ++ show i)
   EDouble d -> emit ("ldc2_w " ++ show d)
+  
+--can we do something like this, following book page 101?   -- it compiles, so I guess you can
   EPlus e1 e2 -> do
     compileExp e1
     compileExp e2
-    emit "iadd"
+    case e1 of  --the type checker only allows int+int or double+double, so checking 1 of them is enough.
+      (EInt x) -> emit "iadd"
+      (EDouble x) -> emit "dadd"
+      _ -> error $ "error: EPlus expression compiled with type not (Int or Double)" ++ show (EPlus e1 e2) --emit "" --should not happen. create error?
+-------        
+  EMinus e1 e2 -> do 
+    compileExp e1
+    compileExp e2
+    case e1 of 
+      (EInt x) -> emit "isub"
+      (EDouble x) -> emit "dsub"
+      _ -> error $ "error: EMinus expression compiled with type not (Int or Double)"++ show (EMinus e1 e2)
+
+
+
+--something with the dup case that needs to consider when an expression of 
+--any of these types leaves the value of the expression on the stack,
+--so that the outer expr can use it to evaluate something. 
+-- page 102 gives some instructions on this matter.
+  
+  
+  
+-- original EPlus below from given code
+-- EPlus e1 e2 -> do --need to extend to handle the different combinations of int and double. the original given example only handles ints. 
+--    compileExp e1
+--    compileExp e2
+--    emit "iadd"
 --  ETyped _ e -> compileExp e
+
+
+
