@@ -42,16 +42,16 @@ compileProgram name (Prog defs) = do
 compileDef :: Def -> State EnvC ()
 compileDef (Fun t (Id f) args stms) = do
   -- method signature
-  emit [".method public static" +++ f
-        ++ "(" ++ (map typeToTypeC args) ++ ")"
-        ++ typeToTypeC t]
+  emit $ ".method public static " +++ f                      -- name
+         ++ "(" ++ map (typeToTypeC . argToType) args ++ ")" -- argument types
+         ++ [typeToTypeC t]                                  -- return type      
 
 
 --   emit(.limit locals locals(f))
 --   emit(.limit stack stack(f))
 
 -- for i = 1,...,m : addVarC(xi,ti)
-  compile stms
+--  compile stms
 --emit(.end method)
 
 

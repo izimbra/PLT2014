@@ -26,7 +26,8 @@ module Environment (-- * Type Checking
                    -- * Other 
                   , Value  
                   , boolToVal
-                  , valToBool ) where
+                  , valToBool
+                  , argToType) where
 
 import qualified Data.Map as M
 import Control.Monad.State
@@ -273,4 +274,6 @@ buildSig sig (d:ds) = buildSig (addFunSig sig d) ds
 addFunSig :: SigTabI -> Def -> SigTabI
 addFunSig sig (Fun t id a s) =  M.insert id (Fun t id a s) sig
 
-
+-- | Extracts type from the function argument.
+argToType :: Arg -> Type
+argToType (Arg t _) = t
