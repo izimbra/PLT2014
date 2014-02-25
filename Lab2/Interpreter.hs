@@ -247,7 +247,7 @@ evalExp env (EApp (Id "printDouble") [exp]) = do
     return (VVoid, env')                                                      
                                   
 evalExp env (EApp (Id "readInt") exps) = do
-    print "Input an integer:"
+    --print "Input an integer:"
     numberString <- getLine
     let number = read numberString
     -- print $ "debug print evalExp readInt : " ++ show (VInt number) 
