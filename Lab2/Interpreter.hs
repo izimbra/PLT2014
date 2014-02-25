@@ -173,7 +173,8 @@ evalExp env (ETimes e1 e2) = do
 evalExp env (EDiv  e1 e2)  = do 
     (v1,v2) <- getValuePair env e1 e2
     case (v1,v2) of
-        (VInt i1, VInt i2)       -> return (VDouble (fromInteger i1/fromInteger i2), env)
+      --  (VInt i1, VInt i2)       -> return (VDouble (fromInteger i1/fromInteger i2), env)
+        (VInt i1, VInt i2)       -> return (VInt (floor (fromInteger i1/fromInteger i2)), env)
         (VDouble d1, VDouble d2) -> return (VDouble (d1/d2), env)
         (VDouble d,  VInt i)     -> return (VDouble (d / (fromIntegral i)),env)
         (VInt i, VDouble d)      -> return (VDouble (fromIntegral i / d), env)
