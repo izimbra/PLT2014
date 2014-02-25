@@ -24,10 +24,26 @@ module Environment (-- * Type Checking
                   , typeToTypeC
                   , typeSize
                    -- * Other 
-                  , Value  
+                  , Value(..) 
                   , boolToVal
-                  , valToBool
-                  , argToType) where
+                  , valToBool 
+                  , argToType
+                  , buildSig
+                  , setVar
+                  , setVars
+                  , addVar
+                  , addVars
+                  , updateVar
+                  , enterScope
+                  , leaveScope
+                  , addScope
+                  , lookupVar
+                  , lookupFun
+                  , updateFun
+                  , evalVar
+                  , emptyEnv
+                  ) where
+
 
 import qualified Data.Map as M
 import Control.Monad.State
