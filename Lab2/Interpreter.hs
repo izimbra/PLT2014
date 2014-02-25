@@ -182,10 +182,15 @@ evalExp env (EDiv  e1 e2)  = do
                              -- add catch-all
 -- comparison operators
 --how can you skip evaluating the expressions and updating the environment here?
-evalExp env (ELt   e1 e2)     = do (v1,v2) <- getValuePair env e1 e2
-                                   return ((compareValues (v1,v2) (<)),env)
-evalExp env (EGt   e1 e2)     = do (v1,v2) <- getValuePair env e1 e2
-                                   return ((compareValues (v1,v2) (>)),env)
+evalExp env (ELt   e1 e2)     = do --(v1,v2) <- getValuePair env e1 e2
+                                   (vLeft, env') <- evalExp env e1
+                                   (vRight, env'') <- evalExp env' e2
+                                   
+                                   return ((compareValues (vLeft,vRight) (<)),env'')
+evalExp env (EGt   e1 e2)     = do --(v1,v2) <- getValuePair env e1 e2
+                                   (vLeft, env') <- evalExp env e1
+                                   (vRight, env'') <- evalExp env' e2
+                                   return ((compareValues (vLeft,vRight) (>)),env'')
 evalExp env (ELtEq e1 e2)     = do (v1,v2) <- getValuePair env e1 e2
                                    return ((compareValues (v1,v2) (<=)),env)
 evalExp env (EGtEq e1 e2)     = do (vLeft, env') <- evalExp env e1
