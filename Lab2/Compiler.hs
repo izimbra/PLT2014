@@ -31,12 +31,17 @@ compileProgram name (Prog defs) = do
     ".end method",
     "",
     ".method public static main([Ljava/lang/String;)V",
-    ".limit locals 100",  --- bogus limit
-    ".limit stack 1000"   --- bogus limit
+    ".limit locals 100",   --- bogus limit
+    ".limit stack 1000",   --- bogus limit
+    -- calling the compiled 'main'
+    "invokestatic " ++ name ++ "/main()I", -- check for return statement
+    "return",
+    ".end method",
+    ""
    ]
   mapM_ compileDef defs
-  emit "return"
-  emit ".end method"
+--  emit "return"
+--  emit ".end method"
 
 -- | Compiles a function definition
 compileDef :: Def -> State EnvC ()
@@ -45,14 +50,16 @@ compileDef (Fun t (Id f) args stms) = do
   emit $ ".method public static " +++ f                      -- name
          ++ "(" ++ map (typeToTypeC . argToType) args ++ ")" -- argument types
          ++ [typeToTypeC t]                                  -- return type      
+  -- storage limits for local variables and stack
+  emit $ ".limit locals 100"
+  emit $ ".limit stack 100"
 
-
---   emit(.limit locals locals(f))
---   emit(.limit stack stack(f))
-
--- for i = 1,...,m : addVarC(xi,ti)
 --  compile stms
---emit(.end method)
+  -- return 0 if function has no return statement
+  -- for i = 1,...,m : addVarC(xi,ti)
+  emit $ "ldc 0"
+  emit $ "ireturn"
+  emit $ ".end method"
 
 
 -- | Concatenates two strings with a space between them. 
