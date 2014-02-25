@@ -191,14 +191,18 @@ evalExp env (EGt   e1 e2)     = do --(v1,v2) <- getValuePair env e1 e2
                                    (vLeft, env') <- evalExp env e1
                                    (vRight, env'') <- evalExp env' e2
                                    return ((compareValues (vLeft,vRight) (>)),env'')
-evalExp env (ELtEq e1 e2)     = do (v1,v2) <- getValuePair env e1 e2
-                                   return ((compareValues (v1,v2) (<=)),env)
+evalExp env (ELtEq e1 e2)     = do --(v1,v2) <- getValuePair env e1 e2
+                                   (vLeft, env') <- evalExp env e1
+                                   (vRight, env'') <- evalExp env' e2
+                                   return ((compareValues (vLeft,vRight) (<=)),env'')
 evalExp env (EGtEq e1 e2)     = do (vLeft, env') <- evalExp env e1
                                    (vRight, env'') <- evalExp env' e2
                                    return ((compareValues (vLeft,vRight) (>=)),env'')
 evalExp env (EEq   e1 e2)     = do --error (" evalExp EEq e1 e2 \n" ++ show e1 ++ "\n" ++ show e2)
-                                   (v1,v2) <- getValuePair env e1 e2
-                                   return ((compareValues (v1,v2) (==)),env)
+                                   --(v1,v2) <- getValuePair env e1 e2
+                                   (vLeft, env') <- evalExp env e1
+                                   (vRight, env'') <- evalExp env' e2
+                                   return ((compareValues (vLeft,vRight) (==)),env'')
 evalExp env (ENEq  e1 e2)     = do (vLeft, env') <- evalExp env e1
                                    (vRight, env'') <- evalExp env' e2
                                    return ((compareValues (vLeft,vRight) (/=)),env'')
