@@ -88,7 +88,7 @@ compileStm s = case s of
   -- variable declaration, emits no code
   SDecl t x    -> addVarC x t
   -- variable assignment
-  SAss x (ETyped t e) -> do
+  SAss x (ETyped t e) -> do  --following bok p102 for assignment statements
     compileExp e
     addr <- lookupVarC x
     case t of 
@@ -128,27 +128,30 @@ compileStm s = case s of
               --   return ()
 
 compileExp :: Exp -> State EnvC ()
-compileExp e = case e of
+
+compileExp (ETyped t e) = case e of
+
+  EId x  -> do --corresponds to example with EVar
+    a <- lookupVarC x
+    --emit ("iload " ++ show a)
+    emitTyped t ("load " ++ show a) 
+    
+  EInt i    -> emit ("bipush " ++ show i)
+  EDouble d -> emit ("ldc2_w " ++ show d)
+
+  EPlus e1 e2 -> do
+    compileExp e1
+    compileExp e2
+    emitTyped t "add"
+
+
   EApp (Id "printInt") [e] -> do --function call
 --    mapM_ compileExp es
     compileExp e
     emit $ "invokestatic Runtime/printInt(I)V"
     
     
-  EId x  -> do
-    a <- lookupVarC x
-    emit ("iload " ++ show a)
-  EInt i    -> emit ("bipush " ++ show i)
-  EDouble d -> emit ("ldc2_w " ++ show d)
   
---can we do something like this, following book page 101?   -- it compiles, so I guess you can
-  EPlus e1 e2 -> do
-    compileExp e1
-    compileExp e2
-    case e1 of  --the type checker only allows int+int or double+double, so checking 1 of them is enough.
-      (EInt x) -> emit "iadd"
-      (EDouble x) -> emit "dadd"
-      _ -> error $ "error: EPlus expression compiled with type not (Int or Double)" ++ show (EPlus e1 e2)  --should not happen. 
 -------        
   EMinus e1 e2 -> do 
     compileExp e1
@@ -159,6 +162,13 @@ compileExp e = case e of
       _ -> error $ "error: EMinus expression compiled with type not (Int or Double)"++ show (EMinus e1 e2)
 
 
+emitTyped :: Type -> Instruction -> State EnvC ()
+emitTyped t i = emit (c ++ i) where
+    c = case t of
+        TInt -> "i"
+        TDouble -> "d"
+        TBool -> "i"
+        _ -> error $ "emitTyped with type not (Int or Double or Bool)"
 
 --something with the dup case that needs to consider when an expression of 
 --any of these types leaves the value of the expression on the stack,
