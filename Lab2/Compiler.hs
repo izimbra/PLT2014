@@ -85,6 +85,8 @@ defaultReturn t =
 (+++) :: String -> String -> String
 a +++ b = a ++ " " ++ b
 
+--newLabel:: State EnvC ()   continue from here and then so SWhile below / emil 140226
+--newLabel = 
 
 compileStm :: Stm -> State EnvC ()
 compileStm s = case s of
@@ -94,12 +96,45 @@ compileStm s = case s of
     --or if void, dont send anything at all
     --emit "pop"
     
-  SExp e -> do
+  SExp (ETyped t e) -> do -- from Stm point of view, all Exp will be ETyped. This code is meant to behave as the rule on book p102
     compileExp e
+    case t of
+      TInt    -> emit "pop"
+      TBool   -> emit "pop"
+      TDouble -> emit "pop2"
+      _       -> return ()
+    
+  
+--  SWhile e s -> do --book page 103
+--    test <- newLabel
+--    end  <- newLabel
+--    emit test
+--    compileExp e
+--    emit $ "ifeq " ++ end
+--    compileStm s
+--    emit $ "goto " ++ test
+--    emit end
+    
+    
     
   -- variable declaration, emits no code
   SDecl t x    -> addVarC x t
   -- variable assignment
+  SAss x (ETyped t e) -> do  --following bok p102 for assignment statements
+    compileExp e
+    addr <- lookupVarC x
+    case t of 
+      TInt -> do
+        emit "dup"
+        emit $ "istore" ++ show addr
+      TBool -> do
+        emit "dup"
+        emit $ "istore" ++ show addr
+      TDouble -> do
+        emit "dup2"
+        emit $ "dstore" ++ show addr
+      _       -> error $ "Compile error: Assign statement with type not (bool, int, double)"
+      
   SAss x e     -> do
     compileExp e
     addr <- lookupVarC x
@@ -124,38 +159,48 @@ compileStm s = case s of
   _            -> error $ "No match: " ++ show s
               --   return ()
 
+--helper function for re-using code pattern
+compileExpArithm :: Exp -> Exp -> Type -> String -> State EnvC ()
+compileExpArithm e1 e2 t s = do
+    compileExp e1
+    compileExp e2
+    emitTyped t s
+
 compileExp :: Exp -> State EnvC ()
-compileExp e = case e of
+
+compileExp (ETyped t e) = case e of
+    
+  EInt i    -> emit ("bipush " ++ show i)
+  EDouble d -> emit ("ldc2_w " ++ show d)
+  ETrue     -> emit "bipush 1"
+  EFalse    -> emit "bipush 0"
+  
+  EPlus  e1 e2 -> compileExpArithm e1 e2 t "add" --page 101 and 98
+  EMinus e1 e2 -> compileExpArithm e1 e2 t "sub"
+  ETimes e1 e2 -> compileExpArithm e1 e2 t "mul"
+  EDiv   e1 e2 -> compileExpArithm e1 e2 t "div"
+
+  EId x  -> do --corresponds to example with EVar
+    a <- lookupVarC x
+    --emit ("iload " ++ show a)
+    emitTyped t ("load " ++ show a) 
+
   EApp (Id "printInt") [e] -> do --function call
 --    mapM_ compileExp es
     compileExp e
     emit $ "invokestatic Runtime/printInt(I)V"
     
     
-  EId x  -> do
-    a <- lookupVarC x
-    emit ("iload " ++ show a)
-  EInt i    -> emit ("bipush " ++ show i)
-  EDouble d -> emit ("ldc2_w " ++ show d)
   
---can we do something like this, following book page 101?   -- it compiles, so I guess you can
-  EPlus e1 e2 -> do
-    compileExp e1
-    compileExp e2
-    case e1 of  --the type checker only allows int+int or double+double, so checking 1 of them is enough.
-      (EInt x) -> emit "iadd"
-      (EDouble x) -> emit "dadd"
-      _ -> error $ "error: EPlus expression compiled with type not (Int or Double)" ++ show (EPlus e1 e2)  --should not happen. 
--------        
-  EMinus e1 e2 -> do 
-    compileExp e1
-    compileExp e2
-    case e1 of 
-      (EInt x) -> emit "isub"
-      (EDouble x) -> emit "dsub"
-      _ -> error $ "error: EMinus expression compiled with type not (Int or Double)"++ show (EMinus e1 e2)
 
 
+emitTyped :: Type -> Instruction -> State EnvC ()
+emitTyped t i = emit (c ++ i) where
+    c = case t of
+        TInt -> "i"
+        TDouble -> "d"
+        TBool -> "i"
+        _ -> error $ "emitTyped with type not (Int or Double or Bool)"
 
 --something with the dup case that needs to consider when an expression of 
 --any of these types leaves the value of the expression on the stack,
