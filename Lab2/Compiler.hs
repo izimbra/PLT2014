@@ -73,6 +73,8 @@ compileDef (Fun t (Id f) args stms) = do
 (+++) :: String -> String -> String
 a +++ b = a ++ " " ++ b
 
+--newLabel:: State EnvC ()   continue from here and then so SWhile below / emil 140226
+--newLabel = 
 
 compileStm :: Stm -> State EnvC ()
 compileStm s = case s of
@@ -83,6 +85,18 @@ compileStm s = case s of
       TBool -> emit "pop"
       TDouble -> emit "pop2"
       _       -> emit ""
+    
+  
+--  SWhile e s -> do --book page 103
+--    test <- newLabel
+--    end  <- newLabel
+--    emit test
+--    compileExp e
+--    emit $ "ifeq " ++ end
+--    compileStm s
+--    emit $ "goto " ++ test
+--    emit end
+    
     
     
   -- variable declaration, emits no code
@@ -140,8 +154,10 @@ compileExp (ETyped t e) = case e of
     
   EInt i    -> emit ("bipush " ++ show i)
   EDouble d -> emit ("ldc2_w " ++ show d)
+  ETrue     -> emit "bipush 1"
+  EFalse    -> emit "bipush 0"
   
-  EPlus  e1 e2 -> compileExpArithm e1 e2 t "add"
+  EPlus  e1 e2 -> compileExpArithm e1 e2 t "add" --page 101 and 98
   EMinus e1 e2 -> compileExpArithm e1 e2 t "sub"
   ETimes e1 e2 -> compileExpArithm e1 e2 t "mul"
   EDiv   e1 e2 -> compileExpArithm e1 e2 t "div"
