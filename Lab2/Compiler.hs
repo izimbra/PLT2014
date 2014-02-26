@@ -60,13 +60,24 @@ compileDef (Fun t (Id f) args stms) = do
   -- for i = 1,...,m : addVarC(xi,ti)
 
   -- default return in case of no return statement
---  if not (null stms) && last stms /= (SReturn _)
---  then do emit $ ""
---          emit $ ".end method"
-  --         emit $ "ldc 0"
-  --         emit $ "ireturn"
---  else
-  emit $ ".end method"
+  case stms of
+    [] -> emit $ ".end method"
+    _  -> case (last stms) of
+            (SReturn e) -> emit $ ".end method" 
+            _           -> do defaultReturn t
+
+-- | Generates default  return code for a given function type.                             
+defaultReturn :: Type ->  State EnvC ()
+defaultReturn t =
+  let insts = case t of
+            TInt    -> ["iconst_0","ireturn"]
+            TDouble -> ["dconst_0","dreturn"]
+            TBool   -> ["iconst_0","ireturn"]
+            TVoid   -> ["return"]
+  in mapM_ emit insts
+  
+  
+
 
 
 -- | Concatenates two strings with a space between them. 
