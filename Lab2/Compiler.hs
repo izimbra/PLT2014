@@ -88,6 +88,21 @@ compileStm s = case s of
   -- variable declaration, emits no code
   SDecl t x    -> addVarC x t
   -- variable assignment
+  SAss x (ETyped t e) -> do
+    compileExp e
+    addr <- lookupVarC x
+    case t of 
+      TInt -> do
+        emit "dup"
+        emit $ "istore" ++ show addr
+      TBool -> do
+        emit "dup"
+        emit $ "istore" ++ show addr
+      TDouble -> do
+        emit "dup2"
+        emit $ "dstore" ++ show addr
+      _       -> error $ "Compile error: Assign statement with type not (bool, int, double)"
+      
   SAss x e     -> do
     compileExp e
     addr <- lookupVarC x
