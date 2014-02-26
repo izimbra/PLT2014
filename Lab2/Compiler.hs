@@ -87,6 +87,15 @@ a +++ b = a ++ " " ++ b
 
 compileStm :: Stm -> State EnvC ()
 compileStm s = case s of
+  SExp (EApp id es) -> do
+    compileExp (EApp id es)
+    --check the type and send pop or pop2 depending (book p103)
+    --or if void, dont send anything at all
+    emit "pop"
+    
+  SExp e -> do
+    compileExp e
+    
   -- variable declaration, emits no code
   SDecl t x    -> addVarC x t
   -- variable assignment
@@ -116,6 +125,12 @@ compileStm s = case s of
 
 compileExp :: Exp -> State EnvC ()
 compileExp e = case e of
+  EApp (Id "printInt") [e] -> do --function call
+--    mapM_ compileExp es
+    compileExp e
+    emit $ "invokestatic Runtime/printInt(I)V"
+    
+    
   EId x  -> do
     a <- lookupVarC x
     emit ("iload " ++ show a)
@@ -129,7 +144,7 @@ compileExp e = case e of
     case e1 of  --the type checker only allows int+int or double+double, so checking 1 of them is enough.
       (EInt x) -> emit "iadd"
       (EDouble x) -> emit "dadd"
-      _ -> error $ "error: EPlus expression compiled with type not (Int or Double)" ++ show (EPlus e1 e2) --emit "" --should not happen. create error?
+      _ -> error $ "error: EPlus expression compiled with type not (Int or Double)" ++ show (EPlus e1 e2)  --should not happen. 
 -------        
   EMinus e1 e2 -> do 
     compileExp e1
