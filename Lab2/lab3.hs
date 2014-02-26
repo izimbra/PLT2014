@@ -5,6 +5,7 @@ import System.Process (system)
 import AbsCPP
 import LexCPP
 import ParCPP
+import PrintCPP
 import ErrM
 
 import TypeChecker
@@ -29,7 +30,9 @@ comp file s = case pProgram (myLexer s) of
               Bad err  -> do putStrLn "SYNTAX ERROR"
                              putStrLn err
                              exitFailure
-              Ok  tree -> case typecheck tree of
+              Ok  tree -> do
+                return (printTree tree)
+                case typecheck tree of
                             Bad err -> do putStrLn "TYPE ERROR"
                                           putStrLn err
                                           exitFailure 

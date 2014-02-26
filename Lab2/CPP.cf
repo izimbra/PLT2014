@@ -49,6 +49,10 @@ EAnd.      Exp4   ::= Exp4  "&&" Exp5 ;
 EOr.       Exp3   ::= Exp3  "||" Exp4 ;
 EAss.      Exp2   ::= Exp3  "="  Exp2 ;
 
+
+-- for the annotating type checker
+internal ETyped. Exp1 ::= Type "(" Exp ")" ; 
+
 coercions  Exp 15 ;
 
 separator  Exp "," ;
