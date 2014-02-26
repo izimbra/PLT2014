@@ -19,9 +19,9 @@ compile :: String -> Program -> String
 compile name p = unlines $ reverse $ code $ execState (compileProgram name p) emptyEnvC
 
 compileProgram :: String -> Program -> State EnvC ()
-compileProgram name (Prog defs) = do
+compileProgram className (Prog defs) = do
   mapM_ emit [
-    ".class public " ++ name,
+    ".class public " ++ className,
     ".super java/lang/Object",
     "",
     ".method public <init>()V",
@@ -33,8 +33,9 @@ compileProgram name (Prog defs) = do
     ".method public static main([Ljava/lang/String;)V",
     ".limit locals 100",   --- bogus limit
     ".limit stack 1000",   --- bogus limit
+
     -- calling the compiled 'main'
-    "invokestatic " ++ name ++ "/main()I", -- check for return statement
+    "invokestatic " ++ className ++ "/main()I",
     "return",
     ".end method",
     ""
@@ -47,18 +48,24 @@ compileProgram name (Prog defs) = do
 compileDef :: Def -> State EnvC ()
 compileDef (Fun t (Id f) args stms) = do
   -- method signature
-  emit $ ".method public static " +++ f                      -- name
+  emit $ ".method public static " ++ f                      -- name
          ++ "(" ++ map (typeToTypeC . argToType) args ++ ")" -- argument types
          ++ [typeToTypeC t]                                  -- return type      
   -- storage limits for local variables and stack
   emit $ ".limit locals 100"
   emit $ ".limit stack 100"
 
---  compile stms
+  mapM_ compileStm stms
   -- return 0 if function has no return statement
   -- for i = 1,...,m : addVarC(xi,ti)
-  emit $ "ldc 0"
-  emit $ "ireturn"
+
+  -- default return in case of no return statement
+--  if not (null stms) && last stms /= (SReturn _)
+--  then do emit $ ""
+--          emit $ ".end method"
+  --         emit $ "ldc 0"
+  --         emit $ "ireturn"
+--  else
   emit $ ".end method"
 
 
@@ -69,18 +76,32 @@ a +++ b = a ++ " " ++ b
 
 compileStm :: Stm -> State EnvC ()
 compileStm s = case s of
-  SDecl t x   -> addVarC x t
-  SAss x e -> do
+  -- variable declaration, emits no code
+  SDecl t x    -> addVarC x t
+  -- variable assignment
+  SAss x e     -> do
     compileExp e
-    a <- lookupVarC x
-    emit ("istore " ++ show a) 
-  SBlock stms -> do
+    addr <- lookupVarC x
+    emit ("istore " ++ show addr) 
+  -- variable initialisation
+  SInit t x e -> do
+    addVarC x t
+    compileExp e
+    addr <- lookupVarC x
+    emit ("istore " ++ show addr)
+  
+  SBlock stms  -> do
     a <- newBlockC
     mapM compileStm stms
     exitBlockC a
-  SPrint e -> do
+  SPrint e     -> do
     compileExp e
     emit $ "invokestatic Runtime/printInt(I)V"
+  SReturn e    -> do
+    compileExp e
+    emit $ "ireturn"
+  _            -> error $ "No match: " ++ show s
+              --   return ()
 
 compileExp :: Exp -> State EnvC ()
 compileExp e = case e of

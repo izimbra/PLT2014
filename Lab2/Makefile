@@ -4,6 +4,8 @@ all:
 	alex -g LexCPP.x
 	ghc --make lab2.hs -o lab2
 
+comp:
+	ghc --make lab3.hs -o lab3
 clean:
 	-rm -f lab2
 	-rm -f *.log *.aux *.hi *.o *.dvi
@@ -11,4 +13,5 @@ clean:
 
 distclean: clean
 	-rm -f DocCPP.* LexCPP.* ParCPP.* LayoutCPP.* SkelCPP.* PrintCPP.* TestCPP.* AbsCPP.* TestCPP ErrM.* SharedString.* CPP.dtd XMLCPP.*
+
 
