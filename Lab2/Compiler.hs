@@ -49,7 +49,7 @@ compileDef :: Def -> State EnvC ()
 compileDef (Fun t (Id f) args stms) = do
   -- method signature
   emit $ ".method public static " ++ f                      -- name
-         ++ "(" ++ map (typeToTypeC . argToType) args ++ ")" -- argument types
+         ++ "(" ++ map (typeToTypeC . argType) args ++ ")" -- argument types
          ++ [typeToTypeC t]                                  -- return type      
   -- storage limits for local variables and stack
   emit $ ".limit locals 100"

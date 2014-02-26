@@ -7,6 +7,7 @@
 module Environment (-- * Type Checking 
                     Env
                   , Context
+                  , addArgs
                    -- * Interpretation
                   , IEnv
                   , IContext
@@ -27,7 +28,7 @@ module Environment (-- * Type Checking
                   , Value(..) 
                   , boolToVal
                   , valToBool 
-                  , argToType
+                  , argType
                   , buildSig
                   , setVar
                   , setVars
@@ -202,6 +203,11 @@ lookup_ (scope:rest) x = case M.lookup x scope of
 addScope :: Env -> Env
 addScope (funs, scopes) = (funs, M.empty:scopes)
 
+addArgs :: Env -> [Arg] -> Err Env
+addArgs env [] = return env --base case 
+addArgs env ( (Arg t id) :as) = do env' <- updateVar env id t
+                                   addArgs env' as
+
 
 emptyEnv :: Env
 emptyEnv = (M.empty, [])
@@ -291,5 +297,6 @@ addFunSig :: SigTabI -> Def -> SigTabI
 addFunSig sig (Fun t id a s) =  M.insert id (Fun t id a s) sig
 
 -- | Extracts type from the function argument.
-argToType :: Arg -> Type
-argToType (Arg t _) = t
+argType :: Arg -> Type
+argType (Arg atype _) = atype
+
