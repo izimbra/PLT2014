@@ -76,14 +76,14 @@ a +++ b = a ++ " " ++ b
 
 compileStm :: Stm -> State EnvC ()
 compileStm s = case s of
-  SExp (EApp id es) -> do
-    compileExp (EApp id es)
-    --check the type and send pop or pop2 depending (book p103)
-    --or if void, dont send anything at all
-    emit "pop"
-    
-  SExp e -> do
+  SExp (ETyped t e) -> do -- from Stm point of view, all Exp will be ETyped. This code is meant to behave as the rule on book p102
     compileExp e
+    case t of
+      TInt -> emit "pop"
+      TBool -> emit "pop"
+      TDouble -> emit "pop2"
+      _       -> emit ""
+    
     
   -- variable declaration, emits no code
   SDecl t x    -> addVarC x t
