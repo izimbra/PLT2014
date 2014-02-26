@@ -127,23 +127,29 @@ compileStm s = case s of
   _            -> error $ "No match: " ++ show s
               --   return ()
 
+--helper function for re-using code pattern
+compileExpArithm :: Exp -> Exp -> Type -> String -> State EnvC ()
+compileExpArithm e1 e2 t s = do
+    compileExp e1
+    compileExp e2
+    emitTyped t s
+
 compileExp :: Exp -> State EnvC ()
 
 compileExp (ETyped t e) = case e of
+    
+  EInt i    -> emit ("bipush " ++ show i)
+  EDouble d -> emit ("ldc2_w " ++ show d)
+  
+  EPlus  e1 e2 -> compileExpArithm e1 e2 t "add"
+  EMinus e1 e2 -> compileExpArithm e1 e2 t "sub"
+  ETimes e1 e2 -> compileExpArithm e1 e2 t "mul"
+  EDiv   e1 e2 -> compileExpArithm e1 e2 t "div"
 
   EId x  -> do --corresponds to example with EVar
     a <- lookupVarC x
     --emit ("iload " ++ show a)
     emitTyped t ("load " ++ show a) 
-    
-  EInt i    -> emit ("bipush " ++ show i)
-  EDouble d -> emit ("ldc2_w " ++ show d)
-
-  EPlus e1 e2 -> do
-    compileExp e1
-    compileExp e2
-    emitTyped t "add"
-
 
   EApp (Id "printInt") [e] -> do --function call
 --    mapM_ compileExp es
@@ -152,14 +158,6 @@ compileExp (ETyped t e) = case e of
     
     
   
--------        
-  EMinus e1 e2 -> do 
-    compileExp e1
-    compileExp e2
-    case e1 of 
-      (EInt x) -> emit "isub"
-      (EDouble x) -> emit "dsub"
-      _ -> error $ "error: EMinus expression compiled with type not (Int or Double)"++ show (EMinus e1 e2)
 
 
 emitTyped :: Type -> Instruction -> State EnvC ()
