@@ -22,4 +22,5 @@ lab3:
     cp CPP.cf         ../Lab3
     cp Compiler.hs    ../Lab3
     cp jasmin.jar     ../Lab3
+
     
