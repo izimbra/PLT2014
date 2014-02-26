@@ -65,6 +65,7 @@ compileDef (Fun t (Id f) args stms) = do
     _  -> case (last stms) of
             (SReturn e) -> emit $ ".end method" 
             _           -> do defaultReturn t
+                              emit $ ".end method"
 
 -- | Generates default  return code for a given function type.                             
 defaultReturn :: Type ->  State EnvC ()
@@ -89,9 +90,9 @@ compileStm :: Stm -> State EnvC ()
 compileStm s = case s of
   SExp (EApp id es) -> do
     compileExp (EApp id es)
-    --check the type and send pop or pop2 depending (book p103)
+    --check the expression type and send pop or pop2 depending (book p103)
     --or if void, dont send anything at all
-    emit "pop"
+    --emit "pop"
     
   SExp e -> do
     compileExp e
@@ -114,9 +115,9 @@ compileStm s = case s of
     a <- newBlockC
     mapM compileStm stms
     exitBlockC a
-  SPrint e     -> do
-    compileExp e
-    emit $ "invokestatic Runtime/printInt(I)V"
+  -- SPrint e     -> do
+  --   compileExp e
+  --   emit $ "invokestatic Runtime/printInt(I)V"
   SReturn e    -> do
     compileExp e
     emit $ "ireturn"
