@@ -1,4 +1,4 @@
-module BuiltInFuncs where
+module BuiltIns where
 
 import AbsCPP
 

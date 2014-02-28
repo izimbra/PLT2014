@@ -8,7 +8,7 @@ import ParCPP
 import PrintCPP
 import ErrM
 
-import TypeChecker
+import TypeCheckerA
 import Compiler
 
 -- driver
@@ -36,11 +36,12 @@ comp file s = case pProgram (myLexer s) of
                             Bad err -> do putStrLn "TYPE ERROR"
                                           putStrLn err
                                           exitFailure 
-                            Ok _    -> let className = dropExtension.takeFileName $ file
-                                           newFile   = (dropExtension file) ++ ".j"
-                                          -- use tree' for annotated type checker
-                                       in do writeFile newFile $ compile className tree
-                                             putStrLn $ "Generated file " ++ newFile
+                            Ok _    -> putStrLn "Type checking done"
+                              -- let className = dropExtension.takeFileName $ file
+                                       --     newFile   = (dropExtension file) ++ ".j"
+                                       --    -- use tree' for annotated type checker
+                                       -- in do writeFile newFile $ compile className tree
+                                       --      putStrLn $ "Generated file " ++ newFile
 
 main :: IO ()
 main = do args <- getArgs

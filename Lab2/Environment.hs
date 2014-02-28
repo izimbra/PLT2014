@@ -1,17 +1,22 @@
 -- | This module defines data types and functions
 -- used for constructing and manipulating
 -- environments used in the different parts of compiler toolchain.
+module Environment (
+                    -- * Type Checking
+                    EnvT
+                  , ContextT
+                  , emptyEnvT
+                  , updateFunT
+                  , lookupFunT
+                  , updateVarT                    
+                  , lookupVarT
+                  , addScopeT                    
+                  , addArgsT
 
---module Environment where
-
-module Environment (-- * Type Checking 
-                    Env
-                  , Context
-                  , addArgs
-                   -- * Interpretation
+                    -- * Interpretation
                   , IEnv
                   , IContext
-                   -- * Compilation
+                   -- * Code generation for JVM
                   , EnvC(..)
                   , Address
                   , Instruction
@@ -34,15 +39,9 @@ module Environment (-- * Type Checking
                   , setVars
                   , addVar
                   , addVars
-                  , updateVar
                   , enterScope
                   , leaveScope
-                  , addScope
-                  , lookupVar
-                  , lookupFun
-                  , updateFun
                   , evalVar
-                  , emptyEnv
                   ) where
 
 
@@ -54,15 +53,35 @@ import PrintCPP
 import ErrM
 
 -- | Variable context - map of variable ids to their types
-type Context =  M.Map Id Type
+type ContextT =  M.Map Id Type
 type IContext = M.Map Id Value
 
--- | The environment of the type checker.
+-- | Function symbol table for type-checking.
+-- Map function ids to their type signatures.
+type SigTabT  = M.Map Id SigT
+
+-- | Function symbol table fot interpretation.
+-- Maps function ids to their AST definitions.
+type SigTabI  = M.Map Id Def
+
+-- | Function symbol table for code generation.
+-- Map function ids to JVM representation of their type signatures.
+type SigTabC = M.Map Id SigC
+
+-- | Function signature for type-checking. Includes argument types and return type.
+type SigT  = ([Type],  Type)
+
+-- | Function signature for code-generation
+-- Includes JVM representation of argument types and return type.
+type SigC = ([TypeC], TypeC)
+
+-- | Type-checking environment.
 -- Includes symbol table for functions and list of variable contexts.
-type Env =  (SigTab,  [Context]) -- mini version: [[(Id, Type)]]
+type EnvT =  (SigTabT,  [ContextT]) -- mini version: [[(Id, Type)]]
+-- | Interpretation enviroment.
 type IEnv = (SigTabI, [IContext]) -- Interpreter version of corresponding tool
 
--- | Compilation environment.
+-- | Code generation environment.
 data EnvC = E {  --temp commented out because it doesnt compile
  addresses   :: [[(Id,Address)]],
  nextLabel   :: Int,
@@ -129,18 +148,6 @@ exitBlockC a = modify (\env -> env {
    })
 
 
--- | Symbol table for functions .
--- A map of function ids and their type signatures.
-type SigTab  = M.Map Id Sig
-type SigTabI = M.Map Id Def
--- | Compile-time function table, which uses JVM representations of
--- argument and return types.
-type SigTabC = M.Map Id SigC -- or special SigC?
-
--- | Function type signature. Includes argument types and return type.
-type Sig  = ([Type],  Type)
-type SigC = ([TypeC], TypeC)
-
 -- | Jasmin assembly represenation of basic Java types 
 type TypeC = Char
 -- | Converts 'Type' value to its Jasmin counterpart.
@@ -177,46 +184,48 @@ valToBool :: Value -> Bool
 valToBool (VInt 1) = True
 valToBool (VInt 0) = False
 
+-- | Create emnpty type-checking environment'
+emptyEnvT :: EnvT
+emptyEnvT = (M.empty, [])
+
 -- | Looks up a function definition in the environment
-lookupFun :: Env -> Id -> Err Sig
-lookupFun (funs, _) f =
+lookupFunT :: EnvT -> Id -> Err SigT
+lookupFunT (funs, _) f =
   case M.lookup f funs of
     Just sig -> return sig
     Nothing  -> fail ("Undefined function " ++ printTree f ++ ".")
 
 -- | Adds a new variable to the current variable scope,
 -- or updates an existing variable    
-updateVar :: Env -> Id -> Type -> Err Env
-updateVar (funs, scope:rest) x t = 
+updateVarT :: EnvT -> Id -> Type -> Err EnvT
+updateVarT (funs, scope:rest) x t = 
     case M.lookup x scope of
       Nothing -> return (funs, (M.insert x t scope):rest)
       Just _  -> fail ("Variable " ++ printTree x ++ " already declared.")
 
 
 -- | Looks up a variable in the environment
-lookupVar :: Env -> Id -> Err Type
-lookupVar (_, scopes) = lookup_ scopes 
+lookupVarT :: EnvT -> Id -> Err Type
+lookupVarT (_, scopes) = lookup_ scopes 
+
 lookup_ [] x = fail $ "lookupVar: Unknown variable " ++ printTree x ++ ". Error, exiting program."
 lookup_ (scope:rest) x = case M.lookup x scope of
-                             Nothing -> lookup_ rest x
-                             Just t  -> return t
-addScope :: Env -> Env
-addScope (funs, scopes) = (funs, M.empty:scopes)
+                           Nothing -> lookup_ rest x
+                           Just t  -> return t
+addScopeT :: EnvT -> EnvT
+addScopeT (funs, scopes) = (funs, M.empty:scopes)
 
-addArgs :: Env -> [Arg] -> Err Env
-addArgs env [] = return env --base case 
-addArgs env ( (Arg t id) :as) = do env' <- updateVar env id t
-                                   addArgs env' as
+addArgsT :: EnvT -> [Arg] -> Err EnvT
+addArgsT env [] = return env --base case 
+addArgsT env ( (Arg t id) :as) = do env' <- updateVarT env id t
+                                    addArgsT env' as
 
-
-emptyEnv :: Env
-emptyEnv = (M.empty, [])
 
 -- | Adds a function signature to the environment,
 -- or updates it if the function is already present.
-updateFun :: Env -> Id -> Sig -> Err Env
-updateFun (funs, scopes) id sig = let funs' = M.insert id sig funs
-                                  in  return (funs', scopes)
+updateFunT :: EnvT -> Id -> SigT -> Err EnvT
+updateFunT (funs, scopes) id sig = let funs' = M.insert id sig funs
+                                   in  return (funs', scopes)
 
 
 --Interpreter functions
@@ -233,11 +242,12 @@ addVars ienv [] = ienv  --base case
 addVars ienv (i:is) = addVars (addVar ienv i) is
 
 addVar :: IEnv -> Id -> IEnv
-addVar (funs, [] ) x          = (funs,[ (M.fromList [ (x, VUndef) ] ) ] )
+addVar (funs, [] )        x    = (funs,[ (M.fromList [ (x, VUndef) ] ) ] )
 --coming into an empty scope, creating the first IContext with a fromlist
 --addVar (funs, [scope]   ) x = (funs, [(M.insert x VUndef scope)]) -- when coming into empty scope
-addVar (funs, scope:rest) x = (funs, (M.insert x VUndef scope):rest)
-addVar env id = error $ "pattern incomplete in addvar: \n" ++ show id ++ "\n" ++ show env
+addVar (funs, scope:rest) x    = (funs, (M.insert x VUndef scope):rest)
+--addVar _                  x    = error $ "pattern incomplete in addvar"
+
 --updateVar :: Env -> Id -> Type -> Err Env
 --updateVar (funs, scope:rest) x t = 
 --    case M.lookup x scope of
