@@ -12,7 +12,8 @@ clean:
 	-rm -f DocCPP.ps
 
 distclean: clean
-	-rm -f DocCPP.* LexCPP.* ParCPP.* LayoutCPP.* SkelCPP.* PrintCPP.* TestCPP.* AbsCPP.* TestCPP ErrM.* SharedString.* CPP.dtd XMLCPP.*
+	-rm -f DocCPP.* LexCPP.* ParCPP.* LayoutCPP.* SkelCPP.* PrintCPP.* TestCPP.* AbsCPP.* \
+	       TestCPP ErrM.* SharedString.* CPP.dtd XMLCPP.*
 
 lab3: 
 	cp CPP.cf         ../Lab3
@@ -23,3 +24,4 @@ lab3:
 	cp lab3.hs        ../Lab3
 	cp Runtime.java   ../Lab3
 	cp jasmin.jar     ../Lab3
+
