@@ -20,8 +20,7 @@ interpret :: Program -> IO ()
 interpret (Prog defs) =  do iSigTab <-  buildSig M.empty defs 
                             iEnv <- return (iSigTab, [])  --why is return neeeded here? Is this a good way to write code?
                             execMain iEnv
---                           execFun (Id "main") iEnv
-                          
+--                           execFun (Id "main") iEnv                        
 
 execMain :: IEnv -> IO ()
 execMain (iSigTab, conts) = case M.lookup (Id "main") iSigTab of
@@ -93,13 +92,10 @@ evalExp env (EIncr (EId id)) = case (evalVar env id) of
 
 
 evalExp env (EAss (EId id) e2) = do
-    -- print $ "DP : evalExp EAss1 : " ++ show (EAss (EId id) e2)
     (v, env') <- evalExp env e2
     let (funs', conts') = env'
-    -- print $ "DP : evalExp EAss2 (v, env') : " ++ show v ++ " , " ++ show conts'
     (v', env'') <- return (v, (setVar env' id v))
     let (funs'', conts'') =  env''
-    -- print $ "DP : evalExp EAss3 :" ++ show v ++ " , " ++ show conts''
     return (v', env'')
 
 -- binary arithmetic operations
@@ -136,19 +132,8 @@ evalExp env (EOr e1 e2)       = do --remember evaluation order! we cannot genera
                 then return ((VInt 1) , env'')
                 else return ((VInt 0) , env'') 
 
--- SIfElse exp s1 s2  -> do ((VInt b) ,env') <- evalExp env exp
---                                 if (b==1)
---                                   then execStm env' s1
---                                   else execStm env' s2
-
-
 --Calls of the four built-in functions can be hard-coded as special cases in the expression evaluation code. 
-
-
-evalExp env (EApp (Id "printInt") [exp]) = do --(funs, conts) <- return env ..debug
-                                              --print $ "evalExp printInt . " ++ show conts  ..debug
-                                              (v, env') <- evalExp env exp
---                                              let i = (\(VInt x)-> x) v
+evalExp env (EApp (Id "printInt") [exp]) = do (v, env') <- evalExp env exp
                                               print $ unwrapInt v
                                               return (VVoid, env') --printInt has type void
 evalExp env (EApp (Id "printDouble") [exp]) = do
@@ -191,8 +176,12 @@ evalExpCompareHelper env e1 e2 cmp = do
     return ((compareValues (vLeft, vRight) (cmp)), env'')  
 
 evalExpArithmeticHelper env e1 e2 op = do
+    --print $ show e1
+    --print $ show e2
     (vLeft , env' ) <- evalExp env  e1
+    --print $ show vLeft
     (vRight, env'') <- evalExp env' e2        
+    --print $ show vRight
     case (vLeft,vRight) of
         (VDouble d1, VDouble d2) -> return (VDouble (d1             `op`              d2), env'')
         (VInt i, VDouble d)      -> return (VDouble (fromIntegral i `op`               d), env'')
@@ -200,8 +189,7 @@ evalExpArithmeticHelper env e1 e2 op = do
         (VInt i1, VInt i2)       -> do 
            let tempDouble = fromIntegral i1 `op` fromIntegral i2
            return ((VInt ( floor tempDouble ) ), env'')
---        return (VInt    (i1             `op`              i2), env)
-        _                        -> error $ "Error evalExp arithmetic, non exhaustive case: " ++ show (e1, e2) ++  "  " ++ show vLeft ++ "   " ++ show vRight
+        _                        -> error $ "Error evalExp arithmetic, non exhaustive case: " ++ show (e1, e2) ++  "  " ++ show vLeft ++ "   " ++ show vRight  --should not happen
     
 
 unwrapInt :: Value -> Integer
@@ -220,24 +208,6 @@ evalArgs env (e:es) vs = do --warning : list of values will be reversed. will be
         (v, env') <- evalExp env e
         evalArgs env' es (v:vs)
 
---evalArgs env' es (v:vs)
---    where (v, env') = return (evalExp env e )
-
---How do you know if they are free of side effects? What about things like
---  if ( x = 5 < y = 3 )   
---  if ( x++  == y--   ) 
-getValuePair :: IEnv -> Exp -> Exp -> IO (Value, Value)
-getValuePair env e1 e2 = do --error ("getValuePair \n " ++ show e1 ++ "\n " ++ show e2 )
-                            (v1,_) <- evalExp env e1
-                            -- print $ "debug print valuepair v1 : " ++ show v1
-                            --error happens before this line
-                            (v2,_) <- evalExp env e2
-                            -- print $ "debug print valuepair v2 : " ++ show v2
-
-
-                            --error happens before this 
---                            error ("getValuePair \n " ++ show v1 ++ "\n " ++ show v2 )
-                            return (v1,v2)
 
 -- | Compares two numeric values using given comparison function
 -- and return @VInt 1@ for true or @VInt 0@ for false.
@@ -261,30 +231,3 @@ compareValues (v1, v2) cmp = case (v1, v2) of
 applyBool :: Value -> (Bool -> Bool ->  Bool) -> Value -> Value
 applyBool v1 boolOp v2 = boolToVal $ (valToBool v1) `boolOp` (valToBool v2)
 
---compareValues (VDouble d1, VDouble d2) cmp = boolToVal (d1 `cmp` d2)
-
---(v1,v2) comparison = do (v1,
--- type Env = [[(Ident, Value)]]
-
--- emptyEnv :: Env
--- emptyEnv = [[]]
-
-
-
--- For good practice, the code could (should) be rewritten using let for all pure bindings
---http://learnyouahaskell.com/input-and-output
---
---import Data.Char  
---  
---main = do  
---    putStrLn "What's your first name?"  
---    firstName <- getLine  
---    putStrLn "What's your last name?"  
---    lastName <- getLine  
---    let bigFirstName = map toUpper firstName  
---        bigLastName = map toUpper lastName  
---    putStrLn $ "hey " ++ bigFirstName ++ " " ++ bigLastName ++ ", how are you?"  
---See how the I/O actions in the do block are lined up? Also notice how the let is lined up with the I/O actions and the -names of the let are lined up with each other? That's good practice, because indentation is important in Haskell. Now,- we did map toUpper firstName, which turns something like "John" into a much cooler string like "JOHN". We bound that- uppercased string to a name and then used it in a string later on that we printed to the terminal.-
-
---You may be wondering when to use <- and when to use let bindings? Well, remember, <- is (for now) for performing I/O actions and binding their results to names. map toUpper firstName, however, isn't an I/O action. It's a pure expression in Haskell. So use <- when you want to bind results of I/O actions to names and you can use let bindings to bind pure expressions to names. Had we done something like let firstName = getLine, we would have just called the getLine I/O action a different name and we'd still have to run it through a <- to perform it.
---
