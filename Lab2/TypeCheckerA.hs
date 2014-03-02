@@ -2,6 +2,7 @@
 module TypeCheckerA where
 
 import Control.Monad(mapAndUnzipM,zipWithM)
+import Debug.Trace(trace)
 
 import AbsCPP
 import PrintCPP
@@ -53,17 +54,22 @@ checkStms env (st:stms) = do
   (st'  ,env' ) <- checkStm  env  st
   (stms',env'') <- checkStms env' stms
   return (st':stms',env'')
-  
+
 checkStm :: EnvT -> Stm -> Err (Stm,EnvT)
 checkStm env s = 
     case s of
 
       SDecl t x         -> do env' <- updateVarT env x t
                               return(s,env')
-      SDecls t ids       -> do (_, envs) <- mapAndUnzipM (checkOne env t) ids
-                               return (SDecls t ids, last envs)
-                                 where checkOne :: EnvT -> Type -> Id -> Err (Stm,EnvT)
-                                       checkOne env t id = checkStm env (SDecl t id)
+      SDecls t ids      -> do (_,env') <- checkOne env t ids
+                              return (SDecls t ids, env')
+                                where
+                                  checkOne :: EnvT -> Type -> [Id] -> Err (Stm,EnvT)
+                                  checkOne env t (id:ids) = do
+                                                (_,env') <- checkStm env (SDecl t id)
+                                                checkOne env' t ids
+                                  checkOne env t []       = return (SDecls t [],env)
+
       SAss  x e         -> do t  <- lookupVarT env x
                               e' <- checkExp env e t
                               return (SAss x e',env)      

@@ -31,7 +31,7 @@ comp file s = case pProgram (myLexer s) of
                              putStrLn err
                              exitFailure
               Ok  tree -> do
-                return (printTree tree)
+                putStrLn (printTree tree)
                 case typecheck tree of
                             Bad err -> do putStrLn "TYPE ERROR"
                                           putStrLn err

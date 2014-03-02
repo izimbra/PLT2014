@@ -77,7 +77,8 @@ type SigC = ([TypeC], TypeC)
 
 -- | Type-checking environment.
 -- Includes symbol table for functions and list of variable contexts.
-type EnvT =  (SigTabT,  [ContextT]) -- mini version: [[(Id, Type)]]
+type EnvT = (SigTabT,  [ContextT])
+
 -- | Interpretation enviroment.
 type IEnv = (SigTabI, [IContext]) -- Interpreter version of corresponding tool
 
