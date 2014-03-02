@@ -140,35 +140,15 @@ evalExp env (EDiv  e1 e2)  = do
         _                        -> error $ "Error EDiv non exhaustive case: " ++ show (EDiv e1 e2) ++ "    " ++ show v1 ++ "   " ++ show v2
                              -- add catch-all
 -- comparison operators
---how can you skip evaluating the expressions and updating the environment here?
-evalExp env (ELt   e1 e2)     = do --(v1,v2) <- getValuePair env e1 e2
-                                   (vLeft, env') <- evalExp env e1
-                                   (vRight, env'') <- evalExp env' e2
-                                   
-                                   return ((compareValues (vLeft,vRight) (<)),env'')
-evalExp env (EGt   e1 e2)     = do --(v1,v2) <- getValuePair env e1 e2
-                                   (vLeft, env') <- evalExp env e1
-                                   (vRight, env'') <- evalExp env' e2
-                                   return ((compareValues (vLeft,vRight) (>)),env'')
-evalExp env (ELtEq e1 e2)     = do --(v1,v2) <- getValuePair env e1 e2
-                                   (vLeft, env') <- evalExp env e1
-                                   (vRight, env'') <- evalExp env' e2
-                                   return ((compareValues (vLeft,vRight) (<=)),env'')
-evalExp env (EGtEq e1 e2)     = do (vLeft, env') <- evalExp env e1
-                                   (vRight, env'') <- evalExp env' e2
-                                   return ((compareValues (vLeft,vRight) (>=)),env'')
-evalExp env (EEq   e1 e2)     = do --error (" evalExp EEq e1 e2 \n" ++ show e1 ++ "\n" ++ show e2)
-                                   --(v1,v2) <- getValuePair env e1 e2
-                                   (vLeft, env') <- evalExp env e1
-                                   (vRight, env'') <- evalExp env' e2
-                                   return ((compareValues (vLeft,vRight) (==)),env'')
-evalExp env (ENEq  e1 e2)     = do (vLeft, env') <- evalExp env e1
-                                   (vRight, env'') <- evalExp env' e2
-                                   return ((compareValues (vLeft,vRight) (/=)),env'')
+evalExp env (ELt   e1 e2)     = evalExpCompareHelper env e1 e2 (<)
+evalExp env (EGt   e1 e2)     = evalExpCompareHelper env e1 e2 (>)
+evalExp env (ELtEq e1 e2)     = evalExpCompareHelper env e1 e2 (<=)
+evalExp env (EGtEq e1 e2)     = evalExpCompareHelper env e1 e2 (>=)
+evalExp env (EEq   e1 e2)     = evalExpCompareHelper env e1 e2 (==)
+evalExp env (ENEq  e1 e2)     = evalExpCompareHelper env e1 e2 (/=)
 
---- same but different
 evalExp env (EAnd e1 e2)      = do    --remember evaluation order! we cannot generalise too much
-    ((VInt b1) , env')  <- evalExp env  e1
+    ((VInt b1) , env')  <- evalExp env  e1 --bool is represented by int 1 or 0
     if (b1 == 0)
         then return ((VInt 0) , env')
         else do
@@ -236,6 +216,11 @@ evalExp env e                 = error ("not finished yet in evalexp: \n" ++ show
 -- | Extract values of a pair of expression, returns them in monadic 'IO' context.
 -- Used to easier work with values in expressions that are free of side effects. 
 
+evalExpCompareHelper env e1 e2 cmp = do
+    (vLeft , env' ) <- evalExp env  e1
+    (vRight, env'') <- evalExp env' e2
+    return ((compareValues (vLeft, vRight) (cmp)), env'')  
+
 
 
 unwrapInt :: Value -> Integer
@@ -275,7 +260,10 @@ getValuePair env e1 e2 = do --error ("getValuePair \n " ++ show e1 ++ "\n " ++ s
 
 -- | Compares two numeric values using given comparison function
 -- and return @VInt 1@ for true or @VInt 0@ for false.
--- Returns @VUndef@ if comparison fails.                            
+-- Returns @VUndef@ if comparison fails.    
+
+--Why doesn't this function have a type definition? Ghci says  
+-- (Value, Value) -> (Double -> Double -> Bool) -> Value                        
 compareValues (v1, v2) cmp = case (v1, v2) of
                                (VInt i1,    VInt i2)     -> boolToVal (fromInteger i1
                                                                        `cmp`
