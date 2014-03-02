@@ -20,8 +20,7 @@ interpret :: Program -> IO ()
 interpret (Prog defs) =  do iSigTab <-  buildSig M.empty defs 
                             iEnv <- return (iSigTab, [])  --why is return neeeded here? Is this a good way to write code?
                             execMain iEnv
---                           execFun (Id "main") iEnv
-                          
+--                           execFun (Id "main") iEnv                        
 
 execMain :: IEnv -> IO ()
 execMain (iSigTab, conts) = case M.lookup (Id "main") iSigTab of
@@ -29,20 +28,6 @@ execMain (iSigTab, conts) = case M.lookup (Id "main") iSigTab of
                                     Just (Fun _ _ _ stms)  -> do --print $ show (iSigTab, conts)
                                                                  ienv <- execStms (iSigTab, conts) stms
                                                                  return ()
-
---execfun in itself is not needed since it will not happen
---what will happen is a function call as a statement or as an expression
-execFun :: Id -> IEnv -> [Value] -> IO()
-execFun id (iSigTab, conts) vals = case M.lookup id iSigTab of
-                                     Nothing -> error "function not found" -- should never happen since we have already typechecked, but case is needed because of lookup
-                                     Just (Fun typ _ args stms) -> return ()
-                                     --skapa context utifrån argumenten till funktionen
-                                     --kör execStms
-                                     --ska execFun returna ett IO Value?
-
-
--- STOP PASTE IN
-
 execStms :: IEnv -> [Stm] -> IO IEnv
 execStms env [] = return env
 execStms env ((SReturn exp):stms) = do (v,env') <- evalExp env exp --evaluate exp
@@ -51,22 +36,16 @@ execStms env ((SReturn exp):stms) = do (v,env') <- evalExp env exp --evaluate ex
                                        
 execStms env (st:stms) = do env' <- execStm env st
                             execStms env' stms
---checkStm :: Env -> Stm -> Err Env
+
 execStm :: IEnv -> Stm -> IO IEnv
---checkStm env s = case s of
 execStm env s = case s of
-    SDecl _ x          -> return (addVar env x)  -- ORIGINAL CODE ONLY THIS LINE
+    SDecl _ x          -> return (addVar env x)  
     SDecls _ xs        -> return (addVars env xs)
-    SAss x e           -> do -- print $ "DP : SAss : " ++ show (SAss x e)
-                             let (funs, conts) = env
-                             -- print $ "DP : SAss2 : conts before " ++ show conts
+    SAss x e           -> do let (funs, conts) = env
                              (v,env' ) <- evalExp env e
                              let (funs', conts') = env'
-                             -- print $ "DP : SAss3 : conts after  " ++ show conts'
                              eee <- return (setVar env' x v)
                              let (funs'', conts'' ) = eee
-                             -- print $ "DP : SAss4 : conts after after " ++ show conts''
-                             --return (setVar env' x v)
                              return eee
     SBlock stms        -> do env' <- execStms (enterScope env) stms
                              return (leaveScope env')
@@ -78,21 +57,13 @@ execStm env s = case s of
                              if (b==1)
                                    then execStm env' s1
                                    else execStm env' s2
-    SWhile exp stm     -> do -- print $ "debug SWhile EXP: " ++ show exp
-                             -- print $ "debug SWhile STM: " ++ show stm
-                             let (funs, conts) = env 
-                             -- print $ "debug SWhile: " ++  show conts
+    SWhile exp stm     -> do let (funs, conts) = env 
                              ((VInt b) , env') <- evalExp env exp
-                             -- print $ "debug SHile : " ++ show b
                              let (f', c') = env'
-                             -- print $ "debug SWhile : " ++ show c'
                              if (b/=0)
                                    then do env'' <- execStm env' stm
                                            execStm env'' (SWhile exp stm)
                                    else return env'
-    --   SPrint e        -> do print (evalExp env e)
-    --                         return env
-    --SReturn exp   return statement has special treatment in execStms
     _       -> error ("not finished yet in execStm: \n" ++ show s)
       
 
@@ -104,13 +75,10 @@ evalExp env (ETrue )    = return (VInt 1,    env)
 evalExp env (EFalse)    = return (VInt 0,    env)
 evalExp env (EInt i)    = return (VInt i,    env)
 evalExp env (EDouble d) = return (VDouble d, env)
--- variables, assignments, function calls
---evalExp env EId x       = evalVar env x 
 
-evalExp env (EId id) = return (evalVar env id  , env)--error ("evalExp with id " ++ show id) -- 
+evalExp env (EId id) = return (evalVar env id  , env)
 
 evalExp env (EPDecr (EId id)) = case (evalVar env id) of  --pattern matching directly on variable. The only cases we will get are for variables, as told in the instructions. And it could be changed in the grammar, but at this point feels too risky to change the grammar, so I made this shortcut
-    --(vtyp i) -> return (vtyp i , setVar env id (vtyp (i+1))) --this doesn't work, but how can it be made to work? would be nice
     (VInt i)    -> return (VInt i , setVar env id (VInt (i-1)))
     (VDouble i) -> return (VDouble i , setVar env id (VDouble (i-1)))
 
@@ -124,92 +92,28 @@ evalExp env (EIncr (EId id)) = case (evalVar env id) of
 
 
 evalExp env (EAss (EId id) e2) = do
-    -- print $ "DP : evalExp EAss1 : " ++ show (EAss (EId id) e2)
     (v, env') <- evalExp env e2
     let (funs', conts') = env'
-    -- print $ "DP : evalExp EAss2 (v, env') : " ++ show v ++ " , " ++ show conts'
     (v', env'') <- return (v, (setVar env' id v))
     let (funs'', conts'') =  env''
-    -- print $ "DP : evalExp EAss3 :" ++ show v ++ " , " ++ show conts''
     return (v', env'')
 
---evalExp env (EPDecr id) = return ((vtyp, v), env') 
---    where 
---        (vtyp, v) = evalVar env id
---        env' = setVar env id (vtyp (v+1))
---case (evalVar env id) of
-  --  (VInt i)    -> 
-    --(VDouble i) ->    
--- -- Err "uninitialized variable x"
--- unary operations w/side effects   --temp commented out because it doesnt compile
-
 -- binary arithmetic operations
-evalExp env (EPlus  e1 e2) = do 
-    (v1,v2) <- getValuePair env e1 e2
-    case (v1,v2) of
-        (VInt i1, VInt i2)       -> return (VInt (i1+i2), env)
-        (VDouble d1, VDouble d2) -> return (VDouble (d1+d2), env)
-        (VInt i, VDouble d)      -> return (VDouble (fromIntegral i + d), env)
-        (VDouble d, VInt i)      -> return (VDouble (d + fromIntegral i), env)
-        _                        -> error $ "Error EPlus non exhaustive case: " ++ show (EPlus e1 e2) ++ "    " ++ show v1 ++ "   " ++ show v2
-
-evalExp env (EMinus e1 e2) = do 
-    (v1,v2) <- getValuePair env e1 e2
-    case (v1,v2) of
-        (VInt i1, VInt i2)       -> return (VInt (i1-i2), env)
-        (VDouble d1, VDouble d2) -> return (VDouble (d1-d2), env)
-        (VInt i, VDouble d)      -> return (VDouble (fromIntegral i - d), env)
-        (VDouble d, VInt i)      -> return (VDouble (d - fromIntegral i), env)
-        _                        -> error $ "Error EMinus non exhaustive case: " ++ show (EMinus e1 e2) ++ "    " ++ show v1 ++ "   " ++ show v2
-evalExp env (ETimes e1 e2) = do 
-    (v1,v2) <- getValuePair env e1 e2
-    case (v1,v2) of
-        (VInt i1, VInt i2)       -> return (VInt (i1*i2), env)
-        (VDouble d1, VDouble d2) -> return (VDouble (d1*d2), env)
-        (VInt i, VDouble d)      -> return (VDouble (fromIntegral i * d), env)
-        (VDouble d, VInt i)      -> return (VDouble (d * fromIntegral i), env)
-        _                        -> error $ "Error ETimes non exhaustive case: " ++ show (ETimes e1 e2) ++ "    " ++ show v1 ++ "   " ++ show v2
-                             -- add catch-all ?
-evalExp env (EDiv  e1 e2)  = do 
-    (v1,v2) <- getValuePair env e1 e2
-    case (v1,v2) of
-      --  (VInt i1, VInt i2)       -> return (VDouble (fromInteger i1/fromInteger i2), env)
-        (VInt i1, VInt i2)       -> return (VInt (floor (fromInteger i1/fromInteger i2)), env)
-        (VDouble d1, VDouble d2) -> return (VDouble (d1/d2), env)
-        (VDouble d,  VInt i)     -> return (VDouble (d / (fromIntegral i)),env)
-        (VInt i, VDouble d)      -> return (VDouble (fromIntegral i / d), env)
-        _                        -> error $ "Error EDiv non exhaustive case: " ++ show (EDiv e1 e2) ++ "    " ++ show v1 ++ "   " ++ show v2
-                             -- add catch-all
+evalExp env (EPlus  e1 e2) = evalExpArithmeticHelper env e1 e2 (+)
+evalExp env (EMinus e1 e2) = evalExpArithmeticHelper env e1 e2 (-)
+evalExp env (ETimes e1 e2) = evalExpArithmeticHelper env e1 e2 (*)
+evalExp env (EDiv  e1 e2)  = evalExpArithmeticHelper env e1 e2 (/)
+-- add catch-all
 -- comparison operators
---how can you skip evaluating the expressions and updating the environment here?
-evalExp env (ELt   e1 e2)     = do --(v1,v2) <- getValuePair env e1 e2
-                                   (vLeft, env') <- evalExp env e1
-                                   (vRight, env'') <- evalExp env' e2
-                                   
-                                   return ((compareValues (vLeft,vRight) (<)),env'')
-evalExp env (EGt   e1 e2)     = do --(v1,v2) <- getValuePair env e1 e2
-                                   (vLeft, env') <- evalExp env e1
-                                   (vRight, env'') <- evalExp env' e2
-                                   return ((compareValues (vLeft,vRight) (>)),env'')
-evalExp env (ELtEq e1 e2)     = do --(v1,v2) <- getValuePair env e1 e2
-                                   (vLeft, env') <- evalExp env e1
-                                   (vRight, env'') <- evalExp env' e2
-                                   return ((compareValues (vLeft,vRight) (<=)),env'')
-evalExp env (EGtEq e1 e2)     = do (vLeft, env') <- evalExp env e1
-                                   (vRight, env'') <- evalExp env' e2
-                                   return ((compareValues (vLeft,vRight) (>=)),env'')
-evalExp env (EEq   e1 e2)     = do --error (" evalExp EEq e1 e2 \n" ++ show e1 ++ "\n" ++ show e2)
-                                   --(v1,v2) <- getValuePair env e1 e2
-                                   (vLeft, env') <- evalExp env e1
-                                   (vRight, env'') <- evalExp env' e2
-                                   return ((compareValues (vLeft,vRight) (==)),env'')
-evalExp env (ENEq  e1 e2)     = do (vLeft, env') <- evalExp env e1
-                                   (vRight, env'') <- evalExp env' e2
-                                   return ((compareValues (vLeft,vRight) (/=)),env'')
+evalExp env (ELt   e1 e2)     = evalExpCompareHelper env e1 e2 (<)
+evalExp env (EGt   e1 e2)     = evalExpCompareHelper env e1 e2 (>)
+evalExp env (ELtEq e1 e2)     = evalExpCompareHelper env e1 e2 (<=)
+evalExp env (EGtEq e1 e2)     = evalExpCompareHelper env e1 e2 (>=)
+evalExp env (EEq   e1 e2)     = evalExpCompareHelper env e1 e2 (==)
+evalExp env (ENEq  e1 e2)     = evalExpCompareHelper env e1 e2 (/=)
 
---- same but different
 evalExp env (EAnd e1 e2)      = do    --remember evaluation order! we cannot generalise too much
-    ((VInt b1) , env')  <- evalExp env  e1
+    ((VInt b1) , env')  <- evalExp env  e1 --bool is represented by int 1 or 0
     if (b1 == 0)
         then return ((VInt 0) , env')
         else do
@@ -228,19 +132,8 @@ evalExp env (EOr e1 e2)       = do --remember evaluation order! we cannot genera
                 then return ((VInt 1) , env'')
                 else return ((VInt 0) , env'') 
 
--- SIfElse exp s1 s2  -> do ((VInt b) ,env') <- evalExp env exp
---                                 if (b==1)
---                                   then execStm env' s1
---                                   else execStm env' s2
-
-
 --Calls of the four built-in functions can be hard-coded as special cases in the expression evaluation code. 
-
-
-evalExp env (EApp (Id "printInt") [exp]) = do --(funs, conts) <- return env ..debug
-                                              --print $ "evalExp printInt . " ++ show conts  ..debug
-                                              (v, env') <- evalExp env exp
---                                              let i = (\(VInt x)-> x) v
+evalExp env (EApp (Id "printInt") [exp]) = do (v, env') <- evalExp env exp
                                               print $ unwrapInt v
                                               return (VVoid, env') --printInt has type void
 evalExp env (EApp (Id "printDouble") [exp]) = do
@@ -277,7 +170,27 @@ evalExp env e                 = error ("not finished yet in evalexp: \n" ++ show
 -- | Extract values of a pair of expression, returns them in monadic 'IO' context.
 -- Used to easier work with values in expressions that are free of side effects. 
 
+evalExpCompareHelper env e1 e2 cmp = do
+    (vLeft , env' ) <- evalExp env  e1
+    (vRight, env'') <- evalExp env' e2
+    return ((compareValues (vLeft, vRight) (cmp)), env'')  
 
+evalExpArithmeticHelper env e1 e2 op = do
+    --print $ show e1
+    --print $ show e2
+    (vLeft , env' ) <- evalExp env  e1
+    --print $ show vLeft
+    (vRight, env'') <- evalExp env' e2        
+    --print $ show vRight
+    case (vLeft,vRight) of
+        (VDouble d1, VDouble d2) -> return (VDouble (d1             `op`              d2), env'')
+        (VInt i, VDouble d)      -> return (VDouble (fromIntegral i `op`               d), env'')
+        (VDouble d, VInt i)      -> return (VDouble (d              `op` fromIntegral  i), env'')
+        (VInt i1, VInt i2)       -> do 
+           let tempDouble = fromIntegral i1 `op` fromIntegral i2
+           return ((VInt ( floor tempDouble ) ), env'')
+        _                        -> error $ "Error evalExp arithmetic, non exhaustive case: " ++ show (e1, e2) ++  "  " ++ show vLeft ++ "   " ++ show vRight  --should not happen
+    
 
 unwrapInt :: Value -> Integer
 unwrapInt (VInt x) = x
@@ -295,28 +208,13 @@ evalArgs env (e:es) vs = do --warning : list of values will be reversed. will be
         (v, env') <- evalExp env e
         evalArgs env' es (v:vs)
 
---evalArgs env' es (v:vs)
---    where (v, env') = return (evalExp env e )
-
---How do you know if they are free of side effects? What about things like
---  if ( x = 5 < y = 3 )   
---  if ( x++  == y--   ) 
-getValuePair :: IEnv -> Exp -> Exp -> IO (Value, Value)
-getValuePair env e1 e2 = do --error ("getValuePair \n " ++ show e1 ++ "\n " ++ show e2 )
-                            (v1,_) <- evalExp env e1
-                            -- print $ "debug print valuepair v1 : " ++ show v1
-                            --error happens before this line
-                            (v2,_) <- evalExp env e2
-                            -- print $ "debug print valuepair v2 : " ++ show v2
-
-
-                            --error happens before this 
---                            error ("getValuePair \n " ++ show v1 ++ "\n " ++ show v2 )
-                            return (v1,v2)
 
 -- | Compares two numeric values using given comparison function
 -- and return @VInt 1@ for true or @VInt 0@ for false.
--- Returns @VUndef@ if comparison fails.                            
+-- Returns @VUndef@ if comparison fails.    
+
+--Why doesn't this function have a type definition? Ghci says  
+-- (Value, Value) -> (Double -> Double -> Bool) -> Value                        
 compareValues (v1, v2) cmp = case (v1, v2) of
                                (VInt i1,    VInt i2)     -> boolToVal (fromInteger i1
                                                                        `cmp`
@@ -333,30 +231,3 @@ compareValues (v1, v2) cmp = case (v1, v2) of
 applyBool :: Value -> (Bool -> Bool ->  Bool) -> Value -> Value
 applyBool v1 boolOp v2 = boolToVal $ (valToBool v1) `boolOp` (valToBool v2)
 
---compareValues (VDouble d1, VDouble d2) cmp = boolToVal (d1 `cmp` d2)
-
---(v1,v2) comparison = do (v1,
--- type Env = [[(Ident, Value)]]
-
--- emptyEnv :: Env
--- emptyEnv = [[]]
-
-
-
--- For good practice, the code could (should) be rewritten using let for all pure bindings
---http://learnyouahaskell.com/input-and-output
---
---import Data.Char  
---  
---main = do  
---    putStrLn "What's your first name?"  
---    firstName <- getLine  
---    putStrLn "What's your last name?"  
---    lastName <- getLine  
---    let bigFirstName = map toUpper firstName  
---        bigLastName = map toUpper lastName  
---    putStrLn $ "hey " ++ bigFirstName ++ " " ++ bigLastName ++ ", how are you?"  
---See how the I/O actions in the do block are lined up? Also notice how the let is lined up with the I/O actions and the -names of the let are lined up with each other? That's good practice, because indentation is important in Haskell. Now,- we did map toUpper firstName, which turns something like "John" into a much cooler string like "JOHN". We bound that- uppercased string to a name and then used it in a string later on that we printed to the terminal.-
-
---You may be wondering when to use <- and when to use let bindings? Well, remember, <- is (for now) for performing I/O actions and binding their results to names. map toUpper firstName, however, isn't an I/O action. It's a pure expression in Haskell. So use <- when you want to bind results of I/O actions to names and you can use let bindings to bind pure expressions to names. Had we done something like let firstName = getLine, we would have just called the getLine I/O action a different name and we'd still have to run it through a <- to perform it.
---
