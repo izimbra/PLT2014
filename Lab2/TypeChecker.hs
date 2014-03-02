@@ -5,7 +5,7 @@ module TypeChecker where
 import AbsCPP
 import PrintCPP
 import ErrM
-import BuiltInFuncs
+import BuiltIns
 import Environment
 
 
@@ -94,44 +94,50 @@ inferExp env e =
       EId x          -> lookupVarT env x
       EInt _         -> return TInt
       EDouble _      -> return TDouble
-      ENEq  e1 e2    -> inferExp env (ELtEq e1 e2) --
-      EEq   e1 e2    -> inferExp env (ELtEq e1 e2) --identical type check
-      EGt   e1 e2    -> inferExp env (ELtEq e1 e2) --identical type check
-      ELt   e1 e2    -> inferExp env (ELtEq e1 e2) 
-      EGtEq e1 e2    -> inferExp env (ELtEq e1 e2)
-      ELtEq e1 e2    -> do t0 <- inferExp env (EPlus e1 e2)
-                           return TBool
-      EDiv   e1 e2   -> inferExp env (EPlus e1 e2) --identical type check
-      ETimes e1 e2   -> inferExp env (EPlus e1 e2) --identical type check
-      EMinus e1 e2   -> inferExp env (EPlus e1 e2) --identical type check
-      EPlus  e1 e2   -> do t1 <- inferExp env (EAss e1 e2)
-                           if t1 == TBool || t1 == TVoid
-                             then fail "Arithmetic operation on bool or void type" 
-                             else return t1
+      EApp id exps   -> inferFun env e
+      ETrue          -> return TBool
+      EFalse         -> return TBool
+
+      --Assignment and type comparison, re-used many times 
       EAss e1 e2     -> do t1 <- inferExp env e1
                            t2 <- inferExp env e2
                            if t1 == t2 
                                     then return t1
                                     else fail (printTree e1 ++ " has type " ++ printTree t1
                                          ++ " but " ++ printTree e2 
-                                         ++ " has type " ++ printTree t2)
-      EApp id exps   -> inferFun env e
---                           type Sig = ([Type], Type)
+                                         ++ " has type " ++ printTree t2)      
+      --Comparisons
+      ENEq  e1 e2    -> inferExp env (ELtEq e1 e2) --
+      EEq   e1 e2    -> inferExp env (ELtEq e1 e2) -- This will allow comparison between voids, 
+      EGt   e1 e2    -> inferExp env (ELtEq e1 e2) -- Which doesn't have an interpretation
+      ELt   e1 e2    -> inferExp env (ELtEq e1 e2) 
+      EGtEq e1 e2    -> inferExp env (ELtEq e1 e2)
+      ELtEq e1 e2    -> do t0 <- inferExp env (EAss e1 e2)
+                           return TBool
+                           
+      --Arithmetics
+      EDiv   e1 e2   -> inferExp env (EPlus e1 e2) --
+      ETimes e1 e2   -> inferExp env (EPlus e1 e2) --
+      EMinus e1 e2   -> inferExp env (EPlus e1 e2) --
+      EPlus  e1 e2   -> do t1 <- inferExp env (EAss e1 e2)
+                           if t1 == TBool || t1 == TVoid
+                             then fail "Arithmetic operation on bool or void type" 
+                             else return t1
+
+      --Logic And,Or
+      EOr  e1 e2     -> inferExp env (EAnd e1 e2)
       EAnd e1 e2     -> do checkExp env e1 TBool
                            checkExp env e2 TBool
-                           return TBool
-      EOr  e1 e2     -> inferExp env (EAnd e1 e2)
-      ETrue          -> return TBool
-      EFalse         -> return TBool
+                           return TBool      
+      --Incr group
       EPDecr exp     -> inferExp env (EIncr exp)
       EPIncr exp     -> inferExp env (EIncr exp)
+      EDecr exp      -> inferExp env (EIncr exp)
       EIncr exp      -> do t <- inferExp env exp
                            if t == TBool || t == TVoid
                            then fail "Increment operation on bool/void"
-                           else return t
-       
-      
-                           
+                           else return t   
+      --Catch-all, should never happen                          
       _               -> fail ("inferExp has a non exhaustive case pattern \n" 
                                ++ show e ++ " \n  " ++ printTree e) 
 
