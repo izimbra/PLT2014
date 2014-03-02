@@ -103,42 +103,11 @@ evalExp env (EAss (EId id) e2) = do
     return (v', env'')
 
 -- binary arithmetic operations
-evalExp env (EPlus  e1 e2) = do 
-    (v1,v2) <- getValuePair env e1 e2
-    case (v1,v2) of
-        (VInt i1, VInt i2)       -> return (VInt (i1+i2), env)
-        (VDouble d1, VDouble d2) -> return (VDouble (d1+d2), env)
-        (VInt i, VDouble d)      -> return (VDouble (fromIntegral i + d), env)
-        (VDouble d, VInt i)      -> return (VDouble (d + fromIntegral i), env)
-        _                        -> error $ "Error EPlus non exhaustive case: " ++ show (EPlus e1 e2) ++ "    " ++ show v1 ++ "   " ++ show v2
-
-evalExp env (EMinus e1 e2) = do 
-    (v1,v2) <- getValuePair env e1 e2
-    case (v1,v2) of
-        (VInt i1, VInt i2)       -> return (VInt (i1-i2), env)
-        (VDouble d1, VDouble d2) -> return (VDouble (d1-d2), env)
-        (VInt i, VDouble d)      -> return (VDouble (fromIntegral i - d), env)
-        (VDouble d, VInt i)      -> return (VDouble (d - fromIntegral i), env)
-        _                        -> error $ "Error EMinus non exhaustive case: " ++ show (EMinus e1 e2) ++ "    " ++ show v1 ++ "   " ++ show v2
-evalExp env (ETimes e1 e2) = do 
-    (v1,v2) <- getValuePair env e1 e2
-    case (v1,v2) of
-        (VInt i1, VInt i2)       -> return (VInt (i1*i2), env)
-        (VDouble d1, VDouble d2) -> return (VDouble (d1*d2), env)
-        (VInt i, VDouble d)      -> return (VDouble (fromIntegral i * d), env)
-        (VDouble d, VInt i)      -> return (VDouble (d * fromIntegral i), env)
-        _                        -> error $ "Error ETimes non exhaustive case: " ++ show (ETimes e1 e2) ++ "    " ++ show v1 ++ "   " ++ show v2
-                             -- add catch-all ?
-evalExp env (EDiv  e1 e2)  = do 
-    (v1,v2) <- getValuePair env e1 e2
-    case (v1,v2) of
-      --  (VInt i1, VInt i2)       -> return (VDouble (fromInteger i1/fromInteger i2), env)
-        (VInt i1, VInt i2)       -> return (VInt (floor (fromInteger i1/fromInteger i2)), env)
-        (VDouble d1, VDouble d2) -> return (VDouble (d1/d2), env)
-        (VDouble d,  VInt i)     -> return (VDouble (d / (fromIntegral i)),env)
-        (VInt i, VDouble d)      -> return (VDouble (fromIntegral i / d), env)
-        _                        -> error $ "Error EDiv non exhaustive case: " ++ show (EDiv e1 e2) ++ "    " ++ show v1 ++ "   " ++ show v2
-                             -- add catch-all
+evalExp env (EPlus  e1 e2) = evalExpArithmeticHelper env e1 e2 (+)
+evalExp env (EMinus e1 e2) = evalExpArithmeticHelper env e1 e2 (-)
+evalExp env (ETimes e1 e2) = evalExpArithmeticHelper env e1 e2 (*)
+evalExp env (EDiv  e1 e2)  = evalExpArithmeticHelper env e1 e2 (/)
+-- add catch-all
 -- comparison operators
 evalExp env (ELt   e1 e2)     = evalExpCompareHelper env e1 e2 (<)
 evalExp env (EGt   e1 e2)     = evalExpCompareHelper env e1 e2 (>)
@@ -221,7 +190,19 @@ evalExpCompareHelper env e1 e2 cmp = do
     (vRight, env'') <- evalExp env' e2
     return ((compareValues (vLeft, vRight) (cmp)), env'')  
 
-
+evalExpArithmeticHelper env e1 e2 op = do
+    (vLeft , env' ) <- evalExp env  e1
+    (vRight, env'') <- evalExp env' e2        
+    case (vLeft,vRight) of
+        (VDouble d1, VDouble d2) -> return (VDouble (d1             `op`              d2), env'')
+        (VInt i, VDouble d)      -> return (VDouble (fromIntegral i `op`               d), env'')
+        (VDouble d, VInt i)      -> return (VDouble (d              `op` fromIntegral  i), env'')
+        (VInt i1, VInt i2)       -> do 
+           let tempDouble = fromIntegral i1 `op` fromIntegral i2
+           return ((VInt ( floor tempDouble ) ), env'')
+--        return (VInt    (i1             `op`              i2), env)
+        _                        -> error $ "Error evalExp arithmetic, non exhaustive case: " ++ show (e1, e2) ++  "  " ++ show vLeft ++ "   " ++ show vRight
+    
 
 unwrapInt :: Value -> Integer
 unwrapInt (VInt x) = x
