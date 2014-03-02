@@ -29,20 +29,6 @@ execMain (iSigTab, conts) = case M.lookup (Id "main") iSigTab of
                                     Just (Fun _ _ _ stms)  -> do --print $ show (iSigTab, conts)
                                                                  ienv <- execStms (iSigTab, conts) stms
                                                                  return ()
-
---execfun in itself is not needed since it will not happen
---what will happen is a function call as a statement or as an expression
-execFun :: Id -> IEnv -> [Value] -> IO()
-execFun id (iSigTab, conts) vals = case M.lookup id iSigTab of
-                                     Nothing -> error "function not found" -- should never happen since we have already typechecked, but case is needed because of lookup
-                                     Just (Fun typ _ args stms) -> return ()
-                                     --skapa context utifrån argumenten till funktionen
-                                     --kör execStms
-                                     --ska execFun returna ett IO Value?
-
-
--- STOP PASTE IN
-
 execStms :: IEnv -> [Stm] -> IO IEnv
 execStms env [] = return env
 execStms env ((SReturn exp):stms) = do (v,env') <- evalExp env exp --evaluate exp
@@ -51,22 +37,16 @@ execStms env ((SReturn exp):stms) = do (v,env') <- evalExp env exp --evaluate ex
                                        
 execStms env (st:stms) = do env' <- execStm env st
                             execStms env' stms
---checkStm :: Env -> Stm -> Err Env
+
 execStm :: IEnv -> Stm -> IO IEnv
---checkStm env s = case s of
 execStm env s = case s of
-    SDecl _ x          -> return (addVar env x)  -- ORIGINAL CODE ONLY THIS LINE
+    SDecl _ x          -> return (addVar env x)  
     SDecls _ xs        -> return (addVars env xs)
-    SAss x e           -> do -- print $ "DP : SAss : " ++ show (SAss x e)
-                             let (funs, conts) = env
-                             -- print $ "DP : SAss2 : conts before " ++ show conts
+    SAss x e           -> do let (funs, conts) = env
                              (v,env' ) <- evalExp env e
                              let (funs', conts') = env'
-                             -- print $ "DP : SAss3 : conts after  " ++ show conts'
                              eee <- return (setVar env' x v)
                              let (funs'', conts'' ) = eee
-                             -- print $ "DP : SAss4 : conts after after " ++ show conts''
-                             --return (setVar env' x v)
                              return eee
     SBlock stms        -> do env' <- execStms (enterScope env) stms
                              return (leaveScope env')
@@ -78,21 +58,13 @@ execStm env s = case s of
                              if (b==1)
                                    then execStm env' s1
                                    else execStm env' s2
-    SWhile exp stm     -> do -- print $ "debug SWhile EXP: " ++ show exp
-                             -- print $ "debug SWhile STM: " ++ show stm
-                             let (funs, conts) = env 
-                             -- print $ "debug SWhile: " ++  show conts
+    SWhile exp stm     -> do let (funs, conts) = env 
                              ((VInt b) , env') <- evalExp env exp
-                             -- print $ "debug SHile : " ++ show b
                              let (f', c') = env'
-                             -- print $ "debug SWhile : " ++ show c'
                              if (b/=0)
                                    then do env'' <- execStm env' stm
                                            execStm env'' (SWhile exp stm)
                                    else return env'
-    --   SPrint e        -> do print (evalExp env e)
-    --                         return env
-    --SReturn exp   return statement has special treatment in execStms
     _       -> error ("not finished yet in execStm: \n" ++ show s)
       
 
@@ -104,13 +76,10 @@ evalExp env (ETrue )    = return (VInt 1,    env)
 evalExp env (EFalse)    = return (VInt 0,    env)
 evalExp env (EInt i)    = return (VInt i,    env)
 evalExp env (EDouble d) = return (VDouble d, env)
--- variables, assignments, function calls
---evalExp env EId x       = evalVar env x 
 
-evalExp env (EId id) = return (evalVar env id  , env)--error ("evalExp with id " ++ show id) -- 
+evalExp env (EId id) = return (evalVar env id  , env)
 
 evalExp env (EPDecr (EId id)) = case (evalVar env id) of  --pattern matching directly on variable. The only cases we will get are for variables, as told in the instructions. And it could be changed in the grammar, but at this point feels too risky to change the grammar, so I made this shortcut
-    --(vtyp i) -> return (vtyp i , setVar env id (vtyp (i+1))) --this doesn't work, but how can it be made to work? would be nice
     (VInt i)    -> return (VInt i , setVar env id (VInt (i-1)))
     (VDouble i) -> return (VDouble i , setVar env id (VDouble (i-1)))
 
@@ -132,16 +101,6 @@ evalExp env (EAss (EId id) e2) = do
     let (funs'', conts'') =  env''
     -- print $ "DP : evalExp EAss3 :" ++ show v ++ " , " ++ show conts''
     return (v', env'')
-
---evalExp env (EPDecr id) = return ((vtyp, v), env') 
---    where 
---        (vtyp, v) = evalVar env id
---        env' = setVar env id (vtyp (v+1))
---case (evalVar env id) of
-  --  (VInt i)    -> 
-    --(VDouble i) ->    
--- -- Err "uninitialized variable x"
--- unary operations w/side effects   --temp commented out because it doesnt compile
 
 -- binary arithmetic operations
 evalExp env (EPlus  e1 e2) = do 
