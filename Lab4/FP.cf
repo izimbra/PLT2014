@@ -1,4 +1,13 @@
-EVar. Exp3 ::=Ident;
+Prog. Program ::= [Def] ;
+
+Fun.  Def     ::= Ident [Arg] "=" Exp ;
+
+separator Arg " " ;
+terminator Def ";" ;
+
+Arg.  Arg  ::= Ident;
+
+EVar. Exp3 ::= Ident;
 EInt. Exp3 ::= Integer;
 EApp. Exp2 ::= Exp2 Exp3;
 EAdd. Exp1 ::= Exp1 "+" Exp2;
