@@ -2,7 +2,7 @@ Program. Program ::= [Def] ;
 
 Fun.  Def     ::= Name [Arg] "=" Exp ;
 
-separator Arg " " ;
+separator Arg "" ;
 terminator Def ";" ;
 
 Name. Name ::= Ident;
