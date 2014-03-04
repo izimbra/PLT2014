@@ -7,3 +7,5 @@ ELt.  Exp1 ::= Exp1 "<" Exp2;
 EIf.  Exp  ::= "if" Exp1 "then" Exp1 "else" Exp;
 ELmb. Exp  ::= "\\" Ident "->" Exp; 
 coercions Exp 3;
+
+comment "--" ;
