@@ -1,0 +1,9 @@
+
+  Exp3 ::= Ident
+  Exp3 ::= Integer
+  Exp2 ::= Exp2 Exp3
+  Exp1 ::= Exp1 "+" Exp2
+  Exp1 ::= Exp1 "-" Exp2
+  Exp1 ::= Exp1 "<" Exp2
+  Exp  ::= "if" Exp1 "then" Exp1 "else" Exp
+  Exp  ::= "\\" Ident "->" Exp
