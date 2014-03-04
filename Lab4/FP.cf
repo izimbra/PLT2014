@@ -1,4 +1,4 @@
-Prog. Program ::= [Def] ;
+Program. Program ::= [Def] ;
 
 Fun.  Def     ::= Ident [Arg] "=" Exp ;
 
