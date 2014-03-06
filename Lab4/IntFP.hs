@@ -5,26 +5,39 @@ module Interpreter where
 
 -- Closure can be specified in the grammar
 
+import Data.Map
+
 import AbsFP
 import PrintFP
 
-data Funs = 
-data Vars = Map Ident Value
+-- | Function symbol table
+data Funs = Map Ident Exp
+
+-- | Local variable storage
+data Env = Map Ident Value
 
 data Value = VInt Int
            | VClosure Exp Env  -- or just closures
 
 
--- lookup
-   -- overshadowing
+-- lookup :: Ident -> Env -> Value
+   -- overshadowing: function < variable < inner variable
                         
--- update
+-- update :: Env -> Ident -> Value
 
 
--- eval
+
+-- interpret
    -- 1. build function table
-                        
-   -- 2. evaluate main
+funs :: [Def] -> Funs
+
+
+  
+
+   -- 2. evaluate `main`
+
+-- | Evaluate an expression
+eval :: Exp -> Env -> Value
 eval exp env =
   case exp of
     -- integer literals

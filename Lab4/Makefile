@@ -1,3 +1,5 @@
+all: bnfc comp
+
 bnfc:
 	bnfc FP.cf
 	happy -gca ParFP.y
@@ -5,8 +7,6 @@ bnfc:
 
 comp:
 	ghc --make lab4.hs -o lab4
-
-all: bnfc comp
 
 clean:
 	-rm -f lab4
