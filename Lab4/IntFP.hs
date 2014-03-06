@@ -14,9 +14,9 @@ import PrintFP
 data Funs = Map Ident Exp
 
 -- | Local variable storage
-data Env = Map Ident Value
+type Env = Map Ident Value
 
-data Value = VInt Int
+type Value = VInt Int
            | VClosure Exp Env  -- or just closures
 
 
@@ -32,6 +32,25 @@ data Value = VInt Int
 funs :: [Def] -> Funs
 
 
+fun1 :: Def ->  (String,Exp)
+fun1 (Fun (Ident f) args exp) = do
+    let re = reverse args
+    let lambda = fun1helper re exp
+    (f,lambda)
+    
+
+
+--fun1 :: Def ->  Exp
+--fun1 (Fun id args exp) = do
+--    let re = reverse args
+--    fun1helper re exp
+    
+fun1helper :: [Ident] -> Exp -> Exp
+fun1helper [] exp = exp
+fun1helper (id:ids) exp = do
+    let einner = EAbs id exp
+    fun1helper ids einner
+  
   
 
    -- 2. evaluate `main`
