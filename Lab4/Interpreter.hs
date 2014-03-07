@@ -17,7 +17,7 @@ type Name = String
 type Funs = M.Map Name Exp
 
 -- | Local variable storage
-type Vars = M.Map Ident Value
+type Vars = M.Map Name Value
 
 
 data Value = VInt Integer
@@ -37,7 +37,13 @@ interpret (Prog defs) = let funs = funTable defs
                               _                  -> error "Bad main function"
 
 lookup :: Name -> (Funs,Vars) -> Value
-lookup = undefined
+lookup id (funs,vars) =
+  case M.lookup id vars of
+    Just v  -> v
+    Nothing -> case M.lookup id funs of
+                 Just exp -> VClosure exp vars
+                 Nothing  -> error "Lookup failed"
+            
    -- overshadowing: function < variable < inner variable
    -- error: not found                              
                         
