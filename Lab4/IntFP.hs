@@ -63,6 +63,10 @@ eval exp (funs,vars) =
   case exp of
     -- integer literals
     EInt i -> VInt i -- optional empty env.
+    EAdd e1 e2 -> let (VInt v1) = eval e1 (funs, vars)
+                      (VInt v2) = eval e2 (funs, vars)
+                  in  (VInt (v1+v2))
+                  
     -- variables
     -- EVar
     
