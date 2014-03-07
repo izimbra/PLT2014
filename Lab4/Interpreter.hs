@@ -34,12 +34,12 @@ interpret (Prog defs) = let funs = funTable defs
                               case main of
                                 VClosure exp vars' -> let v = eval exp (funs,vars')
                                                     in  do case v of
-                                                             VInt i -> putStrLn $ show i
+                                                             EInt i -> putStrLn $ show i
                                                              _      -> error "Bad result"
                                                            
                                 _                  -> error "Bad main function"
 
-lookup :: Name -> (Funs,Vars) -> Value
+lookup :: Name -> (Funs,Vars) -> Exp
 lookup id (funs,vars) =
   case M.lookup id vars of
     Just v  -> v
@@ -53,6 +53,43 @@ lookup id (funs,vars) =
 -- update :: Env -> Ident -> Value
 
 
+  
+   -- 2. evaluate `main`
+
+-- | Evaluate an expression
+eval :: Exp -> (Funs,Vars) -> Exp
+eval exp (funs,vars) =
+  case exp of
+    -- integer literals
+    EInt i -> exp -- base case -- optional empty env.
+    EAdd e1 e2 -> let (EInt v1) = eval e1 (funs, vars)
+                      (EInt v2) = eval e2 (funs, vars)
+                  in  (EInt (v1+v2))
+    EApp e1 e2 -> let f = eval e1
+                      a = eval e2
+                  in  case f of
+                        -- match on closure or ident
+
+                        ECls Exp env -> ECls Exp update env
+                        _            -> error "Bad app"
+
+    -- variables
+                            
+    EId name -> let exp = lookup name funs
+                in  ECls exp M.empty
+                    -- construct empty env
+    
+    -- EAdd
+    -- ESub
+    -- ELt
+    -- EIf
+    -- EApp
+    -- call-by-name
+    -- call-by-value
+
+    ECls exp env -> case exp of
+                      EAbs -> undefined -- update env, shrink lambda
+                      _    -> eval exp
 
 -- | Constructs function symbol table             
 funTable :: [Def] -> Funs
@@ -70,27 +107,3 @@ funTable defs = let kas = map f2abs defs
     funhelper (id:ids) exp = 
       let einner = EAbs id exp
       in funhelper ids einner
-  
-   -- 2. evaluate `main`
-
--- | Evaluate an expression
-eval :: Exp -> (Funs,Vars) -> Value
-eval exp (funs,vars) =
-  case exp of
-    -- integer literals
-    EInt i -> VInt i -- optional empty env.
-    EAdd e1 e2 -> let (VInt v1) = eval e1 (funs, vars)
-                      (VInt v2) = eval e2 (funs, vars)
-                  in  (VInt (v1+v2))
-    --EApp e1 e2 ->              
-    -- variables
-    -- EVar
-    
-    -- EAdd
-    -- ESub
-    -- ELt
-    -- EIf
-    -- ELmb
-    -- EApp
-    -- call-by-name
-    -- call-by-value
