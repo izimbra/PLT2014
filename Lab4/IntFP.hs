@@ -5,71 +5,73 @@ module Interpreter where
 
 -- Closure can be specified in the grammar
 
-import Data.Map
+import qualified Data.Map as M
 
 import AbsFP
 import PrintFP
 
+type Name = String
+
 -- | Function symbol table
-data Funs = Map Ident Exp
+type Funs = M.Map Name Exp
 
 -- | Local variable storage
-type Env = Map Ident Value
-
-type Value = VInt Int
-           | VClosure Exp Env  -- or just closures
+type Vars = M.Map Ident Value
 
 
--- lookup :: Ident -> Env -> Value
+data Value = VInt Integer
+           | VClosure Exp Vars  -- or just closures
+
+
+interpret :: Program -> IO Value
+interpret (Prog defs) = let funs = funTable defs
+                            vars = M.empty
+                            main = lookup "main" (funs,vars)
+                        in  do eval 
+
+-- lookup :: Ident -> (Funs,Vars) -> Value
    -- overshadowing: function < variable < inner variable
+   -- error: not found                              
                         
 -- update :: Env -> Ident -> Value
 
 
-
 -- interpret
    -- 1. build function table
-funs :: [Def] -> Funs
-
-
-fun1 :: Def ->  (String,Exp)
-fun1 (Fun (Ident f) args exp) = do
-    let re = reverse args
-    let lambda = fun1helper re exp
-    (f,lambda)
-    
-
-
---fun1 :: Def ->  Exp
---fun1 (Fun id args exp) = do
---    let re = reverse args
---    fun1helper re exp
-    
-fun1helper :: [Ident] -> Exp -> Exp
-fun1helper [] exp = exp
-fun1helper (id:ids) exp = do
-    let einner = EAbs id exp
-    fun1helper ids einner
+-- | Constructs function symbol table             
+funTable :: [Def] -> Funs
+funTable defs = let kas = map f2abs defs
+                in M.fromList kas  
+--  where
+    -- | Converts function definition to a lambda absraction
+f2abs :: Def -> (Name,Exp)
+f2abs (Fun (Ident f) args exp) = 
+      let lambda = funhelper (reverse args) exp
+      in (f,lambda)
+  where    
+    funhelper :: [Ident] -> Exp -> Exp
+    funhelper [] exp = exp
+    funhelper (id:ids) exp = 
+      let einner = EAbs id exp
+      in funhelper ids einner
   
-  
-
    -- 2. evaluate `main`
 
 -- | Evaluate an expression
-eval :: Exp -> Env -> Value
-eval exp env =
+eval :: Exp -> (Funs,Vars) -> Value
+eval exp (funs,vars) =
   case exp of
     -- integer literals
     EInt i -> VInt i -- optional empty env.
     -- variables
-    EVar
+    -- EVar
     
-    EAdd
-    ESub
-    ELt
-    EIf
-    ELmb
-    EApp
+    -- EAdd
+    -- ESub
+    -- ELt
+    -- EIf
+    -- ELmb
+    -- EApp
     -- call-by-name
     -- call-by-value
     
