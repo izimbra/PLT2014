@@ -5,6 +5,7 @@ module Interpreter where
 
 -- Closure can be specified in the grammar
 
+import Prelude hiding (lookup)
 import qualified Data.Map as M
 
 import AbsFP
@@ -23,13 +24,20 @@ data Value = VInt Integer
            | VClosure Exp Vars  -- or just closures
 
 
-interpret :: Program -> IO Value
+interpret :: Program -> IO ()
 interpret (Prog defs) = let funs = funTable defs
                             vars = M.empty
                             main = lookup "main" (funs,vars)
-                        in  do eval 
+                        in  case main of
+                              VClosure exp vars' -> let v = eval exp (funs,vars')
+                                                    in  do case v of
+                                                             VInt i -> putStrLn $ show i
+                                                             _      -> error "Bad result"
+                                                             
+                              _                  -> error "Bad main function"
 
--- lookup :: Ident -> (Funs,Vars) -> Value
+lookup :: Name -> (Funs,Vars) -> Value
+lookup = undefined
    -- overshadowing: function < variable < inner variable
    -- error: not found                              
                         
