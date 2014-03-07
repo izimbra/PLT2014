@@ -44,19 +44,18 @@ lookup = undefined
 -- update :: Env -> Ident -> Value
 
 
--- interpret
-   -- 1. build function table
+
 -- | Constructs function symbol table             
 funTable :: [Def] -> Funs
 funTable defs = let kas = map f2abs defs
                 in M.fromList kas  
---  where
+  where
     -- | Converts function definition to a lambda absraction
-f2abs :: Def -> (Name,Exp)
-f2abs (Fun (Ident f) args exp) = 
+    f2abs :: Def -> (Name,Exp)
+    f2abs (Fun (Ident f) args exp) = 
       let lambda = funhelper (reverse args) exp
       in (f,lambda)
-  where    
+ 
     funhelper :: [Ident] -> Exp -> Exp
     funhelper [] exp = exp
     funhelper (id:ids) exp = 
