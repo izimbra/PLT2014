@@ -20,6 +20,7 @@ check s = case pProgram (myLexer s) of
             Ok  tree -> do 
                         putStrLn ( show tree)
                         putStrLn "Parse OK"
+                        interpret tree
                         --case typecheck tree of
                         --  Bad err -> do putStrLn "TYPE ERROR"
                         --                putStrLn err

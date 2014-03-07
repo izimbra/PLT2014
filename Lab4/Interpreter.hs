@@ -25,16 +25,19 @@ data Value = VInt Integer
 
 
 interpret :: Program -> IO ()
-interpret (Prog defs) = let funs = funTable defs
+interpret (Prog defs) = let funs = funTable defs                            
                             vars = M.empty
                             main = lookup "main" (funs,vars)
-                        in  case main of
-                              VClosure exp vars' -> let v = eval exp (funs,vars')
+                        in do putStrLn ""
+                              putStrLn $ show funs  
+                              putStrLn ""
+                              case main of
+                                VClosure exp vars' -> let v = eval exp (funs,vars')
                                                     in  do case v of
                                                              VInt i -> putStrLn $ show i
                                                              _      -> error "Bad result"
-                                                             
-                              _                  -> error "Bad main function"
+                                                           
+                                _                  -> error "Bad main function"
 
 lookup :: Name -> (Funs,Vars) -> Value
 lookup id (funs,vars) =
@@ -79,7 +82,7 @@ eval exp (funs,vars) =
     EAdd e1 e2 -> let (VInt v1) = eval e1 (funs, vars)
                       (VInt v2) = eval e2 (funs, vars)
                   in  (VInt (v1+v2))
-                  
+    --EApp e1 e2 ->              
     -- variables
     -- EVar
     
@@ -91,4 +94,3 @@ eval exp (funs,vars) =
     -- EApp
     -- call-by-name
     -- call-by-value
-    
