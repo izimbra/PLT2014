@@ -80,9 +80,10 @@ eval exp (funs,vars) =
 --                        _            -> error "Bad app"
 
     -- variables
-                            
---    EId name -> let exp = lookup name funs
---                in  ECls exp M.empty
+    EId (Ident name) -> let exp = lookup name (funs,vars)
+                        in exp                        
+    --EId name -> let exp = lookup name funs
+    --            in  exp --ECls exp M.empty
 --                    -- construct empty env
     
     -- EAdd
