@@ -47,7 +47,7 @@ evalex e f = case e of
     ESub e1 e2 -> vBinArit  (vBinEval e1 e2 f) (-)
     ELt  e1 e2 -> let (VInt v1, VInt v2) = vBinEval e1 e2 f
                   in  VInt (boolint ( v1 < v2))
-    _      -> error "evalex non exhaustive"
+    _      -> error $ "evalex non exhaustive: " ++ show e
       
 lookup :: Name -> (Funs,Vars) -> Value
 lookup id (funs,vars) =
