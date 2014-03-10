@@ -83,8 +83,8 @@ eval exp (funs,vars) =
     EIf con tru fal -> case eval con (funs,vars) of
                         VInt 1 -> eval tru (funs,vars)
                         VInt 0 -> eval fal (funs,vars)
-    ELt e1 e2 -> let (VInt v1) = eval e1 (funs,vars)
-                     (VInt v2) = eval e2 (funs,vars)
+    ELt e1 e2 -> let (VInt v1) = fromCls ( eval e1 (funs,vars)) (funs,vars)
+                     (VInt v2) = fromCls ( eval e2 (funs,vars)) (funs,vars)
                  in if (v1 < v2)
                     then VInt 1
                     else VInt 0
