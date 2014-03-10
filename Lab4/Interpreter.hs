@@ -60,7 +60,7 @@ lookup id (funs,vars) =
             
 fromCls :: Value -> (Funs,Vars) -> Value
 fromCls (VInt i) (f,v) = VInt i
-fromCls (VClosure exp vars) (f,v) = eval exp (f,v) 
+fromCls (VClosure exp vars) (f,v) = fromCls (eval exp (f,v)) (f,v) 
    -- overshadowing: function < variable < inner variable
    -- error: not found                              
 -- | Evaluate an expression
