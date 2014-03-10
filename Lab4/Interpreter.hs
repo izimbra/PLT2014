@@ -79,6 +79,7 @@ eval exp (funs,vars) =
                         in case v of 
                            VInt i -> v
                            VClosure ex vars' -> eval ex (funs,vars')
+    EAbs (Ident name) exp -> eval exp (funs, vars)
     EApp e1 e2 -> let
             v = eval e2 (funs, vars) --value of exp to input into f 
             f = eval e1 (funs, vars)
