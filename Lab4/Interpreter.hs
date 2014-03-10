@@ -1,33 +1,19 @@
 module Interpreter where
-
--- We need to use separate environments phi and gamma,
--- or use closures (one env. is enough in this case)
-
--- Closure can be specified in the grammar
-
 import Prelude hiding (lookup)
 import qualified Data.Map as M
-
 import AbsFP
 import PrintFP
-
 type Name = String
-
--- | Function symbol table
 type Funs = M.Map Name Exp
-
--- | Local variable storage
-type Vars = M.Map Name Value
-
+type Vars = M.Map Name Value --only for closures
 
 data Value = VInt Integer
-           | VClosure Exp Vars  -- or just closures
+           | VClosure Exp Vars
   deriving (Eq,Ord,Show)
 
 interpret :: Program -> IO ()
-interpret (Prog defs) = let funs = funTable defs                            
-                            vars = M.empty
-                            main = lookup "main" (funs,vars)
+interpret (Prog defs) = let funs = funTable defs
+                            main = lookup "main" (funs,M.empty)
                         in do putStrLn ""
                               putStrLn $ show funs  
                               putStrLn $ "show main:"
@@ -35,18 +21,8 @@ interpret (Prog defs) = let funs = funTable defs
                               putStrLn ""
                               putStrLn "Execution of main:"
                               putStrLn ""
-                              case main of
-                                VInt i -> evalClosure main (funs,vars) -- prints result
-                                (VClosure exp _) -> let v = eval exp (funs,vars)
-                                                    in evalClosure v (funs,vars)
+                              --putStrLn $ show ( eval main (funs, M.empty))
   
-evalClosure :: Value -> (Funs, Vars) ->  IO ()
-evalClosure (VInt i) _ = putStrLn $ show i
-                         
-evalClosure (VClosure exp vars) (funs,vars') = let v = eval exp (funs, vars)
-                                         in evalClosure v (funs, vars)
-     --       _                  -> error "Bad main function"
-
 lookup :: Name -> (Funs,Vars) -> Value
 lookup id (funs,vars) =
   case M.lookup id vars of
@@ -79,7 +55,7 @@ eval exp (funs,vars) =
                   in  (VInt (v1-v2))
     EId (Ident name) ->  lookup name (funs, vars) 
                       
-    EAbs (Ident name) exp -> eval exp (funs, vars)
+    EAbs (Ident name) ex -> VClosure exp M.empty
     EIf con tru fal -> case eval con (funs,vars) of
                         VInt 1 -> eval tru (funs,vars)
                         VInt 0 -> eval fal (funs,vars)
@@ -102,7 +78,9 @@ eval exp (funs,vars) =
                         let vars'' = M.insert id v vars'
                         in VClosure ex vars''
 --                        in eval ex (funs, vars'') 
-                    --VClosure ex vars' -> eval ex (funs, vars')
+                    --VClosure ex vars' -> 
+                       
+                    --eval ex (funs, vars')
                     _ -> error $ "Eval EApp not exhaustive: " ++ show e1
     _ -> error $ "Eval not exhaustive: " ++ show exp
     -- call-by-name
