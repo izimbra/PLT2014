@@ -30,7 +30,11 @@ interpret (Prog defs) = let funs = funTable defs
                             main = lookup "main" (funs,vars)
                         in do putStrLn ""
                               putStrLn $ show funs  
+                              putStrLn $ "show main:"
+                              putStrLn $ show main
+                              putStrLn ""
                               putStrLn "Execution of main:"
+                              putStrLn ""
                               case main of 
                                 VInt i -> putStrLn $ show i
                                 VClosure expmain _ -> 
@@ -59,13 +63,6 @@ lookup id (funs,vars) =
             
    -- overshadowing: function < variable < inner variable
    -- error: not found                              
-                        
--- update :: Env -> Ident -> Value
-
-
-
-   -- 2. evaluate `main`
-
 -- | Evaluate an expression
 eval :: Exp -> (Funs,Vars) -> Value
 eval exp (funs,vars) =
@@ -82,14 +79,27 @@ eval exp (funs,vars) =
                         in case v of 
                            VInt i -> v
                            VClosure ex vars' -> eval ex (funs,vars')
-    EApp (EId (Ident name)) e -> 
-         let f' = lookup name (funs, vars)
-             e' = eval e (funs, vars)
-         in case f' of
-           VInt i -> f'
-           VClosure (EAbs (Ident id) ex) vars' -> 
-             let vars'' = M.insert id e' vars'
-             in  eval ex (funs, vars'')
+    EApp e1 e2 -> let
+            v = eval e2 (funs, vars) --value of exp to input into f 
+            f = eval e1 (funs, vars)
+       -- case e1 of
+       --  (EId (Ident name)) ->
+       --     let f = lookup name (funs,vars)
+       --     in case f of
+       --         VInt i -> 
+                  in case f of
+                    VInt i -> VInt i
+                    VClosure (EAbs (Ident id) ex) vars' ->
+                        let vars'' = M.insert id v vars'
+                        in eval ex (funs, vars'') 
+ --   EApp (EId (Ident name)) e -> 
+ --        let f' = lookup name (funs, vars)
+ --            e' = eval e (funs, vars)
+ --        in case f' of
+ --          VInt i -> f'
+ --          VClosure (EAbs (Ident id) ex) vars' -> 
+ --            let vars'' = M.insert id e' vars'
+ --            in  eval ex (funs, vars'')
     
                             --case ex of
                                 --    EAbs id  
