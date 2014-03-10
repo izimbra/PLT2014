@@ -26,18 +26,27 @@ interpret (Prog defs) = let funs = funTable defs
                               putStrLn ""
                               putStrLn $ show (evalex expMain funs)
                               --putStrLn $ show ( eval main (funs, M.empty))
-vArithm :: Exp -> Exp -> Funs -> Oper -> Value                              
-vArithm e1 e2 f op = 
-    let (VInt v1) = evalex e1 f
-        (VInt v2) = evalex e2 f
-    in  VInt (v1 `op` v2)
                               
+vBinEval :: Exp -> Exp -> Funs -> (Value, Value)
+vBinEval e1 e2 f  = 
+    let (VInt v1) = evalex e1 f  --force type checking for VInt only
+        (VInt v2) = evalex e2 f  --,this should be complete evaluation
+    in  ((VInt v1),(VInt v2))
                               
+vBinArit :: (Value, Value) -> Oper -> Value
+vBinArit (VInt i1, VInt i2) op  = VInt (i1 `op` i2)  -- add or sub
+    
+boolint :: Bool -> Integer
+boolint True  = 1
+boolint False = 0
+                          
 evalex :: Exp -> Funs -> Value
 evalex e f = case e of
     EInt i -> VInt i
-    EAdd e1 e2 -> vArithm e1 e2 f (+)    --they are completely independent, and must be evalable down to a number each        
-    ESub e1 e2 -> vArithm e1 e2 f (-)       
+    EAdd e1 e2 -> vBinArit  (vBinEval e1 e2 f) (+)    --they are completely independent, and must be evalable down to a number each        
+    ESub e1 e2 -> vBinArit  (vBinEval e1 e2 f) (-)
+    ELt  e1 e2 -> let (VInt v1, VInt v2) = vBinEval e1 e2 f
+                  in  VInt (boolint ( v1 < v2))
     _      -> error "evalex non exhaustive"
       
 lookup :: Name -> (Funs,Vars) -> Value
