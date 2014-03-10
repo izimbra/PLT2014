@@ -81,8 +81,9 @@ eval exp (funs,vars) =
     EId (Ident name) -> let v = lookup name (funs, vars)
                         in case v of 
                            VInt i -> v
-                           VClosure ex _ -> eval ex (funs,vars)
-    _          -> error $ show exp
+                           VClosure ex vars' -> eval ex (funs,vars')
+   
+    _          -> error $ "Error not exhaustive case: Eval fail on: " ++ show exp
     
 --    EApp e1 e2 -> undefined --case e1 of
                     --EId (Ident name) -> let e1' = eval e1 (funs,vars)
