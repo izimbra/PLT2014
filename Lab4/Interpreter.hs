@@ -78,12 +78,18 @@ eval exp (funs,vars) =
                       (VInt v2) = eval e2 (funs, vars)
                   in  (VInt (v1-v2))
     EId (Ident name) ->  lookup name (funs, vars) 
-                       --let v = lookup name (funs, vars)
-                       -- in case v of 
-                       --    VInt i -> v
-                       --    VClosure ex vars' -> eval ex (funs,vars')
+                      
     EAbs (Ident name) exp -> eval exp (funs, vars)
-  --  EApp e1 e2 -> error $  " Eval EApp e1 e2: " ++ show e1 ++ "   " ++ show e2
+    EIf con tru fal -> case eval con (funs,vars) of
+                        VInt 1 -> eval tru (funs,vars)
+                        VInt 0 -> eval fal (funs,vars)
+    ELt e1 e2 -> let (VInt v1) = eval e1 (funs,vars)
+                     (VInt v2) = eval e2 (funs,vars)
+                 in if (v1 < v2)
+                    then VInt 1
+                    else VInt 0
+                                         
+                        
     EApp e1 e2 -> let
 --    _ ->    let
             v = eval e2 (funs, vars) --value of exp to input into f 
@@ -96,6 +102,9 @@ eval exp (funs,vars) =
                         let vars'' = M.insert id v vars'
                         in VClosure ex vars''
 --                        in eval ex (funs, vars'') 
+                    --VClosure ex vars' -> eval ex (funs, vars')
+                    _ -> error $ "Eval EApp not exhaustive: " ++ show e1
+    _ -> error $ "Eval not exhaustive: " ++ show exp
     -- call-by-name
     -- call-by-value
 
