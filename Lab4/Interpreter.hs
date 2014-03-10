@@ -82,7 +82,18 @@ eval exp (funs,vars) =
                         in case v of 
                            VInt i -> v
                            VClosure ex vars' -> eval ex (funs,vars')
-   
+    EApp (EId (Ident name)) e -> 
+         let f' = lookup name (funs, vars)
+             e' = eval e (funs, vars)
+         in case f' of
+           VInt i -> f'
+           VClosure (EAbs (Ident id) ex) vars' -> 
+             let vars'' = M.insert id e' vars'
+             in  eval ex (funs, vars'')
+    
+                            --case ex of
+                                --    EAbs id  
+--           error $ show ex --undefined --VClosure ex 
     _          -> error $ "Error not exhaustive case: Eval fail on: " ++ show exp
     
 --    EApp e1 e2 -> undefined --case e1 of
