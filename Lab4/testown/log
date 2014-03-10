@@ -1,0 +1,12 @@
+Prog [Fun (Ident "apa") [Ident "x"] (EId (Ident "x")),Fun (Ident "main") [] (EApp (EId (Ident "apa")) (EInt 3))]
+Parse OK
+
+fromList [("apa",EAbs (Ident "x") (EId (Ident "x"))),("main",EApp (EId (Ident "apa")) (EInt 3))]
+show main:
+VClosure (EApp (EId (Ident "apa")) (EInt 3)) (fromList [])
+
+Execution of main:
+
+lab4:  Eval EApp e1 e2: EId (Ident "apa")   EInt 3
+
+
