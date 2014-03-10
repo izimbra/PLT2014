@@ -35,11 +35,17 @@ interpret (Prog defs) = let funs = funTable defs
                               putStrLn ""
                               putStrLn "Execution of main:"
                               putStrLn ""
-                              case main of 
-                                VInt i -> putStrLn $ show i
-                                VClosure expmain _ -> 
-                                    putStrLn $ show $ 
-                                    eval expmain (funs,vars) 
+                              evalClosure main (funs, vars)
+  
+evalClosure :: Value -> (Funs, Vars) ->  IO ()
+evalClosure (VInt i) _ = putStrLn $ show i
+                         
+evalClosure (VClosure exp vars) (funs,vars') = let v = eval exp (funs, vars)
+                                         in evalClosure v (funs, vars)
+                                    
+--                                    case (eval expmain (funs,vars)) of  
+--                                       VInt ii -> putStrLn $ show i 
+--                                       CVlosure eval expmain (funs,vars) 
                               --let v = eval main (funs,vars)
                               --putStrLn $ show v
                               --putStrLn $ show (eval main (funs,vars))
@@ -59,7 +65,7 @@ lookup id (funs,vars) =
                  --VClosure exp vars -> 
     Nothing -> case M.lookup id funs of
                  Just exp -> VClosure exp M.empty
-                 Nothing  -> error "Lookup failed"
+                 Nothing  -> error $ "Lookup failed. Looking for id:  " ++ show id ++ " funs:  " ++ show funs ++ " Vars : " ++  show vars
             
    -- overshadowing: function < variable < inner variable
    -- error: not found                              
@@ -75,65 +81,25 @@ eval exp (funs,vars) =
     ESub e1 e2 -> let (VInt v1) = eval e1 (funs, vars)
                       (VInt v2) = eval e2 (funs, vars)
                   in  (VInt (v1-v2))
-    EId (Ident name) -> let v = lookup name (funs, vars)
-                        in case v of 
-                           VInt i -> v
-                           VClosure ex vars' -> eval ex (funs,vars')
+    EId (Ident name) ->  lookup name (funs, vars) 
+                       --let v = lookup name (funs, vars)
+                       -- in case v of 
+                       --    VInt i -> v
+                       --    VClosure ex vars' -> eval ex (funs,vars')
     EAbs (Ident name) exp -> eval exp (funs, vars)
+  --  EApp e1 e2 -> error $  " Eval EApp e1 e2: " ++ show e1 ++ "   " ++ show e2
     EApp e1 e2 -> let
+--    _ ->    let
             v = eval e2 (funs, vars) --value of exp to input into f 
+--            in error $ "Eval EApp: " ++ show exp ++ " v " ++ show v -- ++ " f " ++ show f
             f = eval e1 (funs, vars)
-       -- case e1 of
-       --  (EId (Ident name)) ->
-       --     let f = lookup name (funs,vars)
-       --     in case f of
-       --         VInt i -> 
+
                   in case f of
                     VInt i -> VInt i
                     VClosure (EAbs (Ident id) ex) vars' ->
                         let vars'' = M.insert id v vars'
-                        in eval ex (funs, vars'') 
- --   EApp (EId (Ident name)) e -> 
- --        let f' = lookup name (funs, vars)
- --            e' = eval e (funs, vars)
- --        in case f' of
- --          VInt i -> f'
- --          VClosure (EAbs (Ident id) ex) vars' -> 
- --            let vars'' = M.insert id e' vars'
- --            in  eval ex (funs, vars'')
-    
-                            --case ex of
-                                --    EAbs id  
---           error $ show ex --undefined --VClosure ex 
-    _          -> error $ "Error not exhaustive case: Eval fail on: " ++ show exp
-    
---    EApp e1 e2 -> undefined --case e1 of
-                    --EId (Ident name) -> let e1' = eval e1 (funs,vars)
-                    --                    in eval (EApp e1' e2) (funs,vars)
-                    --EAbs (Ident var) lmb -> undefined
---                    error $ show e1
-                  --let f = eval e1
-                  --    a = eval e2
-                  
---                  in  case f of
---                        -- match on closure or ident---
---
---                        ECls Exp env -> ECls Exp update env
---                        _            -> error "Bad app"
-
-    -- variables
-   -- EId (Ident name) -> let exp = lookup name (funs,vars)
-   --                     in eval exp (funs,vars)
-    --EApp e1 e2       -> error $ show e2                        
-    --EId name -> let exp = lookup name funs
-    --            in  exp --ECls exp M.empty
---                    -- construct empty env
-    
-    -- EAdd
-    -- ESub
-    -- ELt
-    -- EIf
-    -- EApp
+                        in VClosure ex vars''
+--                        in eval ex (funs, vars'') 
     -- call-by-name
     -- call-by-value
 
