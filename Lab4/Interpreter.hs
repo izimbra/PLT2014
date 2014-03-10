@@ -35,27 +35,17 @@ interpret (Prog defs) = let funs = funTable defs
                               putStrLn ""
                               putStrLn "Execution of main:"
                               putStrLn ""
-                              evalClosure main (funs, vars)
+                              case main of
+                                VInt i -> evalClosure main (funs,vars) -- prints result
+                                (VClosure exp _) -> let v = eval exp (funs,vars)
+                                                    in evalClosure v (funs,vars)
   
 evalClosure :: Value -> (Funs, Vars) ->  IO ()
 evalClosure (VInt i) _ = putStrLn $ show i
                          
 evalClosure (VClosure exp vars) (funs,vars') = let v = eval exp (funs, vars)
                                          in evalClosure v (funs, vars)
-                                    
---                                    case (eval expmain (funs,vars)) of  
---                                       VInt ii -> putStrLn $ show i 
---                                       CVlosure eval expmain (funs,vars) 
-                              --let v = eval main (funs,vars)
-                              --putStrLn $ show v
-                              --putStrLn $ show (eval main (funs,vars))
---                              case main of
---                                VClosure exp vars' -> let v = eval exp (funs,vars')
---                                                    in  do case v of
---                                                             EInt i -> putStrLn $ show -i
---                                                             _      -> error "Bad result"
---                                                           
---                                _                  -> error "Bad main function"
+     --       _                  -> error "Bad main function"
 
 lookup :: Name -> (Funs,Vars) -> Value
 lookup id (funs,vars) =
@@ -67,6 +57,10 @@ lookup id (funs,vars) =
                  Just exp -> VClosure exp M.empty
                  Nothing  -> error $ "Lookup failed. Looking for id:  " ++ show id ++ " funs:  " ++ show funs ++ " Vars : " ++  show vars
             
+            
+fromCls :: Value -> (Funs,Vars) -> Value
+fromCls (VInt i) (f,v) = VInt i
+fromCls (VClosure exp vars) (f,v) = eval exp (f,v) 
    -- overshadowing: function < variable < inner variable
    -- error: not found                              
 -- | Evaluate an expression
@@ -75,8 +69,10 @@ eval exp (funs,vars) =
   case exp of
     -- integer literals
     EInt i -> VInt i -- base case -- optional empty env.
-    EAdd e1 e2 -> let (VInt v1) = eval e1 (funs, vars)
-                      (VInt v2) = eval e2 (funs, vars)
+    EAdd e1 e2 -> --error $ show $ eval e2 (funs,vars)
+                  --error $ show exp 
+                  let (VInt v1) = fromCls  (eval e1 (funs, vars)) (funs,vars)
+                      (VInt v2) = fromCls  (eval e2 (funs, vars)) (funs,vars)
                   in  (VInt (v1+v2))
     ESub e1 e2 -> let (VInt v1) = eval e1 (funs, vars)
                       (VInt v2) = eval e2 (funs, vars)
@@ -91,7 +87,7 @@ eval exp (funs,vars) =
     EApp e1 e2 -> let
 --    _ ->    let
             v = eval e2 (funs, vars) --value of exp to input into f 
---            in error $ "Eval EApp: " ++ show exp ++ " v " ++ show v -- ++ " f " ++ show f
+--            in error $ "Eval EApp: " ++ show exp ++ " v " ++ show v -- ++ " f " ++ show f      
             f = eval e1 (funs, vars)
 
                   in case f of
