@@ -17,11 +17,11 @@ type Name = String
 type Funs = M.Map Name Exp
 
 -- | Local variable storage
-type Vars = M.Map Name Value
+type Vars = M.Map Name Exp --Value
 
 
-data Value = VInt Integer
-           | VClosure Exp Vars  -- or just closures
+--data Value = VInt Integer
+--           | VClosure Exp Vars  -- or just closures
 
 
 interpret :: Program -> IO ()
@@ -30,21 +30,24 @@ interpret (Prog defs) = let funs = funTable defs
                             main = lookup "main" (funs,vars)
                         in do putStrLn ""
                               putStrLn $ show funs  
-                              putStrLn ""
-                              case main of
-                                VClosure exp vars' -> let v = eval exp (funs,vars')
-                                                    in  do case v of
-                                                             EInt i -> putStrLn $ show i
-                                                             _      -> error "Bad result"
-                                                           
-                                _                  -> error "Bad main function"
+                              putStrLn "Execution of main:"
+                              let (EInt i) = eval main (funs,vars)
+                              putStrLn $ show i
+                              --putStrLn $ show (eval main (funs,vars))
+--                              case main of
+--                                VClosure exp vars' -> let v = eval exp (funs,vars')
+--                                                    in  do case v of
+--                                                             EInt i -> putStrLn $ show -i
+--                                                             _      -> error "Bad result"
+--                                                           
+--                                _                  -> error "Bad main function"
 
 lookup :: Name -> (Funs,Vars) -> Exp
 lookup id (funs,vars) =
   case M.lookup id vars of
     Just v  -> v
     Nothing -> case M.lookup id funs of
-                 Just exp -> VClosure exp vars
+                 Just exp -> exp --VClosure exp vars
                  Nothing  -> error "Lookup failed"
             
    -- overshadowing: function < variable < inner variable
@@ -65,19 +68,22 @@ eval exp (funs,vars) =
     EAdd e1 e2 -> let (EInt v1) = eval e1 (funs, vars)
                       (EInt v2) = eval e2 (funs, vars)
                   in  (EInt (v1+v2))
-    EApp e1 e2 -> let f = eval e1
-                      a = eval e2
-                  in  case f of
-                        -- match on closure or ident
-
-                        ECls Exp env -> ECls Exp update env
-                        _            -> error "Bad app"
+    ESub e1 e2 -> let (EInt v1) = eval e1 (funs, vars)
+                      (EInt v2) = eval e2 (funs, vars)
+                  in  (EInt (v1-v2))
+--    EApp e1 e2 -> let f = eval e1
+--                      a = eval e2
+--                  in  case f of
+--                        -- match on closure or ident---
+--
+--                        ECls Exp env -> ECls Exp update env
+--                        _            -> error "Bad app"
 
     -- variables
                             
-    EId name -> let exp = lookup name funs
-                in  ECls exp M.empty
-                    -- construct empty env
+--    EId name -> let exp = lookup name funs
+--                in  ECls exp M.empty
+--                    -- construct empty env
     
     -- EAdd
     -- ESub
@@ -87,9 +93,9 @@ eval exp (funs,vars) =
     -- call-by-name
     -- call-by-value
 
-    ECls exp env -> case exp of
-                      EAbs -> undefined -- update env, shrink lambda
-                      _    -> eval exp
+--    ECls exp env -> case exp of
+--                      EAbs -> undefined -- update env, shrink lambda
+--                      _    -> eval exp
 
 -- | Constructs function symbol table             
 funTable :: [Def] -> Funs
