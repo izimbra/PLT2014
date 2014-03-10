@@ -78,7 +78,12 @@ eval exp (funs,vars) =
     ESub e1 e2 -> let (VInt v1) = eval e1 (funs, vars)
                       (VInt v2) = eval e2 (funs, vars)
                   in  (VInt (v1-v2))
+    EId (Ident name) -> let v = lookup name (funs, vars)
+                        in case v of 
+                           VInt i -> v
+                           VClosure ex _ -> eval ex (funs,vars)
     _          -> error $ show exp
+    
 --    EApp e1 e2 -> undefined --case e1 of
                     --EId (Ident name) -> let e1' = eval e1 (funs,vars)
                     --                    in eval (EApp e1' e2) (funs,vars)
