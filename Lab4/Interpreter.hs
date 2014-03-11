@@ -71,13 +71,17 @@ evalex e f v = case e of
                       arg = evalex e2 f v
                       vars' = M.union vNew v
                       vars'' = M.insert name arg vars'
+                      in evalex exp f vars''
                       --in error $ "EXP: " ++ show exp ++ " AND ARG:   " ++ show arg  ++ "   AND VARS' : " ++ show vars'
 --                      in error $ "\n ---- VNEW: " ++ show vNew 
 --                                 ++ "\n ---- EXP:  " ++ show exp 
 --                                 ++ "\n ARG: " ++ show arg 
 --                                 ++ "\n E1:  " ++ show (evalex e1 f v) 
 --                                 ++ "\n vars'' " ++ show vars''
-                      in evalex exp f vars''
+    EIf test yes no -> let (VInt i) = ep ( evalex test f v) f v
+                       in case i of
+                         1 -> evalex yes f v
+                         0 -> evalex no  f v                  
     EAbs (Ident name) exp -> VClosure e v --vars added to closure of lambda, book p 130                   
     _      -> error $ "evalex non exhaustive: " ++ show e
       
