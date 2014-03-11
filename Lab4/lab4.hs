@@ -11,8 +11,8 @@ import Interpreter
 
 -- driver
 
-check :: String -> IO () 
-check s = case pProgram (myLexer s) of
+check :: Integer -> String -> IO () 
+check i s = case pProgram (myLexer s) of
             Bad err  -> do putStrLn "SYNTAX ERROR"
                            putStrLn err
                            exitFailure 
@@ -26,11 +26,18 @@ check s = case pProgram (myLexer s) of
                         --                putStrLn err
                         --                exitFailure 
                         --  Ok _ -> interpret tree
-
 main :: IO ()
 main = do args <- getArgs
           case args of
-            [file] -> readFile file >>= check
+            [file] -> do
+                    s <- readFile file
+                    check 0 s
+            ["-n", file] -> do
+                    s <- readFile file
+                    check 1 s
+            [ x  , file] -> do
+                    s <- readFile file
+                    check 0 s
             _      -> do putStrLn "Usage: lab4 <SourceFile>"
                          exitFailure
 
