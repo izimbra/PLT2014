@@ -19,15 +19,15 @@ interpretByName (Prog defs) = let
                               main = lookup "main" (funs,M.empty)
                               VClosure expMain _ = main
                               in do 
-                                putStrLn ""
-                                putStrLn $ show funs  
-                                putStrLn $ "show main: (callbyname)"
-                                putStrLn $ show main
-                                putStrLn ""
-                                putStrLn "Execution of main: (callbyname)"
-                                putStrLn ""
-                                let round1 = ep (evalex expMain funs M.empty) funs M.empty
-                                putStrLn $ show round1
+                                --putStrLn ""
+                                --putStrLn $ show funs  
+                                --putStrLn $ "show main: (callbyname)"
+                                --putStrLn $ show main
+                                --putStrLn ""
+                                --putStrLn "Execution of main: (callbyname)"
+                                --putStrLn ""
+                                let result = ep (evalex expMain funs M.empty) funs M.empty
+                                putStrLn $ show $ (\(VInt i) -> i) result
          
 --self - recursive function meant to force evaluation as far as possible
 ep = evalProgress

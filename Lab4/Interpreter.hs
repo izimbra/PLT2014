@@ -17,15 +17,15 @@ interpret :: Program -> IO ()
 interpret (Prog defs) = let funs = funTable defs
                             main = lookup "main" (funs,M.empty)
                             VClosure expMain _ = main
-                        in do   putStrLn ""
-                                putStrLn $ show funs  
-                                putStrLn $ "show main: (callbyvalue)"
-                                putStrLn $ show main
-                                putStrLn ""
-                                putStrLn "Execution of main: (callbyvalue)"
-                                putStrLn ""
-                                let round1 = ep (evalex expMain funs M.empty) funs M.empty
-                                putStrLn $ show round1
+                        in do   --putStrLn ""
+                                --putStrLn $ show funs  
+                                --putStrLn $ "show main: (callbyvalue)"
+                                --putStrLn $ show main
+                                --putStrLn ""
+                                --putStrLn "Execution of main: (callbyvalue)"
+                                --putStrLn ""
+                                let result = ep (evalex expMain funs M.empty) funs M.empty
+                                putStrLn $ show $ (\(VInt i) -> i) result
          
 --self - recursive function meant to force evaluation as far as possible
 ep = evalProgress

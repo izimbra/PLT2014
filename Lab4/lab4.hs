@@ -19,8 +19,8 @@ check callbyMode s = case pProgram (myLexer s) of
                            exitFailure 
                            
             Ok  tree -> do 
-                        putStrLn ( show tree)
-                        putStrLn "Parse OK"
+                        --putStrLn ( show tree)
+                        --putStrLn "Parse OK"
                         if callbyMode == 0 
                         then interpret tree
                         else interpretByName tree
