@@ -24,13 +24,18 @@ interpret (Prog defs) = let funs = funTable defs
                               putStrLn ""
                               putStrLn "Execution of main:"
                               putStrLn ""
-                              putStrLn $ show (evalex expMain funs)
+                              let round1 = evalex expMain funs M.empty
+                              putStrLn $ show round1
+                              --case round1 of
+                              --  VInt i -> return
+                              --  VClosure 
+                              --putStrLn $ show (evalex expMain funs)
                               --putStrLn $ show ( eval main (funs, M.empty))
                               
-vBinEval :: Exp -> Exp -> Funs -> (Value, Value)
-vBinEval e1 e2 f  = 
-    let (VInt v1) = evalex e1 f  --force type checking for VInt only
-        (VInt v2) = evalex e2 f  --,this should be complete evaluation
+vBinEval :: Exp -> Exp -> Funs -> Vars -> (Value, Value)
+vBinEval e1 e2 f v = 
+    let (VInt v1) = evalex e1 f v --force type checking for VInt only
+        (VInt v2) = evalex e2 f v --,this should be complete evaluation
     in  ((VInt v1),(VInt v2))
                               
 vBinArit :: (Value, Value) -> Oper -> Value
@@ -40,13 +45,17 @@ boolint :: Bool -> Integer
 boolint True  = 1
 boolint False = 0
                           
-evalex :: Exp -> Funs -> Value
-evalex e f = case e of
+evalex :: Exp -> Funs -> Vars -> Value
+evalex e f v = case e of
     EInt i -> VInt i
-    EAdd e1 e2 -> vBinArit  (vBinEval e1 e2 f) (+)    --they are completely independent, and must be evalable down to a number each        
-    ESub e1 e2 -> vBinArit  (vBinEval e1 e2 f) (-)
-    ELt  e1 e2 -> let (VInt v1, VInt v2) = vBinEval e1 e2 f
+    EAdd e1 e2 -> vBinArit  (vBinEval e1 e2 f v) (+)    --they are completely independent, and must be evalable down to a number each        
+    ESub e1 e2 -> vBinArit  (vBinEval e1 e2 f v) (-)
+    ELt  e1 e2 -> let (VInt v1, VInt v2) = vBinEval e1 e2 f v
                   in  VInt (boolint ( v1 < v2))
+    EId (Ident name) -> case lookup name (f, M.empty) of
+                            VInt i -> VInt i
+                            VClosure exp vars -> evalex exp f v 
+                        
     _      -> error $ "evalex non exhaustive: " ++ show e
       
 lookup :: Name -> (Funs,Vars) -> Value
