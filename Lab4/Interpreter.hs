@@ -24,7 +24,7 @@ interpret (Prog defs) = let funs = funTable defs
                               putStrLn ""
                               putStrLn "Execution of main:"
                               putStrLn ""
-                              let round1 = evalex expMain funs M.empty
+                              let round1 = ep (evalex expMain funs M.empty) funs M.empty
                               putStrLn $ show round1
                               --case round1 of
                               --  VInt i -> return
@@ -32,18 +32,22 @@ interpret (Prog defs) = let funs = funTable defs
                               --putStrLn $ show (evalex expMain funs)
                               --putStrLn $ show ( eval main (funs, M.empty))
          
---ep = evalProgress
---evalProgress :: Value -> Funs -> Vars -> Value
---evalProgress (VInt i) f v = VInt i
---evalProgress (VClosure exp vInner) f vOuter =
---    let vars = M.union vInner vOuter
---    in evalex exp f vars         
+ep = evalProgress
+evalProgress :: Value -> Funs -> Vars -> Value
+evalProgress (VInt i) f v = VInt i
+evalProgress (VClosure exp vInner) f vOuter =
+    let vars = M.union vInner vOuter
+    in ep (evalex exp f vars) f vars         
                               
 vBinEval :: Exp -> Exp -> Funs -> Vars -> (Value, Value)
-vBinEval e1 e2 f v = 
-    let (VInt v1) = (evalex e1 f v) --force type checking for VInt only
-        (VInt v2) = (evalex e2 f v) --,this should be complete evaluation
-    in  ((VInt v1),(VInt v2))
+vBinEval e1 e2 f v = --error $ show e1 ++ "   "  ++ show e2
+    let  v1 = ep (evalex e1 f v) f v --force type checking for VInt only
+         v2 = ep (evalex e2 f v) f v--,this should be complete evaluation
+    in   (v1, v2)
+--    in error $ show v1 ++ "   " ++ show v2
+--    let (VInt v1) = (evalex e1 f v) --force type checking for VInt only
+--        (VInt v2) = (evalex e2 f v) --,this should be complete evaluation
+--    in  ((VInt v1),(VInt v2))
                               
 vBinArit :: (Value, Value) -> Oper -> Value
 vBinArit (VInt i1, VInt i2) op  = VInt (i1 `op` i2)  -- add or sub
@@ -59,10 +63,15 @@ evalex e f v = case e of
     ESub e1 e2 -> vBinArit  (vBinEval e1 e2 f v) (-)
     ELt  e1 e2 -> let (VInt v1, VInt v2) = vBinEval e1 e2 f v
                   in  VInt (boolint ( v1 < v2))
-    EId (Ident name) -> lookup name (f, M.empty)
-                        --case lookup name (f, M.empty) of
-                        --    VInt i -> VInt i
-                        --    VClosure exp vars -> evalex exp f vars 
+    EId (Ident name) -> lookup name (f, v) --p130
+    --tricky
+    --the func will always be a lambda. we want to extract info from it
+    EApp e1 e2 -> let (VClosure (EAbs (Ident name) exp) _) = evalex e1 f v
+                      arg = evalex e2 f v
+                      vars' = M.insert name arg v                      
+                      --in error $ show (evalex e1 f v) ++ "   " ++ show arg ++ "    " ++ show vars' -- ++ "   becomes  : " ++ show result
+--                      result = evalex exp f vars'
+                      in evalex exp f vars'
     EAbs (Ident name) exp -> VClosure e v --vars added to closure of lambda, book p 130                   
     _      -> error $ "evalex non exhaustive: " ++ show e
       
