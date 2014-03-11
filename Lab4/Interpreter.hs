@@ -13,16 +13,16 @@ data Value = VInt Integer
 
 type Oper = (Integer -> Integer -> Integer)
 
-interpret :: Integer -> Program -> IO ()
-interpret i (Prog defs) = let funs = funTable defs
-                              main = lookup "main" (funs,M.empty)
-                              VClosure expMain _ = main
-                          in do putStrLn ""
+interpret :: Program -> IO ()
+interpret (Prog defs) = let funs = funTable defs
+                            main = lookup "main" (funs,M.empty)
+                            VClosure expMain _ = main
+                        in do   putStrLn ""
                                 putStrLn $ show funs  
-                                putStrLn $ "show main:"
+                                putStrLn $ "show main: (callbyvalue)"
                                 putStrLn $ show main
                                 putStrLn ""
-                                putStrLn "Execution of main:"
+                                putStrLn "Execution of main: (callbyvalue)"
                                 putStrLn ""
                                 let round1 = ep (evalex expMain funs M.empty) funs M.empty
                                 putStrLn $ show round1

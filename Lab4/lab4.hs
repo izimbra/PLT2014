@@ -8,6 +8,7 @@ import ErrM
 import PrintFP
 --import TypeChecker
 import Interpreter
+import InterpreterByName
 
 -- driver
 
@@ -20,7 +21,9 @@ check callbyMode s = case pProgram (myLexer s) of
             Ok  tree -> do 
                         putStrLn ( show tree)
                         putStrLn "Parse OK"
-                        interpret callbyMode tree
+                        if callbyMode == 0 
+                        then interpret tree
+                        else interpretByName tree
                         --case typecheck tree of
                         --  Bad err -> do putStrLn "TYPE ERROR"
                         --                putStrLn err
