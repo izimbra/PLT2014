@@ -67,10 +67,16 @@ evalex e f v = case e of
     --tricky
     --the func will always be a lambda. we want to extract info from it
     EApp e1 e2 -> let (VClosure (EAbs (Ident name) exp) vNew) = evalex e1 f v
+    
                       arg = evalex e2 f v
-                      --vars' = M.union v vNew
-                      vars'' = M.insert name arg v
+                      vars' = M.union vNew v
+                      vars'' = M.insert name arg vars'
                       --in error $ "EXP: " ++ show exp ++ " AND ARG:   " ++ show arg  ++ "   AND VARS' : " ++ show vars'
+--                      in error $ "\n ---- VNEW: " ++ show vNew 
+--                                 ++ "\n ---- EXP:  " ++ show exp 
+--                                 ++ "\n ARG: " ++ show arg 
+--                                 ++ "\n E1:  " ++ show (evalex e1 f v) 
+--                                 ++ "\n vars'' " ++ show vars''
                       in evalex exp f vars''
     EAbs (Ident name) exp -> VClosure e v --vars added to closure of lambda, book p 130                   
     _      -> error $ "evalex non exhaustive: " ++ show e
