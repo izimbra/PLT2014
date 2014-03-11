@@ -66,12 +66,12 @@ evalex e f v = case e of
     EId (Ident name) -> lookup name (f, v) --p130
     --tricky
     --the func will always be a lambda. we want to extract info from it
-    EApp e1 e2 -> let (VClosure (EAbs (Ident name) exp) _) = evalex e1 f v
+    EApp e1 e2 -> let (VClosure (EAbs (Ident name) exp) vNew) = evalex e1 f v
                       arg = evalex e2 f v
-                      vars' = M.insert name arg v                      
-                      --in error $ show (evalex e1 f v) ++ "   " ++ show arg ++ "    " ++ show vars' -- ++ "   becomes  : " ++ show result
---                      result = evalex exp f vars'
-                      in evalex exp f vars'
+                      --vars' = M.union v vNew
+                      vars'' = M.insert name arg v
+                      --in error $ "EXP: " ++ show exp ++ " AND ARG:   " ++ show arg  ++ "   AND VARS' : " ++ show vars'
+                      in evalex exp f vars''
     EAbs (Ident name) exp -> VClosure e v --vars added to closure of lambda, book p 130                   
     _      -> error $ "evalex non exhaustive: " ++ show e
       
@@ -83,40 +83,13 @@ lookup id (funs,vars) =
                  --VClosure exp vars -> 
     Nothing -> case M.lookup id funs of
                  Just exp -> VClosure exp M.empty
-                 Nothing  -> error $ "Lookup failed. Looking for id:  " ++ show id ++ " funs:  " ++ show funs ++ " Vars : " ++  show vars
+                 Nothing  -> error $ "LOOKUP FAILED. LOOKING FOR ID:  " ++ show id ++ " IN FUNS:  " ++ show funs ++ " AND VARS : " ++  show vars
             
-            
-fromCls :: Value -> (Funs,Vars) -> Value
-fromCls (VInt i) (f,v) = VInt i
-fromCls (VClosure exp vars) (f,v) = fromCls (eval exp (f,v)) (f,v) 
-   -- overshadowing: function < variable < inner variable
-   -- error: not found                              
+                             
 -- | Evaluate an expression
 eval :: Exp -> (Funs,Vars) -> Value
 eval exp (funs,vars) =
   case exp of
-    -- integer literals
-    EInt i -> VInt i -- base case -- optional empty env.
-    EAdd e1 e2 -> --error $ show $ eval e2 (funs,vars)
-                  --error $ show exp 
-                  let (VInt v1) = fromCls  (eval e1 (funs, vars)) (funs,vars)
-                      (VInt v2) = fromCls  (eval e2 (funs, vars)) (funs,vars)
-                  in  (VInt (v1+v2))
-    ESub e1 e2 -> let (VInt v1) = eval e1 (funs, vars)
-                      (VInt v2) = eval e2 (funs, vars)
-                  in  (VInt (v1-v2))
-    EId (Ident name) ->  lookup name (funs, vars) 
-                      
-    EAbs (Ident name) ex -> VClosure exp M.empty
-    EIf con tru fal -> case eval con (funs,vars) of
-                        VInt 1 -> eval tru (funs,vars)
-                        VInt 0 -> eval fal (funs,vars)
-    ELt e1 e2 -> let (VInt v1) = fromCls ( eval e1 (funs,vars)) (funs,vars)
-                     (VInt v2) = fromCls ( eval e2 (funs,vars)) (funs,vars)
-                 in if (v1 < v2)
-                    then VInt 1
-                    else VInt 0
-                                         
                         
     EApp e1 e2 -> let
 --    _ ->    let
