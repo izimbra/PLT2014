@@ -31,11 +31,18 @@ interpret (Prog defs) = let funs = funTable defs
                               --  VClosure 
                               --putStrLn $ show (evalex expMain funs)
                               --putStrLn $ show ( eval main (funs, M.empty))
+         
+--ep = evalProgress
+--evalProgress :: Value -> Funs -> Vars -> Value
+--evalProgress (VInt i) f v = VInt i
+--evalProgress (VClosure exp vInner) f vOuter =
+--    let vars = M.union vInner vOuter
+--    in evalex exp f vars         
                               
 vBinEval :: Exp -> Exp -> Funs -> Vars -> (Value, Value)
 vBinEval e1 e2 f v = 
-    let (VInt v1) = evalex e1 f v --force type checking for VInt only
-        (VInt v2) = evalex e2 f v --,this should be complete evaluation
+    let (VInt v1) = (evalex e1 f v) --force type checking for VInt only
+        (VInt v2) = (evalex e2 f v) --,this should be complete evaluation
     in  ((VInt v1),(VInt v2))
                               
 vBinArit :: (Value, Value) -> Oper -> Value
@@ -52,10 +59,11 @@ evalex e f v = case e of
     ESub e1 e2 -> vBinArit  (vBinEval e1 e2 f v) (-)
     ELt  e1 e2 -> let (VInt v1, VInt v2) = vBinEval e1 e2 f v
                   in  VInt (boolint ( v1 < v2))
-    EId (Ident name) -> case lookup name (f, M.empty) of
-                            VInt i -> VInt i
-                            VClosure exp vars -> evalex exp f v 
-                        
+    EId (Ident name) -> lookup name (f, M.empty)
+                        --case lookup name (f, M.empty) of
+                        --    VInt i -> VInt i
+                        --    VClosure exp vars -> evalex exp f vars 
+    EAbs (Ident name) exp -> VClosure e v --vars added to closure of lambda, book p 130                   
     _      -> error $ "evalex non exhaustive: " ++ show e
       
 lookup :: Name -> (Funs,Vars) -> Value
