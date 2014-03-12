@@ -21,7 +21,7 @@ check s = case pProgram (myLexer s) of
                         --putStrLn ( show tree)
                         putStrLn $ printTree tree
                         putStrLn "Parse OK"
-                        interpret tree
+                        interpret tree True
                         --case typecheck tree of
                         --  Bad err -> do putStrLn "TYPE ERROR"
                         --                putStrLn err

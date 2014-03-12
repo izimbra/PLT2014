@@ -1,3 +1,5 @@
+{-# LANGUAGE BangPatterns #-}
+
 module Interpreter where
 
 -- We need to use separate environments phi and gamma,
@@ -18,22 +20,28 @@ import PrintFP
 -- data Value = VInt Integer
 ---            | VClosure Exp Vars  -- or just closures
 
+setCallMode :: Bool -> Def
+setCallMode True  = Fun (Ident "callByName") [] (EInt 1) -- call-by-name
+setCallMode False = Fun (Ident "callByName") [] (EInt 0) -- call-by-value
 
-interpret :: Program -> IO ()
-interpret (Prog defs) = let funs          = funTable defs                            
-                            vars          = M.empty
-                            main          = lookup "main" (funs,vars)
-                            result        = eval main (funs,vars)
+callByName :: Funs -> Bool
+callByName funs = case lookup "callByName" (funs,M.empty) of
+  EInt 1 -> True
+  _      -> False
+  
+-- | Second parameter is call-by-name flag
+interpret :: Program -> Bool -> IO ()
+interpret (Prog defs) callMode = let funs   = funTable $ defs ++ [setCallMode callMode]
+                                     vars   = M.empty
+                                     main   = lookup "main" (funs,vars)
+                                     result = eval main (funs,vars)
                         in do putStrLn ""
                               putStrLn $ show funs  
                               putStrLn ""
---                              case main of
---                                VClosure exp vars' -> let v = eval exp (funs,vars')
                               case result of
                                 EInt i -> putStrLn $ show i
                                 _      -> error $ "Bad result: " ++ show result
                                                            
---                                _                  -> error "Bad main function"
 
 lookup :: Name -> (Funs,Vars) -> Exp
 lookup id (funs,vars) =
@@ -76,13 +84,16 @@ eval exp (funs,vars) =
     EId (Ident id) -> trace ("Look up id " ++ id) $ eval (lookup id (funs,vars)) (funs, vars) -- EInt or ECls
 
     EApp e1 e2 -> let f = eval e1 (funs, vars) -- ECls
-                      a = eval e2 (funs, vars) -- EInt 
+                      a = eval e2 (funs, vars) -- EInt
+                      --if (callByName funs)
+                      --then eval e2 (funs, vars) -- EInt 
+                      --else (eval e2 (funs, vars)) -- EInt 
                   in  case f of
                         -- match on closure or ident
-
-                        ECls (EAbs (Ident id) e) env -> let env' = env -- M.union env vars
-                                                        in  eval e (funs,(update env' id a))
-                                                            -- update overshadows global ids
+                        ECls (EAbs (Ident id) e) env ->
+                          let env' = env -- M.union env vars
+                          in  eval e (funs,(update env' id a))
+                                                            -- update overshadows global ids 
 
 --                        _       -> eval (EApp f a) (funs,vars)
                         _  -> error $ "Bad app: \n" ++ show f ++ "\n" ++ show a 
