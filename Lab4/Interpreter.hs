@@ -2,54 +2,46 @@
 
 module Interpreter where
 
--- We need to use separate environments phi and gamma,
--- or use closures (one env. is enough in this case)
-
--- Closure can be specified in the grammar
-
 import Prelude hiding (lookup)
 import Foreign.Marshal.Utils (fromBool)
 import qualified Data.Map as M
-import Debug.Trace
 
 import AbsFP
 import PrintFP
 
-
-
--- data Value = VInt Integer
----            | VClosure Exp Vars  -- or just closures
-
+-- Sets the call mode: call-by-name fro `True`,
+-- call-by-value fro `False`
 setCallMode :: Bool -> Def
 setCallMode True  = Fun (Ident "callByName") [] (EInt 1) -- call-by-name
 setCallMode False = Fun (Ident "callByName") [] (EInt 0) -- call-by-value
 
+-- Looks up the special `callByName` in the argument function table
+-- and returns call-by-name flag based on its value
 callByName :: Funs -> Bool
 callByName funs = case lookup "callByName" (funs,M.empty) of
   EInt 1 -> True
   _      -> False
   
--- | Second parameter is call-by-name flag
+-- Second parameter is call-by-name flag
 interpret :: Program -> Bool -> IO ()
 interpret (Prog defs) callMode = let funs   = funTable $ defs ++ [setCallMode callMode]
                                      vars   = M.empty
                                      main   = lookup "main" (funs,vars)
                                      result = eval main (funs,vars)
-                        in do putStrLn ""
-                              putStrLn $ show funs  
-                              putStrLn ""
-                              case result of
+                        in do case result of
                                 EInt i -> putStrLn $ show i
-                                _      -> error $ "Bad result: " ++ show result
+                                _      -> error $ "RUNTIME ERROR\n"
+                                                  ++ "Bad result type:\n" ++ show result
                                                            
 
 lookup :: Name -> (Funs,Vars) -> Exp
 lookup id (funs,vars) =
   case M.lookup id vars of
-    Just e  -> trace ("\tfound in vars: " ++ show e) $ e
+    Just e  -> e
     Nothing -> case M.lookup id funs of
-                 Just e  -> trace ("\tfound n funs: " ++ show e) $ e --ECls e vars
-                 Nothing -> error $ "Lookup failed: " ++ id ++ " not found"
+                 Just e  -> e
+                 Nothing -> error $ "RUNTIME ERROR\n"
+                                    ++ "unknown identifier " ++ id
             
    -- overshadowing: function < variable < inner variable
    -- error: not found                              
@@ -63,11 +55,12 @@ evalOperands :: Exp -> Exp -> (Funs,Vars) -> (Integer,Integer)
 evalOperands e1 e2 (funs,vars) =
    let v1 = eval e1 (funs, vars)
        v2 = eval e2 (funs, vars)
-   in trace ("V1: " ++ show v1 ++ "\nV2: " ++ show v2) $ case (v1,v2) of
-         (EInt i1,EInt i2) ->  (i1,i2)
-         _  -> error " No ints!"
+   in case (v1,v2) of
+         (EInt i1,EInt i2) -> (i1,i2)
+         _                 -> error $ "RUNTIME ERROR\n"
+                                      ++ "binary operation on non-integer expressions"
                   
--- | Evaluate an expression
+-- Evaluate an expression
 eval :: Exp -> (Funs,Vars) -> Exp
 eval exp (funs,vars) =
   case exp of
@@ -81,18 +74,19 @@ eval exp (funs,vars) =
     ELt  e1 e2 -> let (i1,i2) = evalOperands e1 e2 (funs, vars)
                   in  EInt $ fromBool (i1<i2)
     -- function and argument look up, 
-    EId (Ident id) -> trace ("Look up id " ++ id) $ eval (lookup id (funs,vars)) (funs, vars) -- EInt or ECls
+    EId (Ident id) -> eval (lookup id (funs,vars)) (funs, vars) -- EInt or ECls
 
     EApp e1 e2 -> let f = eval e1 (funs, vars) -- ECls
                       a = eval e2 (funs, vars) -- EInt
+
                       --if (callByName funs)
                       --then eval e2 (funs, vars) -- EInt 
                       --else (eval e2 (funs, vars)) -- EInt 
                   in  case f of
                         -- match on closure or ident
                         ECls (EAbs (Ident id) e) env ->
-                          let env' = env -- M.union env vars
-                          in  eval e (funs,(update env' id a))
+                             let env' = env -- M.union env vars
+                             in  eval e (funs,(update env' id a))
                                                             -- update overshadows global ids 
 
 --                        _       -> eval (EApp f a) (funs,vars)

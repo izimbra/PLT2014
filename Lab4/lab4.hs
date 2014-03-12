@@ -10,28 +10,20 @@ import PrintFP
 import Interpreter
 
 -- driver
-
-check :: String -> IO () 
-check s = case pProgram (myLexer s) of
+check :: Bool -> String -> IO () 
+check callMode s = case pProgram (myLexer s) of
             Bad err  -> do putStrLn "SYNTAX ERROR"
                            putStrLn err
                            exitFailure 
                            
-            Ok  tree -> do 
-                        --putStrLn ( show tree)
-                        putStrLn $ printTree tree
-                        putStrLn "Parse OK"
-                        interpret tree True
-                        --case typecheck tree of
-                        --  Bad err -> do putStrLn "TYPE ERROR"
-                        --                putStrLn err
-                        --                exitFailure 
-                        --  Ok _ -> interpret tree
+            Ok  tree -> do interpret tree callMode
 
 main :: IO ()
 main = do args <- getArgs
           case args of
-            [file] -> readFile file >>= check
-            _      -> do putStrLn "Usage: lab4 <SourceFile>"
-                         exitFailure
+            [file]      -> readFile file >>= check False 
+            ["-n",file] -> readFile file >>= check True
+            ["-v",file] -> readFile file >>= check False 
+            _           -> do putStrLn "Usage: lab4 [-n|-v] <SourceFile>"
+                              exitFailure
 
