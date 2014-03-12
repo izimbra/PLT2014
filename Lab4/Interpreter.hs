@@ -78,7 +78,16 @@ eval exp (funs,vars) =
 
     EApp e1 e2 -> let f = eval e1 (funs, vars) -- ECls
                       a = eval e2 (funs, vars) -- EInt
-
+                      --This is where we need to force evaluation 
+                      --to use call by value. We tried the pragma Bang 
+                      --suggested in the google group, we also tried the
+                      --seq, the ErrM, and some cases, but all of them 
+                      --still didn't force evaluation so as to make 
+                      --good2.fun loop endlessly. 
+                      --Only with trace (show vars) does it loop
+                      --as expected, so that apparently forces evaluation
+                      --of Grow in good2. But that is not a useful final
+                      --solution.
                       --if (callByName funs)
                       --then eval e2 (funs, vars) -- EInt 
                       --else (eval e2 (funs, vars)) -- EInt 
