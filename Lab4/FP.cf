@@ -15,10 +15,6 @@ ELt.  Exp1 ::= Exp1 "<" Exp2 ;
 EIf.  Exp  ::= "if" Exp1 "then" Exp1 "else" Exp ;
 EAbs. Exp  ::= "\\" Ident "->" Exp ;
 
-internal ECLs. Exp ::= Exp [Assign]
-
-Ass. Assign ::= Id Exp
-
 coercions Exp 3 ;
 
 comment "--" ;

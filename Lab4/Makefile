@@ -1,4 +1,4 @@
-all: bnfc comp
+all: comp
 
 bnfc:
 	bnfc FP.cf
