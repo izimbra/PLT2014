@@ -18,7 +18,8 @@ check s = case pProgram (myLexer s) of
                            exitFailure 
                            
             Ok  tree -> do 
-                        putStrLn ( show tree)
+                        --putStrLn ( show tree)
+                        putStrLn $ printTree tree
                         putStrLn "Parse OK"
                         interpret tree
                         --case typecheck tree of

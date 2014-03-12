@@ -8,6 +8,7 @@ module Interpreter where
 import Prelude hiding (lookup)
 import Foreign.Marshal.Utils (fromBool)
 import qualified Data.Map as M
+import Debug.Trace
 
 import AbsFP
 import PrintFP
@@ -21,7 +22,7 @@ import PrintFP
 interpret :: Program -> IO ()
 interpret (Prog defs) = let funs          = funTable defs                            
                             vars          = M.empty
-                            (ECls main _) = lookup "main" (funs,vars)
+                            main          = lookup "main" (funs,vars)
                             result        = eval main (funs,vars)
                         in do putStrLn ""
                               putStrLn $ show funs  
@@ -37,9 +38,9 @@ interpret (Prog defs) = let funs          = funTable defs
 lookup :: Name -> (Funs,Vars) -> Exp
 lookup id (funs,vars) =
   case M.lookup id vars of
-    Just e  -> e
+    Just e  -> trace ("\tfound in vars: " ++ show e) $ e
     Nothing -> case M.lookup id funs of
-                 Just e  -> ECls e vars
+                 Just e  -> trace ("\tfound n funs: " ++ show e) $ e --ECls e vars
                  Nothing -> error $ "Lookup failed: " ++ id ++ " not found"
             
    -- overshadowing: function < variable < inner variable
@@ -52,9 +53,11 @@ update env id v = M.insert id v env
 
 evalOperands :: Exp -> Exp -> (Funs,Vars) -> (Integer,Integer)
 evalOperands e1 e2 (funs,vars) =
-   let (EInt i1) = eval e1 (funs, vars)
-       (EInt i2) = eval e2 (funs, vars)
-   in  (i1,i2)
+   let v1 = eval e1 (funs, vars)
+       v2 = eval e2 (funs, vars)
+   in trace ("V1: " ++ show v1 ++ "\nV2: " ++ show v2) $ case (v1,v2) of
+         (EInt i1,EInt i2) ->  (i1,i2)
+         _  -> error " No ints!"
                   
 -- | Evaluate an expression
 eval :: Exp -> (Funs,Vars) -> Exp
@@ -69,24 +72,27 @@ eval exp (funs,vars) =
                   in  EInt (i1-i2)
     ELt  e1 e2 -> let (i1,i2) = evalOperands e1 e2 (funs, vars)
                   in  EInt $ fromBool (i1<i2)
-    
+    -- function and argument look up, 
+    EId (Ident id) -> trace ("Look up id " ++ id) $ eval (lookup id (funs,vars)) (funs, vars) -- EInt or ECls
+
     EApp e1 e2 -> let f = eval e1 (funs, vars) -- ECls
                       a = eval e2 (funs, vars) -- EInt 
                   in  case f of
                         -- match on closure or ident
 
-                        ECls (EAbs (Ident id) e) env -> ECls e (update env id a) --e update env
-                        _            -> error $ "Bad app: " ++ show f
+                        ECls (EAbs (Ident id) e) env -> let env' = env -- M.union env vars
+                                                        in  eval e (funs,(update env' id a))
+                                                            -- update overshadows global ids
 
-    -- variables
-    EId (Ident id) -> lookup id (funs,vars) -- EInt or ECls
-                                    -- construct empty env
-    
+--                        _       -> eval (EApp f a) (funs,vars)
+                        _  -> error $ "Bad app: \n" ++ show f ++ "\n" ++ show a 
 
-
-
-    -- EIf
-
+    EAbs _ _       -> ECls exp vars
+    ECls e env     -> eval e (funs, env)
+    EIf cond e1 e2   -> case eval cond (funs, vars) of
+                          EInt 1 -> eval e1 (funs,vars)
+                          EInt 0 -> eval e2 (funs,vars)
+--    _                -> error $ "Non-exhaustive case in eval: \n" ++ show exp
     -- call-by-name
     -- call-by-value
 
