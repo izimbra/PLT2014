@@ -134,6 +134,14 @@ lookupVarC x = do
      Nothing -> look rest x
      Just a  -> a
 
+
+-- | Creates a new label
+newLabel:: State EnvC Address
+newLabel = do
+    modify (\env -> env {nextLabel = nextLabel env + 1})
+    env <- get
+    return $ nextLabel env --updated value
+
 -- | Creates a new scope in the variable storage.
 newBlockC :: State EnvC Address
 newBlockC = do
