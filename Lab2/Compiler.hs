@@ -202,6 +202,16 @@ compileExp (ETyped t e) = trace (show e) $
     emit "bipush 1"
     emit "iadd"
     emit "istore"
+  
+  ELt  e1 e2 -> do --book page 104  
+    true <- newLabelC
+    emit "bipush 1"
+    compileExp e1
+    compileExp e2
+    emit $ "if_icmplt " ++ show true
+    emit "pop"
+    emit "bipush 0"
+    emit $ show true ++ ":"
     
     --compileExp (ETyped TInt (EPlus (ETyped TInt e)  (ETyped TInt (EInt 1))))
     
