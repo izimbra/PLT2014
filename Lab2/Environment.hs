@@ -25,6 +25,7 @@ module Environment (
                   , addVarC
                   , lookupVarC
                   , newBlockC
+                  , newLabelC
                   , exitBlockC
                   , TypeC
                   , typeToTypeC
@@ -136,8 +137,8 @@ lookupVarC x = do
 
 
 -- | Creates a new label
-newLabel:: State EnvC Address
-newLabel = do
+newLabelC :: State EnvC Address
+newLabelC = do
     modify (\env -> env {nextLabel = nextLabel env + 1})
     env <- get
     return $ nextLabel env --updated value

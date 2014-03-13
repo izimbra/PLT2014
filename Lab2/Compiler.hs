@@ -50,7 +50,9 @@ compileDef (Fun t (Id f) args stms) = do
   -- method signature
   emit $ ".method public static " ++ f                      -- name
          ++ "(" ++ map (typeToTypeC . argType) args ++ ")" -- argument types
-         ++ [typeToTypeC t]                                  -- return type      
+         ++ [typeToTypeC t]                                  -- return type   
+         
+         --    
   -- storage limits for local variables and stack
   emit $ ".limit locals 100"
   emit $ ".limit stack 100"
@@ -86,8 +88,10 @@ defaultReturn t =
 a +++ b = a ++ " " ++ b
 
 --newLabel:: State EnvC ()   continue from here and then so SWhile below / emil 140226
---newLabel = 
+--newLabel
 
+  
+  
 compileStm :: Stm -> State EnvC ()
 compileStm s = case s of
   SExp (EApp id es) -> do
@@ -105,15 +109,15 @@ compileStm s = case s of
       _       -> return ()
     
   
---  SWhile e s -> do --book page 103
---    test <- newLabel
---    end  <- newLabel
---    emit test
---    compileExp e
---    emit $ "ifeq " ++ end
---    compileStm s
---    emit $ "goto " ++ test
---    emit end
+  SWhile e s -> do --book page 103
+    test <- newLabelC
+    end  <- newLabelC
+    emit $ show test ++ ":"
+    compileExp e
+    emit $ "ifeq " ++ show end
+    compileStm s
+    emit $ "goto " ++ show test
+    emit $ show end ++ ":"
     
     
     
