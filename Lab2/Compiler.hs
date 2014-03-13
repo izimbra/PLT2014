@@ -162,14 +162,13 @@ compileStm s = case s of
   --   emit $ "invokestatic Runtime/printInt(I)V"
   SReturn (ETyped t e) -> do
     compileExp (ETyped t e)
-    case t of
-            TInt    -> ["iconst_0","ireturn"]
-            TDouble -> ["dconst_0","dreturn"]
-            TBool   -> ["iconst_0","ireturn"]
-            TVoid   -> ["return"]
-      
-    emit $ "ireturn"
-  _            -> error $ "No match: " ++ show s
+    emit $ case t of
+            TInt    -> "ireturn"
+            TDouble -> "dreturn"
+            TBool   -> "ireturn"
+            TVoid   -> "return"
+--    emit $ "ireturn"
+  _            -> error $ "No match in compileExp: " ++ show s
               --   return ()
 
 --helper function for re-using code pattern
