@@ -31,7 +31,7 @@ comp file s = case pProgram (myLexer s) of
                              putStrLn err
                              exitFailure
               Ok  tree -> do
-  --              putStrLn (printTree tree)
+                putStrLn (printTree tree)
                 case typecheck tree of
                             Bad err  -> do putStrLn "TYPE ERROR"
                                            putStrLn err
@@ -40,7 +40,7 @@ comp file s = case pProgram (myLexer s) of
                                             newFile   = (dropExtension file) ++ ".j"
                                            -- use tree' for annotated type checker
                                         in  do putStrLn "Type checking done"
-                                               putStrLn $ show tree
+--                                               putStrLn $ show tree
                                                putStrLn $ "\n\n---\n\n"
                                                putStrLn $ show tree'
                                                putStrLn $ "\nEND OF TREE\n"
