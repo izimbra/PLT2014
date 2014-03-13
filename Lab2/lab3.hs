@@ -31,17 +31,17 @@ comp file s = case pProgram (myLexer s) of
                              putStrLn err
                              exitFailure
               Ok  tree -> do
-                putStrLn (printTree tree)
+  --              putStrLn (printTree tree)
                 case typecheck tree of
-                            Bad err -> do putStrLn "TYPE ERROR"
-                                          putStrLn err
-                                          exitFailure 
-                            Ok _    -> putStrLn "Type checking done"
-                              -- let className = dropExtension.takeFileName $ file
-                                       --     newFile   = (dropExtension file) ++ ".j"
-                                       --    -- use tree' for annotated type checker
-                                       -- in do writeFile newFile $ compile className tree
-                                       --      putStrLn $ "Generated file " ++ newFile
+                            Bad err  -> do putStrLn "TYPE ERROR"
+                                           putStrLn err
+                                           exitFailure 
+                            Ok tree' -> let className = dropExtension.takeFileName $ file
+                                            newFile   = (dropExtension file) ++ ".j"
+                                           -- use tree' for annotated type checker
+                                        in  do putStrLn "Type checking done"
+                                               writeFile newFile $ compile className tree'
+                                               putStrLn $ "Generated file " ++ newFile
 
 main :: IO ()
 main = do args <- getArgs
