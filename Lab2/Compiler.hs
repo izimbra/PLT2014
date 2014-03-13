@@ -160,8 +160,14 @@ compileStm s = case s of
   -- SPrint e     -> do
   --   compileExp e
   --   emit $ "invokestatic Runtime/printInt(I)V"
-  SReturn e    -> do
-    compileExp e
+  SReturn (ETyped t e) -> do
+    compileExp (ETyped t e)
+    case t of
+            TInt    -> ["iconst_0","ireturn"]
+            TDouble -> ["dconst_0","dreturn"]
+            TBool   -> ["iconst_0","ireturn"]
+            TVoid   -> ["return"]
+      
     emit $ "ireturn"
   _            -> error $ "No match: " ++ show s
               --   return ()
@@ -193,10 +199,21 @@ compileExp (ETyped t e) = trace (show e) $
     --emit ("iload " ++ show a)
     emitTyped t ("load " ++ show a) 
 
+-- Built-in functions
   EApp (Id "printInt") [e] -> do --function call
 --    mapM_ compileExp es
     compileExp e
     emit $ "invokestatic Runtime/printInt(I)V"
+  EApp (Id "printDouble") [e] -> do
+    compileExp e
+    emit $ "invokestatic Runtime/printDouble(D)V"
+  EApp (Id "readInt") _ -> do
+    compileExp e
+    emit $ "invokestatic Runtime/readInt()I"
+  EApp (Id "readDouble") _ -> do
+    compileExp e
+    emit $ "invokestatic Runtime/readDouble()D"
+
   EIncr e -> do
     compileExp  e
     emit "bipush 1"
@@ -205,7 +222,7 @@ compileExp (ETyped t e) = trace (show e) $
     
     --compileExp (ETyped TInt (EPlus (ETyped TInt e)  (ETyped TInt (EInt 1))))
     
-  _ -> error ( "\n\nERROR NON EXHAUSTIVE COMPIleEXP \n " ++
+  _ -> error ( "\n\nERROR NON EXHAUSTIVE COMPIlEEXP \n " ++
                show (ETyped t e) ++ 
                "cannot compile case of \n" ++ show e)
  
