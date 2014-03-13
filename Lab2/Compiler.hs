@@ -63,13 +63,15 @@ compileDef (Fun t (Id f) args stms) = do
 
   -- default return in case of no return statement
   case stms of
-    [] -> emit $ ".end method"
+    [] -> defaultReturn t
+--             emit $ ".end metod"
     _  -> case (last stms) of
             (SReturn e) -> emit $ ".end method" 
-            _           -> do defaultReturn t
-                              emit $ ".end method"
+            _           -> defaultReturn t
 
--- | Generates default  return code for a given function type.                             
+
+
+-- | Generates default return code for a given function type.                             
 defaultReturn :: Type ->  State EnvC ()
 defaultReturn t =
   let insts = case t of
@@ -77,11 +79,9 @@ defaultReturn t =
             TDouble -> ["dconst_0","dreturn"]
             TBool   -> ["iconst_0","ireturn"]
             TVoid   -> ["return"]
-  in mapM_ emit insts
+  in mapM_ emit $ insts ++ [".end method"]
   
   
-
-
 
 -- | Concatenates two strings with a space between them. 
 (+++) :: String -> String -> String
