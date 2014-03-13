@@ -197,7 +197,14 @@ compileExp (ETyped t e) = --trace (show e) $
 --    mapM_ compileExp es
     compileExp e
     emit $ "invokestatic Runtime/printInt(I)V"
-  
+  EIncr e -> do
+    compileExp  e
+    emit "bipush 1"
+    emit "iadd"
+    emit "istore"
+    
+    --compileExp (ETyped TInt (EPlus (ETyped TInt e)  (ETyped TInt (EInt 1))))
+    
   _ -> error $ show (ETyped t e) ++ 
                     " non exhaustive case compileExp\n" ++  
                     "cannot compile case of \n" ++ show e
