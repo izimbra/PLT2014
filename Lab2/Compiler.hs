@@ -128,7 +128,7 @@ compileStm s = case s of
   SDecl t x    -> addVarC x t
   -- variable assignment
   SAss x (ETyped t e) -> do  --following bok p102 for assignment statements
-    compileExp e
+    compileExp (ETyped t e) --- DO NOT UNWRAP
     addr <- lookupVarC x
     case t of 
       TInt -> do
@@ -142,10 +142,10 @@ compileStm s = case s of
         emit $ "dstore" ++ show addr
       _       -> error $ "Compile error: Assign statement with type not (bool, int, double)"
       
-  SAss x e     -> do
-    compileExp e
-    addr <- lookupVarC x
-    emit ("istore " ++ show addr) 
+  --SAss x e     -> trace (show e) $ do 
+  --  compileExp e
+  --  addr <- lookupVarC x
+  --  emit ("istore " ++ show addr) 
   -- variable initialisation
   SInit t x e -> do
     addVarC x t
@@ -175,7 +175,7 @@ compileExpArithm e1 e2 t s = do
 
 compileExp :: Exp -> State EnvC ()
 
-compileExp (ETyped t e) = --trace (show e) $ 
+compileExp (ETyped t e) = trace (show e) $ 
  case e of
     
   EInt i    -> emit ("bipush " ++ show i)
@@ -205,11 +205,11 @@ compileExp (ETyped t e) = --trace (show e) $
     
     --compileExp (ETyped TInt (EPlus (ETyped TInt e)  (ETyped TInt (EInt 1))))
     
-  _ -> error $ show (ETyped t e) ++ 
-                    " non exhaustive case compileExp\n" ++  
-                    "cannot compile case of \n" ++ show e
+  _ -> error ( "\n\nERROR NON EXHAUSTIVE COMPIleEXP \n " ++
+               show (ETyped t e) ++ 
+               "cannot compile case of \n" ++ show e)
  
-compileExp e = trace (show e) $ error "troll" 
+compileExp e = error $ "NON TYPED EXP IN COMPILEEXP \n" ++ (show e)
 
 
 emitTyped :: Type -> Instruction -> State EnvC ()
