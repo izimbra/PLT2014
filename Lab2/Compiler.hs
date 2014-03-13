@@ -136,7 +136,7 @@ compileStm s = case s of
   -- variable declaration, emits no code
   SDecl t x    -> addVarC x t
   -- variable assignment
-  SAss x (ETyped t e) -> do  --following bok p102 for assignment statements
+  SAss x (ETyped t e) -> trace ("TRACE\n" ++ show (ETyped t e )++"\nEndTrace\n") $ do  --following bok p102 for assignment statements
     compileExp (ETyped t e) --- DO NOT UNWRAP
     addr <- lookupVarC x
     case t of 
@@ -156,11 +156,14 @@ compileStm s = case s of
   --  addr <- lookupVarC x
   --  emit ("istore " ++ show addr) 
   -- variable initialisation
-  SInit t x e -> do
-    addVarC x t
-    compileExp e
-    addr <- lookupVarC x
-    emit ("istore " ++ show addr)
+  SInit t x e -> --trace ("\nTRACE:\n " ++ show t ++ "\n " ++ show x ++ "\n " ++ show e ++ "\nEND TRACE\n")  $ 
+   do
+    compileStm (SDecl t x)
+    compileStm (SAss x e)
+    --addVarC x t
+    --compileExp e
+    --addr <- lookupVarC x
+    --emit ("istore " ++ show addr)
   
   SBlock stms  -> do
     a <- newBlockC
@@ -188,7 +191,7 @@ compileExpArithm e1 e2 t s = do
 
 compileExp :: Exp -> State EnvC ()
 
-compileExp (ETyped t e) = trace (show e) $ 
+compileExp (ETyped t e) = trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"\nEnd trace\n" ) $ 
  case e of
     
   EInt i    -> emit ("bipush " ++ show i)
@@ -215,10 +218,10 @@ compileExp (ETyped t e) = trace (show e) $
     compileExp e
     emit $ "invokestatic Runtime/printDouble(D)V"
   EApp (Id "readInt") _ -> do
-    compileExp e
+    --compileExp e
     emit $ "invokestatic Runtime/readInt()I"
   EApp (Id "readDouble") _ -> do
-    compileExp e
+    --compileExp e
     emit $ "invokestatic Runtime/readDouble()D"
 
   EIncr e -> do
