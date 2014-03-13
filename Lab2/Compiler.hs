@@ -5,11 +5,14 @@ import Control.Monad.State
 import System.Environment (getArgs)
 import System.Exit (exitFailure)
 
+import Debug.Trace
+
 import AbsCPP
 import LexCPP
 import ParCPP
 import PrintCPP
 import ErrM
+
 
 import Environment
 
@@ -94,14 +97,14 @@ a +++ b = a ++ " " ++ b
   
 compileStm :: Stm -> State EnvC ()
 compileStm s = case s of
-  SExp (EApp id es) -> do
-    compileExp (EApp id es)
+  --SExp (EApp id es) -> do probably old
+  --  compileExp (EApp id es)
     --check the expression type and send pop or pop2 depending (book p103)
     --or if void, dont send anything at all
     --emit "pop"
     
   SExp (ETyped t e) -> do -- from Stm point of view, all Exp will be ETyped. This code is meant to behave as the rule on book p102
-    compileExp e
+    compileExp (ETyped t e)
     case t of
       TInt    -> emit "pop"
       TBool   -> emit "pop"
@@ -172,7 +175,8 @@ compileExpArithm e1 e2 t s = do
 
 compileExp :: Exp -> State EnvC ()
 
-compileExp (ETyped t e) = case e of
+compileExp (ETyped t e) = --trace (show e) $ 
+ case e of
     
   EInt i    -> emit ("bipush " ++ show i)
   EDouble d -> emit ("ldc2_w " ++ show d)
@@ -193,9 +197,12 @@ compileExp (ETyped t e) = case e of
 --    mapM_ compileExp es
     compileExp e
     emit $ "invokestatic Runtime/printInt(I)V"
-    
-    
   
+  _ -> error $ show (ETyped t e) ++ 
+                    " non exhaustive case compileExp\n" ++  
+                    "cannot compile case of \n" ++ show e
+ 
+compileExp e = trace (show e) $ error "troll" 
 
 
 emitTyped :: Type -> Instruction -> State EnvC ()

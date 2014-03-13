@@ -40,6 +40,10 @@ comp file s = case pProgram (myLexer s) of
                                             newFile   = (dropExtension file) ++ ".j"
                                            -- use tree' for annotated type checker
                                         in  do putStrLn "Type checking done"
+                                               putStrLn $ show tree
+                                               putStrLn $ "\n\n---\n\n"
+                                               putStrLn $ show tree'
+                                               putStrLn $ "\nEND OF TREE\n"
                                                writeFile newFile $ compile className tree'
                                                putStrLn $ "Generated file " ++ newFile
 
