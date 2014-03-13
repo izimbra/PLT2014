@@ -137,11 +137,11 @@ lookupVarC x = do
 
 
 -- | Creates a new label
-newLabelC :: State EnvC Address
+newLabelC :: State EnvC String
 newLabelC = do
     modify (\env -> env {nextLabel = nextLabel env + 1})
     env <- get
-    return $ nextLabel env --updated value
+    return $ "Label" ++ show (nextLabel env) --updated value
 
 -- | Creates a new scope in the variable storage.
 newBlockC :: State EnvC Address
