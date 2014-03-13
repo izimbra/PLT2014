@@ -237,10 +237,10 @@ compileExp (ETyped t e) = trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"\n
     emit "bipush 1"
     compileExp e1
     compileExp e2
-    emit $ "if_icmplt " ++ show true
+    emit $ "if_icmplt " ++ true
     emit "pop"
     emit "bipush 0"
-    emit $ show true ++ ":"
+    emit $ show ++ ":"
     
     --compileExp (ETyped TInt (EPlus (ETyped TInt e)  (ETyped TInt (EInt 1))))
     
