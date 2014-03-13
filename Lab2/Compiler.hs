@@ -133,13 +133,13 @@ compileStm s = case s of
     case t of 
       TInt -> do
         emit "dup"
-        emit $ "istore" ++ show addr
+        emit $ "istore" +++ show addr
       TBool -> do
         emit "dup"
-        emit $ "istore" ++ show addr
+        emit $ "istore" +++ show addr
       TDouble -> do
         emit "dup2"
-        emit $ "dstore" ++ show addr
+        emit $ "dstore" +++ show addr
       _       -> error $ "Compile error: Assign statement with type not (bool, int, double)"
       
   --SAss x e     -> trace (show e) $ do 
@@ -220,8 +220,10 @@ compileExp (ETyped t e) = trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"\n
     compileExp  e
     emit "bipush 1"
     emit "iadd"
-    emit "istore"
-  
+    let (ETyped t (EId x)) = e
+    a <- lookupVarC x 
+    emit $ "istore" +++ show a
+    
   ELt  e1 e2 -> do --book page 104  
     true <- newLabelC
     emit "bipush 1"
