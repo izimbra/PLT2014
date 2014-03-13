@@ -117,12 +117,21 @@ compileStm s = case s of
     end  <- newLabelC
     emit $ show test ++ ":"
     compileExp e
-    emit $ "ifeq " ++ show end
+    emit $ "ifeq" +++ show end
     compileStm s
-    emit $ "goto " ++ show test
+    emit $ "goto" +++ show test
     emit $ show end ++ ":"
-    
-    
+
+  SIfElse e s1 s2 -> do
+    false <- newLabelC
+    true  <- newLabelC
+    compileExp e
+    emit $ "ifeq" +++ show false
+    compileStm s1
+    emit $ "goto" +++ show true
+    emit $ show false ++ ":"
+    compileStm s2
+    emit $ show true ++ ":"
     
   -- variable declaration, emits no code
   SDecl t x    -> addVarC x t
@@ -166,8 +175,7 @@ compileStm s = case s of
             TInt    -> "ireturn"
             TDouble -> "dreturn"
             TBool   -> "ireturn"
-            TVoid   -> "return"
---    emit $ "ireturn"
+--            TVoid   -> "return"
   _            -> error $ "No match in compileExp: " ++ show s
               --   return ()
 
