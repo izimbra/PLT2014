@@ -115,23 +115,23 @@ compileStm s = case s of
   SWhile e s -> do --book page 103
     test <- newLabelC
     end  <- newLabelC
-    emit $ show test ++ ":"
+    emit $ test ++ ":"
     compileExp e
-    emit $ "ifeq" +++ show end
+    emit $ "ifeq" +++ end
     compileStm s
-    emit $ "goto" +++ show test
-    emit $ show end ++ ":"
+    emit $ "goto" +++ test
+    emit $ end ++ ":"
 
   SIfElse e s1 s2 -> do
     false <- newLabelC
     true  <- newLabelC
     compileExp e
-    emit $ "ifeq" +++ show false
+    emit $ "ifeq" +++ false
     compileStm s1
-    emit $ "goto" +++ show true
-    emit $ show false ++ ":"
+    emit $ "goto" +++ true
+    emit $ false ++ ":"
     compileStm s2
-    emit $ show true ++ ":"
+    emit $ true ++ ":"
     
   -- variable declaration, emits no code
   SDecl t x    -> addVarC x t
