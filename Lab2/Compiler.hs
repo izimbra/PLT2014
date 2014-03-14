@@ -131,20 +131,20 @@ compileStm s = case s of
   -- variable declaration, emits no code
   SDecl t x    -> addVarC x t
   -- variable assignment
-  SAss x (ETyped t e) -> trace ("TRACE\n" ++ show (ETyped t e )++"\nEndTrace\n") $ do  --following bok p102 for assignment statements
-    compileExp (ETyped t e) --- DO NOT UNWRAP
-    addr <- lookupVarC x
-    case t of 
-      TInt -> do
-        emit "dup"
-        emit $ "istore" +++ show addr
-      TBool -> do
-        emit "dup"
-        emit $ "istore" +++ show addr
-      TDouble -> do
-        emit "dup2"
-        emit $ "dstore" +++ show addr
-      _       -> error $ "Compile error: Assign statement with type not (bool, int, double)"
+  -- SAss x (ETyped t e) -> trace ("TRACE\n" ++ show (ETyped t e )++"\nEndTrace\n") $ do  --following bok p102 for assignment statements
+  --   compileExp (ETyped t e) --- DO NOT UNWRAP
+  --   addr <- lookupVarC x
+  --   case t of 
+  --     TInt -> do
+  --       emit "dup"
+  --       emit $ "istore" +++ show addr
+  --     TBool -> do
+  --       emit "dup"
+  --       emit $ "istore" +++ show addr
+  --     TDouble -> do
+  --       emit "dup2"
+  --       emit $ "dstore" +++ show addr
+  --     _       -> error $ "Compile error: Assign statement with type not (bool, int, double)"
       
   --SAss x e     -> trace (show e) $ do 
   --  compileExp e
@@ -199,10 +199,30 @@ compileExp (ETyped t e) = trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"\n
   ETimes e1 e2 -> compileExpArithm e1 e2 t "mul"
   EDiv   e1 e2 -> compileExpArithm e1 e2 t "div"
 
+  -- variable reference loads its value on stack
   EId x  -> do --corresponds to example with EVar
     a <- lookupVarC x
     --emit ("iload " ++ show a)
     emitTyped t ("load " ++ show a) 
+
+  -- variable assignment
+  EAss (ETyped t (EId x)) e -> do -- explicit match on EId because we don't want
+    addr <- lookupVarC x               -- to load 'x', just look up its address
+    --trace ("TRACE\n" ++ show (ETyped t e )++"\nEndTrace\n") $ do  --following bok p102 for assignment statements
+    compileExp e
+    case t of 
+      TInt -> do
+        emit "dup"
+        emit $ "istore" +++ show addr
+      TBool -> do
+        emit "dup"
+        emit $ "istore" +++ show addr
+      TDouble -> do
+        emit "dup2"
+        emit $ "dstore" +++ show addr
+      _       -> error $ "COMPILATION ERROR\n" ++
+                         "Assigment of type not in [bool, int, double]" -- should be caught in type checker?
+
 
 -- Built-in functions
   EApp (Id "printInt") [e] -> do --function call

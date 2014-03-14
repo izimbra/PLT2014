@@ -20,19 +20,25 @@ return
 
 ; ABSTRACT SYNTAX                                               ;STACK                  SOURCE
 
-; SAss (Id "lo") (ETyped TInt (EInt 1))                                                 lo = 1;
+;SAss (Id "lo") (ETyped TInt (EInt 1))                                                 lo = 1;
+;SExp (ETyped TInt (EAss (ETyped TInt (EId (Id "lo")))
+;                        (ETyped TInt (EInt 1))))
 bipush 1                                                        ;1
 dup                                                             ;1 . 1   
 istore 1                                                        ;1
 ; we need a 'pop' here but SExp is not invoked!
 
 ;SAss (Id "hi") (ETyped TInt (EId (Id "lo")))                                           hi = lo;
+;SExp (ETyped TInt (EAss (ETyped TInt (EId (Id "hi")))
+;                        (ETyped TInt (EId (Id "lo")))))
 iload 1                                                         ;1
 dup                                                             ;1 . 1
 istore 2                                                        ;1
 ; no 'pop' here either
 
 ;SAss (Id "mx") (ETyped TInt (EApp (Id "readInt") []))                                  mx = readInt
+;SExp (ETyped TInt (EAss (ETyped TInt (EId (Id "mx")))
+;                        (ETyped TInt (EApp (Id "readInt") []))))
 invokestatic Runtime/readInt()I                                 ;x (some int) . 1
 dup                                                             ;x . x . 1
 istore 3                                                        ;x . 1
