@@ -1,13 +1,19 @@
-all:
+all: comp
+
+bnfc:
 	bnfc CPP.cf
 	happy -gca ParCPP.y
 	alex -g LexCPP.x
+
+lab2: 
 	ghc --make lab2.hs -o lab2
 
 comp:
 	ghc --make lab3.hs -o lab3
+	javac Runtime.java
+
 clean:
-#	-rm -f lab2
+	-rm -f lab2
 	-rm -f *.log *.aux *.hi *.o *.dvi
 	-rm -f DocCPP.ps
 	-rm -f *.j *.class
