@@ -1,0 +1,88 @@
+.class public good05mod
+.super java/lang/Object
+
+.method public <init>()V
+aload_0
+invokenonvirtual java/lang/Object/<init>()V
+return
+.end method
+
+.method public static main([Ljava/lang/String;)V
+.limit locals 100
+.limit stack 1000
+invokestatic good05mod/main()I
+return
+.end method
+
+.method public static main()I
+.limit locals 100
+.limit stack 100
+
+; ABSTRACT SYNTAX                                               ;STACK                  SOURCE
+
+; SAss (Id "lo") (ETyped TInt (EInt 1))                                                 lo = 1;
+bipush 1                                                        ;1
+dup                                                             ;1 . 1   
+istore 1                                                        ;1
+; we need a 'pop' here but SExp is not invoked!
+
+;SAss (Id "hi") (ETyped TInt (EId (Id "lo")))                                           hi = lo;
+iload 1                                                         ;1
+dup                                                             ;1 . 1
+istore 2                                                        ;1
+; no 'pop' here either
+
+;SAss (Id "mx") (ETyped TInt (EApp (Id "readInt") []))                                  mx = readInt
+invokestatic Runtime/readInt()I                                 ;x (some int) . 1
+dup                                                             ;x . x . 1
+istore 3                                                        ;x . 1
+
+;SExp (ETyped TVoid (EApp (Id "printInt") [ETyped TInt (EId (Id "lo"))]))
+iload 1                                                         ;1 . x . 1
+invokestatic Runtime/printInt(I)V                               ;x . 1
+;SExp emits no 'pop' - void type
+
+;while loop condition
+;SWhile (ETyped TBool (ELt (ETyped TInt (EId (Id "hi"))) (ETyped TInt (EId (Id "mx"))))) 
+TEST1:
+bipush 1                                                        ;1 . x . 1
+iload 2                                                         ;1 . 1 . x . 1
+iload 3                                                         ;x . 1 . 1 . x . 1
+if_icmplt TRUE3  ; removes 2 values from stack                  ;1 . x . 1
+pop                                                             ;x . 1
+bipush 0                                                        ;0 . x . 1
+
+TRUE3:
+ifeq END2        ; loop exit                                    ;x . 1
+
+
+;body of the while loop
+;(SBlock [
+
+;SExp (ETyped TVoid (EApp (Id "printInt") [ETyped TInt (EId (Id "hi"))]))           printInt(hi) 
+iload 2                                                         ;1 . x . 1          
+invokestatic Runtime/printInt(I)V                               ;x . 1
+; SExp emits no 'pop' - void type
+
+;SAss (Id "hi") (ETyped TInt (EPlus (ETyped TInt (EId (Id "lo")))                   hi = lo + hi ; 
+;                                   (ETyped TInt (EId (Id "hi")))))
+iload 1                                                         ;1 . x . 1
+iload 2                                                         ;1 . 1 . x . 1
+iadd                                                            ;2 . x . 1
+dup                                                             ;2 . 2 . x . 1
+istore 2                                                        ;2 . x . 1
+
+;SAss (Id "lo") (ETyped TInt (EMinus (ETyped TInt (EId (Id "hi")))                 lo = hi - lo
+                             (ETyped TInt (EId (Id "lo")))))
+iload 2                                                         ;2 . 2 . x . 1
+iload 1                                                         ;1 . 2 . 2 . x . 1
+isub                                                            ;1 . 2 . x . 1
+dup                                                             ;1 . 1 . 2 . x . 1 
+istore 1                                                        ;1 . 2 . x . 1
+goto TEST1
+
+END2:
+; default return
+iconst_0
+ireturn
+.end method
