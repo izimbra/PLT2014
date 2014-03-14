@@ -90,11 +90,6 @@ defaultReturn t =
 (+++) :: String -> String -> String
 a +++ b = a ++ " " ++ b
 
---newLabel:: State EnvC ()   continue from here and then so SWhile below / emil 140226
---newLabel
-
-  
-  
 compileStm :: Stm -> State EnvC ()
 compileStm s = case s of
   --SExp (EApp id es) -> do probably old
@@ -113,8 +108,8 @@ compileStm s = case s of
     
   
   SWhile e s -> do --book page 103
-    test <- newLabelC
-    end  <- newLabelC
+    test <- newLabelC "TEST"
+    end  <- newLabelC "END"
     emit $ test ++ ":"
     compileExp e
     emit $ "ifeq" +++ end
@@ -123,8 +118,8 @@ compileStm s = case s of
     emit $ end ++ ":"
 
   SIfElse e s1 s2 -> do
-    false <- newLabelC
-    true  <- newLabelC
+    false <- newLabelC "FALSE"
+    true  <- newLabelC "FALSE"
     compileExp e
     emit $ "ifeq" +++ false
     compileStm s1
@@ -233,7 +228,7 @@ compileExp (ETyped t e) = trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"\n
     emit $ "istore" +++ show a
     
   ELt  e1 e2 -> do --book page 104  
-    true <- newLabelC
+    true <- newLabelC "TRUE"
     emit "bipush 1"
     compileExp e1
     compileExp e2
