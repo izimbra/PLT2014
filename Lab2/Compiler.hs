@@ -58,6 +58,7 @@ compileDef (Fun t (Id f) args stms) = do
          
          --    
   -- storage limits for local variables and stack
+-- <<<<<<< HEAD
   emit $ ".limit locals 100"
   emit $ ".limit stack 100"
   modify (\env -> env { addresses = [], nextAddress = 0 })
@@ -71,6 +72,14 @@ compileDef (Fun t (Id f) args stms) = do
   --             argId     -- :: Arg -> Id
   --             ) args    -- :: [Type -> State EnvC ()] -- first map gives a list of functions
   --       ) (map argType args)
+-- =======
+--  emit $ ".limit locals 102"
+--  emit $ ".limit stack 102"
+
+--  addArgsHelper args
+  --trace ( "\nTRACE ARGS: " ++ show args ++"\nOF FUNCTION " ++ show f ++ "\nEND TRACEARGS" ) $ addArgsHelper args
+
+-- >>>>>>> ca27c4a1b30bb28a6d9efc2d05c13401465ea1de
   mapM_ compileStm stms
  
   -- default return in case of no return statement
@@ -84,6 +93,7 @@ argId :: Arg -> Id
 argId (Arg _ id) = id
 
 addArgsHelper :: [Arg] -> State EnvC ()
+-- <<<<<<< HEAD
 addArgsHelper [] = do
     env <- get 
     trace ("\naddArgsHelper finished, env has: \n"++  show (addresses env)) $ emit ""
@@ -91,6 +101,12 @@ addArgsHelper ( (Arg aType id) : as) =
   trace ("\nAddArgsHelper: "
          ++ show (Arg aType id)
          ++ "\n" ++ show as ++ "\n") $ do
+-- =======
+--addArgsHelper [] = return () --do
+   -- env <- get 
+   -- trace ("\naddArgsHelper finished, env has: \n"++  show (addresses env)) $ emit ""
+-- addArgsHelper ( (Arg aType id) : as) = do --trace ("\nAddArgsHelper: " ++ show (Arg aType id) ++ "\n" ++ show as ++ "\n") $ do
+-- >>>>>>> ca27c4a1b30bb28a6d9efc2d05c13401465ea1de
     addVarC id aType
     addArgsHelper as
 
@@ -221,10 +237,12 @@ compileExp (ETyped t e) = --trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"
 
   EApp (Id name ) args -> funCallHelper (ETyped t (EApp (Id name) args)) "" --general function call
    
-  EInt i    -> emit ("bipush " ++ show i)
+  EInt i    -> if i > 200 
+               then emit ("sipush " ++ show i)
+               else emit ("bipush " ++ show i) 
   EDouble d -> emit ("ldc2_w " ++ show d)
-  ETrue     -> emit "bipush 1"
-  EFalse    -> emit "bipush 0"
+  ETrue     -> emit "iconst_1"
+  EFalse    -> emit "iconst_0"
   
   EPlus  e1 e2 -> compileExpArithm e1 e2 t "add" --page 101 and 98
   EMinus e1 e2 -> compileExpArithm e1 e2 t "sub"
@@ -268,7 +286,7 @@ compileExp (ETyped t e) = --trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"
     emit $ "goto" +++ end
     emit $ false ++ ":"
     emit "iconst_0"         -- add EAnd result 0 
-    emit $ "goto" +++ end
+    --emit $ "goto" +++ end
     emit $ end ++ ":"       -- either 1 or 0 on stack
     
   EOr  e1 e2 -> do --error $ "EOr not implemented yet in compileExp"
@@ -328,7 +346,7 @@ compileIncr e t i timing = do
     let (ETyped t (EId x)) = e
     a <- lookupVarC x 
     emitTyped t ("store" +++ show a)
-    where (dup,one) = case t of TInt    -> ("dup" , "bipush 1")
+    where (dup,one) = case t of TInt    -> ("dup" , "iconst_1")
                                 TDouble -> ("dup2", "dconst_1") 
 
 --the jvm Operator is passed as the  string argument
@@ -338,12 +356,12 @@ compileExpCompare jvmOp e1 e2 = do
     let label = drop 7 jvmOp -- all these 6 ops have the same length 9 and we want the last 2
 
     true <- newLabelC ("TRUE"++label)
-    emit "bipush 1"
+    emit "iconst_1"
     compileExp e1
     compileExp e2
     emit $ jvmOp ++ " " ++ true
     emit "pop"
-    emit "bipush 0"
+    emit "iconst_0"
     emit $ true ++ ":"
 
 -- Helper function for emitting type-specific versions of instructions.
