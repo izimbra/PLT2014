@@ -266,10 +266,10 @@ compileExp (ETyped t e) = --trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"
   EEq   e1 e2 -> compileExpCompare "if_icmpeq"  e1 e2
   ENEq  e1 e2 -> compileExpCompare "if_icmpne"  e1 e2
 
-  EIncr  e -> compileIncr e "iadd" PRE
-  EDecr  e -> compileIncr e "isub" PRE
-  EPIncr e -> compileIncr e "iadd" POST
-  EPDecr e -> compileIncr e "isub" POST
+  EIncr  e -> compileIncr e "iadd" Pre
+  EDecr  e -> compileIncr e "isub" Pre
+  EPIncr e -> compileIncr e "iadd" Post
+  EPDecr e -> compileIncr e "isub" Post
 
 --  EIncr  e -> compilePreIncDec  e "iadd"
 --  EDecr  e -> compilePreIncDec  e "isub"
@@ -323,16 +323,16 @@ compileExp e = error $ "NON TYPED EXP IN COMPILEEXP \n" ++ (show e)
 compileIncr :: Exp -> String -> IncrTiming -> State EnvC ()  
 compileIncr e operation timing = do
     compileExp e
-    emit case timing of 
-        PRE -> ""
-        POST -> "dup"
+    emit $ case timing of 
+        Pre -> ""
+        Post -> "dup"
     
     emit "bipush 1"
     emit operation
 
-    emit case timing of
-        PRE -> "dup"
-        POST -> ""
+    emit $ case timing of
+        Pre -> "dup"
+        Post -> ""
 
     let (ETyped t (EId x)) = e
     a <- lookupVarC x 
