@@ -186,7 +186,8 @@ compileStm s = case s of
             TInt    -> "ireturn"
             TDouble -> "dreturn"
             TBool   -> "ireturn"
---            TVoid   -> "return"
+            --TVoid   -> error $ "SReturn TVoid not handled"
+            TVoid   -> "return"
   _            -> error $ "No match in compileExp: " ++ show s
               --   return ()
 
