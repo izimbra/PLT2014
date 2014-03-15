@@ -63,7 +63,8 @@ compileDef (Fun t (Id f) args stms) = do
   emit $ ".limit locals 100"
   emit $ ".limit stack 100"
 
-  trace ( "\nTRACE ARGS: " ++ show args ++"\nOF FUNCTION " ++ show f ++ "\nEND TRACEARGS" ) $ addArgsHelper args
+  addArgsHelper args
+  --trace ( "\nTRACE ARGS: " ++ show args ++"\nOF FUNCTION " ++ show f ++ "\nEND TRACEARGS" ) $ addArgsHelper args
 
   mapM_ compileStm stms
   -- return 0 if function has no return statement
@@ -80,10 +81,10 @@ compileDef (Fun t (Id f) args stms) = do
 
 
 addArgsHelper :: [Arg] -> State EnvC ()
-addArgsHelper [] = do
-    env <- get 
-    trace ("\naddArgsHelper finished, env has: \n"++  show (addresses env)) $ emit ""
-addArgsHelper ( (Arg aType id) : as) = trace ("\nAddArgsHelper: " ++ show (Arg aType id) ++ "\n" ++ show as ++ "\n") $ do
+addArgsHelper [] = return () --do
+   -- env <- get 
+   -- trace ("\naddArgsHelper finished, env has: \n"++  show (addresses env)) $ emit ""
+addArgsHelper ( (Arg aType id) : as) = do --trace ("\nAddArgsHelper: " ++ show (Arg aType id) ++ "\n" ++ show as ++ "\n") $ do
     addVarC id aType
     addArgsHelper as
 
@@ -285,7 +286,7 @@ compileExp (ETyped t e) = --trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"
     emit $ "goto" +++ end
     emit $ false ++ ":"
     emit "iconst_0"         -- add EAnd result 0 
-    emit $ "goto" +++ end
+    --emit $ "goto" +++ end
     emit $ end ++ ":"       -- either 1 or 0 on stack
     
   EOr  e1 e2 -> do --error $ "EOr not implemented yet in compileExp"

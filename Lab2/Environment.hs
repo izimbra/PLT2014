@@ -132,7 +132,8 @@ addVarC x t = modify (\env -> env {
 lookupVarC :: Id -> State EnvC Address
 lookupVarC x = do
   env <- get
-  return $ trace ("\nlookupVarC : " ++ show (addresses env) ++"\n" ) $ look (addresses env) x 
+  return $ look (addresses env) x
+--  return $ trace ("\nlookupVarC : " ++ show (addresses env) ++"\n" ) $ look (addresses env) x  
  where
    look [] x = error $ "\nCompiler Lookup: Unknown variable " ++ printTree x ++ "."
    look (scope:rest) x = case lookup x scope of
