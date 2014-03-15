@@ -137,7 +137,7 @@ lookupVarC x = do
  where
    look [] x = error $ "\nCompiler Lookup: Unknown variable " ++ printTree x ++ "."
    look (scope:rest) x = case lookup x scope of
-     Nothing -> trace ("\nLOOKUP NOTHING SCOPE:\n" ++ show scope) $ look rest x
+     Nothing -> look rest x --trace ("\nLOOKUP NOTHING SCOPE:\n" ++ show scope) $ look rest x
      Just a  -> a
 
 

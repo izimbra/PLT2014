@@ -60,8 +60,8 @@ compileDef (Fun t (Id f) args stms) = do
          
          --    
   -- storage limits for local variables and stack
-  emit $ ".limit locals 100"
-  emit $ ".limit stack 100"
+  emit $ ".limit locals 102"
+  emit $ ".limit stack 102"
 
   addArgsHelper args
   --trace ( "\nTRACE ARGS: " ++ show args ++"\nOF FUNCTION " ++ show f ++ "\nEND TRACEARGS" ) $ addArgsHelper args
