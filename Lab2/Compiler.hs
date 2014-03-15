@@ -130,6 +130,11 @@ compileStm s = case s of
     
   -- variable declaration, emits no code
   SDecl t x    -> addVarC x t
+
+  SDecls t (x:[]) -> compileStm (SDecl t x)
+  SDecls t (x:xs) -> do
+    compileStm (SDecl t x)
+    compileStm (SDecls t xs)
   -- variable assignment
   -- SAss x (ETyped t e) -> trace ("TRACE\n" ++ show (ETyped t e )++"\nEndTrace\n") $ do  --following bok p102 for assignment statements
   --   compileExp (ETyped t e) --- DO NOT UNWRAP
