@@ -16,6 +16,7 @@ import ErrM
 
 import Environment
 
+data IncrTiming = Pre | Post
 -- a simple-minded compiler that doesn't need type annotations and works for integers only
 
 compile :: String -> Program -> String
@@ -265,10 +266,15 @@ compileExp (ETyped t e) = --trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"
   EEq   e1 e2 -> compileExpCompare "if_icmpeq"  e1 e2
   ENEq  e1 e2 -> compileExpCompare "if_icmpne"  e1 e2
 
-  EIncr  e -> compilePreIncDec  e "iadd"
-  EDecr  e -> compilePreIncDec  e "isub"
-  EPIncr e -> compilePostIncDec e "iadd"
-  EPDecr e -> compilePostIncDec e "isub"
+  EIncr  e -> compileIncr e "iadd" PRE
+  EDecr  e -> compileIncr e "isub" PRE
+  EPIncr e -> compileIncr e "iadd" POST
+  EPDecr e -> compileIncr e "isub" POST
+
+--  EIncr  e -> compilePreIncDec  e "iadd"
+--  EDecr  e -> compilePreIncDec  e "isub"
+--  EPIncr e -> compilePostIncDec e "iadd"
+--  EPDecr e -> compilePostIncDec e "isub"
   -- variable reference loads its value on stack
   EId x  -> do --corresponds to example with EVar
     a <- lookupVarC x
@@ -313,26 +319,44 @@ compileExp (ETyped t e) = --trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"
  
 compileExp e = error $ "NON TYPED EXP IN COMPILEEXP \n" ++ (show e)
 
-
-compilePostIncDec :: Exp -> String -> State EnvC ()
-compilePostIncDec e operation = do
+--generalised compiler for pre- and post- increment and decrements
+compileIncr :: Exp -> String -> IncrTiming -> State EnvC ()  
+compileIncr e operation timing = do
     compileExp e
-    emit "dup" --dup before operation, so that the original value is left on the stack to return
-    emit "bipush 1"
-    emit operation   
-    let (ETyped t (EId x)) = e
-    a <- lookupVarC x 
-    emit $ "istore" +++ show a
-
-compilePreIncDec :: Exp -> String -> State EnvC ()
-compilePreIncDec e operation = do
-    compileExp  e
+    emit case timing of 
+        PRE -> ""
+        POST -> "dup"
+    
     emit "bipush 1"
     emit operation
-    emit $ "dup" --we need a dup here since we want the expression to have a return value . in the case of SExp, SExp will pop one extra time to take care of it. 
+
+    emit case timing of
+        PRE -> "dup"
+        POST -> ""
+
     let (ETyped t (EId x)) = e
     a <- lookupVarC x 
     emit $ "istore" +++ show a
+
+--compilePostIncDec :: Exp -> String -> State EnvC ()
+--compilePostIncDec e operation = do
+--    compileExp e
+--    emit "dup" --dup before operation, so that the original value is left on the stack to return
+--    emit "bipush 1"
+--    emit operation   
+--    let (ETyped t (EId x)) = e
+--    a <- lookupVarC x 
+--    emit $ "istore" +++ show a-
+--
+--compilePreIncDec :: Exp -> String -> State EnvC ()
+--compilePreIncDec e operation = do
+--    compileExp  e
+--    emit "bipush 1"
+--    emit operation
+--    emit $ "dup" --we need a dup here since we want the expression to have a return value . in the case of SExp, SExp will pop -one extra time to take care of it. 
+--    let (ETyped t (EId x)) = e
+--    a <- lookupVarC x 
+--    emit $ "istore" +++ show a
 
 --the jvm Operator is passed as the  string argument
 --book page 104 on how to compile ELt . Same pattern for all 6 which have their own JVM operator.
