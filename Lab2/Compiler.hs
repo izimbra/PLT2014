@@ -276,30 +276,29 @@ compileExp (ETyped t e) = --trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"
     a <- lookupVarC x
     emitTyped t ("load " ++ show a)  --emit ("iload " ++ show a)
 
-  -- variable assignment
+  -- variable assignment--following bok p102 for assignment statements
   EAss (ETyped t (EId x)) e -> do -- explicit match on EId because we don't want
-    addr <- lookupVarC x               -- to load 'x', just look up its address
-    --trace ("TRACE\n" ++ show (ETyped t e )++"\nEndTrace\n") $ do  --following bok p102 for assignment statements
+    addr <- lookupVarC x               -- to load 'x', just look up its address   
     compileExp e
     emit dup
     emitTyped t ("store" +++ show addr)
     where dup = case t of TDouble -> "dup2"
                           _       -> "dup"   --int or bool. removed the check for a bad type that was here before, but the same check is done in emitTyped, which will crash appropriately if not (double, int, bool), so it will work just as fine as before.
- 
---    case t of 
---      TInt -> do
---        emit "dup"
---        emit $ "istore" +++ show addr
---      TBool -> do
---        emit "dup"
---        emit $ "istore" +++ show addr
---      TDouble -> do
---        emit "dup2"
---        emit $ "dstore" +++ show addr
---      _       -> error $ "COMPILATION ERROR\n" ++
---                         "Assigment of type not in [bool, int, double]" -- should be caught in type checker?
 
-  EOr e1 e2 -> error $ "EOr not implemented yet in compileExp"
+  EOr e1 e2 -> do --error $ "EOr not implemented yet in compileExp"
+    true  <- newLabelC ("TRUEor")
+    let truejump = "ifne " ++ true  -- http://cs.au.dk/~mis/dOvs/jvmspec/ref-ifne.html
+    end <- newLabelC ("ENDor")
+    compileExp e1 --e1 on stack
+    emit truejump --stack empty
+    compileExp e2 --e2 on stack
+    emit truejump --stack empty
+    emit "bipush 0" --0 on stack . if we arrive here, neither was true so we are false
+    emit $ "goto " ++ end
+    emit $ true ++":"       --label
+    emit "bipush 1" --1 on stack. if we arrive here, either expression was true
+    emit $ end ++ ":" --0 or 1 on stack
+    
     
 
   _ -> error ( "\n\nERROR NON EXHAUSTIVE COMPIlEEXP \n " ++
