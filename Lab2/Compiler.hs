@@ -100,11 +100,14 @@ compileStm s = case s of
     
   SExp (ETyped t e) -> do -- from Stm point of view, all Exp will be ETyped. This code is meant to behave as the rule on book p102
     compileExp (ETyped t e)
-    case t of
-      TInt    -> emit "pop"
-      TBool   -> emit "pop"
-      TDouble -> emit "pop2"
-      _       -> return ()
+    case e of
+        EAss _ _ -> return ()
+        _ -> case t of
+--      case t of
+          TInt    -> emit "pop"
+          TBool   -> emit "pop"
+          TDouble -> emit "pop2"
+          _       -> return ()
     
   
   SWhile e s -> do --book page 103
@@ -119,7 +122,7 @@ compileStm s = case s of
 
   SIfElse e s1 s2 -> do
     false <- newLabelC "FALSE"
-    true  <- newLabelC "FALSE"
+    true  <- newLabelC "TRUE"
     compileExp e
     emit $ "ifeq" +++ false
     compileStm s1
@@ -159,7 +162,10 @@ compileStm s = case s of
   SInit t x e -> --trace ("\nTRACE:\n " ++ show t ++ "\n " ++ show x ++ "\n " ++ show e ++ "\nEND TRACE\n")  $ 
    do
     compileStm (SDecl t x)
-    compileStm (SAss x e)
+    --compileStm (SAss x e) --we removed this from the grammar and decided to use only SExp EAss. The call becomes ugly tho =)
+    
+    compileStm (SExp (ETyped t (EAss (ETyped t (EId x)) e)))  --perHaps you can just compileExp and skip the Stm, I wasn't sure.
+    --compileExp (ETyped t (EAss (ETyped t (EId x)) e)) --seems bad, gets wrong stack height
     --addVarC x t
     --compileExp e
     --addr <- lookupVarC x
