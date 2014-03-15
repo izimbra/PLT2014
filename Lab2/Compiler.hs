@@ -235,7 +235,6 @@ invokeRuntime s [e] = do
     compileExp e
     invokeRuntime s []
 
-
 compileExp :: Exp -> State EnvC ()
 
 compileExp (ETyped t e) = --trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"\nEnd trace\n" ) $ 
@@ -246,7 +245,7 @@ compileExp (ETyped t e) = --trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"
   EApp (Id "readInt")     _   -> invokeRuntime "readInt()I"      []
   EApp (Id "readDouble")  _   -> invokeRuntime "readDouble()D"   []
 
-  EApp (Id name ) args -> funCallHelper (ETyped t (EApp (Id name) args)) "" 
+  EApp (Id name ) args -> funCallHelper (ETyped t (EApp (Id name) args)) "" --general function call
    
   EInt i    -> emit ("bipush " ++ show i)
   EDouble d -> emit ("ldc2_w " ++ show d)
@@ -257,6 +256,14 @@ compileExp (ETyped t e) = --trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"
   EMinus e1 e2 -> compileExpArithm e1 e2 t "sub"
   ETimes e1 e2 -> compileExpArithm e1 e2 t "mul"
   EDiv   e1 e2 -> compileExpArithm e1 e2 t "div"
+
+    --http://cs.au.dk/~mis/dOvs/jvmspec/ref-Java.html
+  ELt   e1 e2 -> compileExpCompare "if_icmplt"  e1 e2
+  EGt   e1 e2 -> compileExpCompare "if_icmpgt"  e1 e2
+  ELtEq e1 e2 -> compileExpCompare "if_icmple"  e1 e2
+  EGtEq e1 e2 -> compileExpCompare "if_icmpge"  e1 e2
+  EEq   e1 e2 -> compileExpCompare "if_icmpeq"  e1 e2
+  ENEq  e1 e2 -> compileExpCompare "if_icmpne"  e1 e2
 
   -- variable reference loads its value on stack
   EId x  -> do --corresponds to example with EVar
@@ -288,15 +295,6 @@ compileExp (ETyped t e) = --trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"
     let (ETyped t (EId x)) = e
     a <- lookupVarC x 
     emit $ "istore" +++ show a
-
-    --http://cs.au.dk/~mis/dOvs/jvmspec/ref-Java.html
-  ELt   e1 e2 -> compileExpCompare "if_icmplt"  e1 e2
-  EGt   e1 e2 -> compileExpCompare "if_icmpgt"  e1 e2
-  ELtEq e1 e2 -> compileExpCompare "if_icmple"  e1 e2
-  EGtEq e1 e2 -> compileExpCompare "if_icmpge"  e1 e2
-  EEq   e1 e2 -> compileExpCompare "if_icmpeq"  e1 e2
-  ENEq  e1 e2 -> compileExpCompare "if_icmpne"  e1 e2
-
 
     --compileExp (ETyped TInt (EPlus (ETyped TInt e)  (ETyped TInt (EInt 1))))
     
