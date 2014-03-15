@@ -229,30 +229,25 @@ funCallHelper (ETyped fType (EApp (Id name) ( (ETyped aType arg):args))) s = do 
     funCallHelper (ETyped fType (EApp (Id name) ( args))) s'  --1 arg popped and 1 argTypeC added
 
 
+invokeRuntime :: String -> [Exp] -> State EnvC ()
+invokeRuntime s []  = emit $ "invokestatic Runtime/" ++ s
+invokeRuntime s [e] = do
+    compileExp e
+    invokeRuntime s []
+
+
 compileExp :: Exp -> State EnvC ()
 
 compileExp (ETyped t e) = --trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"\nEnd trace\n" ) $ 
  case e of
   -- Built-in functions
-  EApp (Id "printInt") [e] -> do --function call
---    mapM_ compileExp es
-    compileExp e
-    emit $ "invokestatic Runtime/printInt(I)V"
-  EApp (Id "printDouble") [e] -> do
-    compileExp e
-    emit $ "invokestatic Runtime/printDouble(D)V"
-  EApp (Id "readInt") _ -> do
-    --compileExp e
-    emit $ "invokestatic Runtime/readInt()I"
-  EApp (Id "readDouble") _ -> do
-    --compileExp e
-    emit $ "invokestatic Runtime/readDouble()D"
-  --EApp (Id name ) [] -> do
-  --  emit $ "invokestatic " ++ show name ++ "()" -- argument TYPES ! ! ! AND FUNCTION TYPE
-  EApp (Id name ) args -> do
-    funCallHelper (ETyped t (EApp (Id name) args)) "" 
-    --compileExp arg
-    --compileExp (ETyped t (EApp (Id name) (args))) --self-recursive one arg at a time  
+  EApp (Id "printInt")    [e] -> invokeRuntime "printInt(I)V"    [e]
+  EApp (Id "printDouble") [e] -> invokeRuntime "printDouble(D)V" [e]
+  EApp (Id "readInt")     _   -> invokeRuntime "readInt()I"      []
+  EApp (Id "readDouble")  _   -> invokeRuntime "readDouble()D"   []
+
+  EApp (Id name ) args -> funCallHelper (ETyped t (EApp (Id name) args)) "" 
+   
   EInt i    -> emit ("bipush " ++ show i)
   EDouble d -> emit ("ldc2_w " ++ show d)
   ETrue     -> emit "bipush 1"
@@ -266,8 +261,7 @@ compileExp (ETyped t e) = --trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"
   -- variable reference loads its value on stack
   EId x  -> do --corresponds to example with EVar
     a <- lookupVarC x
-    --emit ("iload " ++ show a)
-    emitTyped t ("load " ++ show a) 
+    emitTyped t ("load " ++ show a)  --emit ("iload " ++ show a)
 
   -- variable assignment
   EAss (ETyped t (EId x)) e -> do -- explicit match on EId because we don't want
@@ -286,8 +280,6 @@ compileExp (ETyped t e) = --trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"
         emit $ "dstore" +++ show addr
       _       -> error $ "COMPILATION ERROR\n" ++
                          "Assigment of type not in [bool, int, double]" -- should be caught in type checker?
-
-
 
   EIncr e -> do
     compileExp  e
