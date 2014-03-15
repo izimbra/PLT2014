@@ -266,10 +266,10 @@ compileExp (ETyped t e) = --trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"
   EEq   e1 e2 -> compileExpCompare "if_icmpeq"  e1 e2
   ENEq  e1 e2 -> compileExpCompare "if_icmpne"  e1 e2
 
-  EIncr  e -> compileIncr e "iadd" Pre
-  EDecr  e -> compileIncr e "isub" Pre
-  EPIncr e -> compileIncr e "iadd" Post
-  EPDecr e -> compileIncr e "isub" Post
+  EIncr  e -> compileIncr e t "add" Pre
+  EDecr  e -> compileIncr e t "sub" Pre
+  EPIncr e -> compileIncr e t "add" Post
+  EPDecr e -> compileIncr e t "sub" Post
 
 --  EIncr  e -> compilePreIncDec  e "iadd"
 --  EDecr  e -> compilePreIncDec  e "isub"
@@ -320,23 +320,29 @@ compileExp (ETyped t e) = --trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"
 compileExp e = error $ "NON TYPED EXP IN COMPILEEXP \n" ++ (show e)
 
 --generalised compiler for pre- and post- increment and decrements
-compileIncr :: Exp -> String -> IncrTiming -> State EnvC ()  
-compileIncr e operation timing = do
+compileIncr :: Exp -> Type -> Instruction -> IncrTiming -> State EnvC ()  
+compileIncr e t i timing = do
+    --let dup = case t of
+       
+
     compileExp e
     emit $ case timing of 
         Pre -> ""
-        Post -> "dup"
+        Post -> dup
     
-    emit "bipush 1"
-    emit operation
+    emit one        
+    emitTyped t i  -- add or sub according to type 
 
     emit $ case timing of
-        Pre -> "dup"
+        Pre -> dup
         Post -> ""
 
     let (ETyped t (EId x)) = e
     a <- lookupVarC x 
-    emit $ "istore" +++ show a
+    emitTyped t ("store" +++ show a)
+    where (dup,one) = case t of TInt    -> ("dup" , "bipush 1")
+                                TDouble -> ("dup2", "dconst_1") 
+          
 
 --compilePostIncDec :: Exp -> String -> State EnvC ()
 --compilePostIncDec e operation = do
