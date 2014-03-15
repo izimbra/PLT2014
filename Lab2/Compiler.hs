@@ -63,12 +63,13 @@ compileDef (Fun t (Id f) args stms) = do
   emit $ ".limit locals 100"
   emit $ ".limit stack 100"
 
+  trace ( "\nTRACE ARGS: " ++ show args ++"\nOF FUNCTION " ++ show f ++ "\nEND TRACEARGS" ) $ addArgsHelper args
+
   mapM_ compileStm stms
   -- return 0 if function has no return statement
   -- for i = 1,...,m : addVarC(xi,ti)
   --error "trikikki"
-  trace ( "\nTRACE ARGS: " ++ show args ++"\nOF FUNCTION " ++ show f ++ "\nEND TRACEARGS" ) $ addArgsHelper args
-
+ 
   -- default return in case of no return statement
   case stms of
     [] -> defaultReturn t
