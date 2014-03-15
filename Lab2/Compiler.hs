@@ -239,7 +239,9 @@ compileExp (ETyped t e) = --trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"
 
   EApp (Id name ) args -> funCallHelper (ETyped t (EApp (Id name) args)) "" --general function call
    
-  EInt i    -> emit ("bipush " ++ show i)
+  EInt i    -> if i > 200 
+               then emit ("sipush " ++ show i)
+               else emit ("bipush " ++ show i) 
   EDouble d -> emit ("ldc2_w " ++ show d)
   ETrue     -> emit "iconst_1"
   EFalse    -> emit "iconst_0"
