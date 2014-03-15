@@ -117,7 +117,6 @@ compileStm s = case s of
    --     EAss _ _ -> return ()
    --     _ -> case t of
     popTyped t
-        
   
   SWhile e s -> do --book page 103
     test <- newLabelC "TESTwhile"
@@ -283,12 +282,17 @@ compileExp (ETyped t e) = --trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"
 
   EAnd e1 e2 -> do
     false <- newLabelC "and_FALSE"
+    end   <- newLabelC "and_END"
     compileExp e1
-    dupTyped $ whichType e1
+    emit $ "ifeq" +++ false -- false if 1st exp evals to 0
+    compileExp e2
     emit $ "ifeq" +++ false
-
+    emit "iconst_1"         -- if we arrive here, both exp are non-zero
+    emit $ "goto" +++ end
     emit $ false ++ ":"
-    popTyped $ whichType e1
+    emit "iconst_0"         -- add EAnd result 0 
+    emit $ "goto" +++ end
+    emit $ end ++ ":"       -- either 1 or 0 on stack
     
   EOr  e1 e2 -> do --error $ "EOr not implemented yet in compileExp"
     true  <- newLabelC "TRUEor"
@@ -298,10 +302,10 @@ compileExp (ETyped t e) = --trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"
     emit truejump --stack empty
     compileExp e2 --e2 on stack
     emit truejump --stack empty
-    emit "bipush 0" --0 on stack . if we arrive here, neither was true so we are false
+    emit "iconst_0" --0 on stack . if we arrive here, neither was true so we are false
     emit $ "goto" +++ end
     emit $ true ++":"       --label
-    emit "bipush 1" --1 on stack. if we arrive here, either expression was true
+    emit "iconst_1" --1 on stack. if we arrive here, either expression was true
     emit $ end ++ ":" --0 or 1 on stack
     
 
