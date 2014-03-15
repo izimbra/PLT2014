@@ -116,12 +116,8 @@ compileStm s = case s of
    -- case e of
    --     EAss _ _ -> return ()
    --     _ -> case t of
-    case t of
-        TInt    -> emit "pop"
-        TBool   -> emit "pop"
-        TDouble -> emit "pop2"
-        _       -> return ()
-    
+    popTyped t
+        
   
   SWhile e s -> do --book page 103
     test <- newLabelC "TESTwhile"
@@ -202,7 +198,8 @@ compileStm s = case s of
   _            -> error $ "No match in compileExp: " ++ show s
               --   return ()
 
---helper function for re-using code pattern
+-- Helper function for re-using pattern for compiling
+-- arithmetic expressions (add, sub, mul, div).  
 compileExpArithm :: Exp -> Exp -> Type -> String -> State EnvC ()
 compileExpArithm e1 e2 t s = do
     compileExp e1
@@ -210,23 +207,23 @@ compileExpArithm e1 e2 t s = do
     emitTyped t s
 
 
-argTypeC :: Type -> Char 
-argTypeC TInt    = 'I'
-argTypeC TDouble = 'D'
-argTypeC TBool   = 'I' --maybe should be Z. and maybe this function isn't needed because the environment.hs has something similar
-argTypeC TVoid   = 'V'
-argTypeC t       = error $ "bad type sent to argTypeC: " ++ show t
+-- argTypeC :: Type -> Char 
+-- argTypeC TInt    = 'I'
+-- argTypeC TDouble = 'D'
+-- argTypeC TBool   = 'I' --maybe should be Z. and maybe this function isn't needed because the environment.hs has something similar
+-- argTypeC TVoid   = 'V'
+-- argTypeC t       = error $ "bad type sent to argTypeC: " ++ show t
 
 funCallHelper :: Exp -> String -> State EnvC () --The String here is the list of chars for ArgTypes used in the jvm such as (II)
 
 funCallHelper (ETyped fType (EApp (Id name) [])) s = do --base case, no more args to compile
     env <- get
     let className_ = (className env)
-    emit $ "invokestatic " ++ className_ ++ "/" ++ name ++ "(" ++ s ++ ")" ++ [argTypeC fType]
+    emit $ "invokestatic " ++ className_ ++ "/" ++ name ++ "(" ++ s ++ ")" ++ [typeToTypeC fType]
 
 funCallHelper (ETyped fType (EApp (Id name) ( (ETyped aType arg):args))) s = do --self recursive
     compileExp (ETyped aType arg)
-    let s' = s ++ [argTypeC aType]
+    let s' = s ++ [typeToTypeC aType]
     funCallHelper (ETyped fType (EApp (Id name) ( args))) s'  --1 arg popped and 1 argTypeC added
 
 
@@ -280,32 +277,56 @@ compileExp (ETyped t e) = --trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"
   EAss (ETyped t (EId x)) e -> do -- explicit match on EId because we don't want
     addr <- lookupVarC x               -- to load 'x', just look up its address   
     compileExp e
-    emit dup
+    dupTyped t
     emitTyped t ("store" +++ show addr)
-    where dup = case t of TDouble -> "dup2"
-                          _       -> "dup"   --int or bool. removed the check for a bad type that was here before, but the same check is done in emitTyped, which will crash appropriately if not (double, int, bool), so it will work just as fine as before.
+       --int or bool. removed the check for a bad type that was here before, but the same check is done in emitTyped, which will crash appropriately if not (double, int, bool), so it will work just as fine as before.
 
-  EOr e1 e2 -> do --error $ "EOr not implemented yet in compileExp"
-    true  <- newLabelC ("TRUEor")
-    let truejump = "ifne " ++ true  -- http://cs.au.dk/~mis/dOvs/jvmspec/ref-ifne.html
+  EAnd e1 e2 -> do
+    false <- newLabelC "and_FALSE"
+    compileExp e1
+    dupTyped $ whichType e1
+    emit $ "ifeq" +++ false
+
+    emit $ false ++ ":"
+    popTyped $ whichType e1
+    
+  EOr  e1 e2 -> do --error $ "EOr not implemented yet in compileExp"
+    true  <- newLabelC "TRUEor"
+    let truejump = "ifne" +++ true  -- http://cs.au.dk/~mis/dOvs/jvmspec/ref-ifne.html
     end <- newLabelC ("ENDor")
     compileExp e1 --e1 on stack
     emit truejump --stack empty
     compileExp e2 --e2 on stack
     emit truejump --stack empty
     emit "bipush 0" --0 on stack . if we arrive here, neither was true so we are false
-    emit $ "goto " ++ end
+    emit $ "goto" +++ end
     emit $ true ++":"       --label
     emit "bipush 1" --1 on stack. if we arrive here, either expression was true
     emit $ end ++ ":" --0 or 1 on stack
-    
     
 
   _ -> error ( "\n\nERROR NON EXHAUSTIVE COMPIlEEXP \n " ++
                show (ETyped t e) ++ 
                "\n +++ ++ ++++ cannot compile case of \n" ++ show e)
- 
+
 compileExp e = error $ "NON TYPED EXP IN COMPILEEXP \n" ++ (show e)
+
+
+-- Emit type-specific dup instruction.
+dupTyped :: Type -> State EnvC ()
+dupTyped t = emit $ case t of
+                      TDouble -> "dup2"
+                      _       -> "dup"
+                      
+-- Emit type-specific pop instruction.
+popTyped :: Type -> State EnvC ()
+popTyped t = case t of
+               TInt    -> emit "pop"
+               TBool   -> emit "pop"
+               TDouble -> emit "pop2"
+               _       -> return ()
+
+
 
 --generalised compiler for pre- and post- increment and decrements
 compileIncr :: Exp -> Type -> Instruction -> IncrTiming -> State EnvC ()  
@@ -344,15 +365,13 @@ compileExpCompare jvmOp e1 e2 = do
     emit "bipush 0"
     emit $ true ++ ":"
 
+-- Helper function for emitting type-specific versions of instructions.
+-- Used for loads, stores and arithmetic instructions. 
 emitTyped :: Type -> Instruction -> State EnvC ()
 emitTyped t i = emit (c ++ i) where
     c = case t of
-        TInt -> "i"
+        TInt    -> "i"
         TDouble -> "d"
-        TBool -> "i"
+        TBool   -> "i"
         _ -> error $ "emitTyped with type not (Int or Double or Bool)"
 
---something with the dup case that needs to consider when an expression of 
---any of these types leaves the value of the expression on the stack,
---so that the outer expr can use it to evaluate something. 
--- page 102 gives some instructions on this matter.

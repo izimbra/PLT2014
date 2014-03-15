@@ -30,6 +30,7 @@ module Environment (
                   , TypeC
                   , typeToTypeC
                   , typeSize
+                  , whichType
                    -- * Other 
                   , Value(..) 
                   , boolToVal
@@ -176,6 +177,10 @@ typeSize t = case t of
   TInt    -> 1
   TDouble -> 2
   TBool   -> 1 -- booleans are represented by integers at runtime
+
+-- | Returns type of a 'ETyped' expression.
+whichType :: Exp -> Type
+whichType (ETyped t _) = t
 
 
 data Value = VInt Integer | VDouble Double | VVoid | VUndef
