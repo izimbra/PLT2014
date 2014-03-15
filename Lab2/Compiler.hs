@@ -299,11 +299,11 @@ compileExp (ETyped t e) = --trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"
 
     --http://cs.au.dk/~mis/dOvs/jvmspec/ref-Java.html
   ELt   e1 e2 -> compileExpCompare "if_icmplt" "lt" e1 e2
-  EGt   e1 e2 -> compileExpCompare "if_icmpgt" "lt" e1 e2
-  ELtEq e1 e2 -> compileExpCompare "if_icmple" "lt" e1 e2
-  EGtEq e1 e2 -> compileExpCompare "if_icmpge" "lt" e1 e2
-  EEq   e1 e2 -> compileExpCompare "if_icmpeq" "lt" e1 e2
-  ENEq  e1 e2 -> compileExpCompare "if_icmpne" "lt" e1 e2
+  EGt   e1 e2 -> compileExpCompare "if_icmpgt" "gt" e1 e2
+  ELtEq e1 e2 -> compileExpCompare "if_icmple" "le" e1 e2
+  EGtEq e1 e2 -> compileExpCompare "if_icmpge" "ge" e1 e2
+  EEq   e1 e2 -> compileExpCompare "if_icmpeq" "eq" e1 e2
+  ENEq  e1 e2 -> compileExpCompare "if_icmpne" "ne" e1 e2
 --do --book page 104  
  --   true <- newLabelC "TRUEelt"
  --   emit "bipush 1"
