@@ -12,12 +12,10 @@ import LexCPP
 import ParCPP
 import PrintCPP
 import ErrM
-
-
 import Environment
 
 data IncrTiming = Pre | Post
--- a simple-minded compiler that doesn't need type annotations and works for integers only
+
 
 compile :: String -> Program -> String
 compile name p = unlines $ reverse $ code $ execState (compileProgram name p) emptyEnvC
@@ -45,7 +43,7 @@ compileProgram className_ (Prog defs) = do
     ""
    ]
   modify (\env -> env {className = className_})  --adds className to state so it can be used in compile
-  env <- get -- is this needed?
+--  env <- get -- is this needed?
 
   mapM_ compileDef defs
 --  emit "return"
@@ -54,36 +52,45 @@ compileProgram className_ (Prog defs) = do
 compileDef :: Def -> State EnvC ()
 compileDef (Fun t (Id f) args stms) = do
   -- method signature
-  emit $ ".method public static " ++ f                      -- name
+  emit $ ".method public static " ++ f                     -- name
          ++ "(" ++ map (typeToTypeC . argType) args ++ ")" -- argument types
-         ++ [typeToTypeC t]                                  -- return type   
+         ++ [typeToTypeC t]                                -- return type   
          
          --    
   -- storage limits for local variables and stack
   emit $ ".limit locals 100"
   emit $ ".limit stack 100"
+  modify (\env -> env { addresses = [], nextAddress = 0 })
+  trace ( "\nTRACE ARGS: "
+          ++ show args ++"\nOF FUNCTION " ++ show f
+          ++ "\nEND TRACEARGS" ) $ addArgsHelper args
 
-  trace ( "\nTRACE ARGS: " ++ show args ++"\nOF FUNCTION " ++ show f ++ "\nEND TRACEARGS" ) $ addArgsHelper args
-
+  -- mapM_ (
+  --       map   (
+  --             addVarC . -- :: Id -> Type -> State EnvC ()
+  --             argId     -- :: Arg -> Id
+  --             ) args    -- :: [Type -> State EnvC ()] -- first map gives a list of functions
+  --       ) (map argType args)
   mapM_ compileStm stms
-  -- return 0 if function has no return statement
-  -- for i = 1,...,m : addVarC(xi,ti)
-  --error "trikikki"
  
   -- default return in case of no return statement
   case stms of
     [] -> defaultReturn t
---             emit $ ".end metod"
     _  -> case (last stms) of
             (SReturn e) -> emit $ ".end method" 
             _           -> defaultReturn t
 
+argId :: Arg -> Id
+argId (Arg _ id) = id
 
 addArgsHelper :: [Arg] -> State EnvC ()
 addArgsHelper [] = do
     env <- get 
     trace ("\naddArgsHelper finished, env has: \n"++  show (addresses env)) $ emit ""
-addArgsHelper ( (Arg aType id) : as) = trace ("\nAddArgsHelper: " ++ show (Arg aType id) ++ "\n" ++ show as ++ "\n") $ do
+addArgsHelper ( (Arg aType id) : as) =
+  trace ("\nAddArgsHelper: "
+         ++ show (Arg aType id)
+         ++ "\n" ++ show as ++ "\n") $ do
     addVarC id aType
     addArgsHelper as
 
@@ -147,26 +154,6 @@ compileStm s = case s of
   SDecls t (x:xs) -> do
     compileStm (SDecl t x)
     compileStm (SDecls t xs)
-  -- variable assignment
-  -- SAss x (ETyped t e) -> trace ("TRACE\n" ++ show (ETyped t e )++"\nEndTrace\n") $ do  --following bok p102 for assignment statements
-  --   compileExp (ETyped t e) --- DO NOT UNWRAP
-  --   addr <- lookupVarC x
-  --   case t of 
-  --     TInt -> do
-  --       emit "dup"
-  --       emit $ "istore" +++ show addr
-  --     TBool -> do
-  --       emit "dup"
-  --       emit $ "istore" +++ show addr
-  --     TDouble -> do
-  --       emit "dup2"
-  --       emit $ "dstore" +++ show addr
-  --     _       -> error $ "Compile error: Assign statement with type not (bool, int, double)"
-      
-  --SAss x e     -> trace (show e) $ do 
-  --  compileExp e
-  --  addr <- lookupVarC x
-  --  emit ("istore " ++ show addr) 
   -- variable initialisation
   SInit t x e -> --trace ("\nTRACE:\n " ++ show t ++ "\n " ++ show x ++ "\n " ++ show e ++ "\nEND TRACE\n")  $ 
    do
@@ -184,19 +171,15 @@ compileStm s = case s of
     a <- newBlockC
     mapM compileStm stms
     exitBlockC a
-  -- SPrint e     -> do
-  --   compileExp e
-  --   emit $ "invokestatic Runtime/printInt(I)V"
+
   SReturn (ETyped t e) -> do
     compileExp (ETyped t e)
     emit $ case t of
             TInt    -> "ireturn"
             TDouble -> "dreturn"
             TBool   -> "ireturn"
-            --TVoid   -> error $ "SReturn TVoid not handled"
             TVoid   -> "return"
   _            -> error $ "No match in compileExp: " ++ show s
-              --   return ()
 
 -- Helper function for re-using pattern for compiling
 -- arithmetic expressions (add, sub, mul, div).  

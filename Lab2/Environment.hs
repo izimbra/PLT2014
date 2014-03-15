@@ -108,10 +108,10 @@ emptyEnvC :: EnvC
 emptyEnvC = E {
   addresses = [[]],
   nextLabel = 0,
-  nextAddress = 1,
-  maxAddress = 1,
+  nextAddress = 0,
+  maxAddress = 0,
   stackSize = 0,
-  maxSize = 1,
+  maxSize = 0,
   code = [],
   funTable = M.empty,
   className = ""       
@@ -124,7 +124,9 @@ emit i = modify (\env -> env{ code = i : code env })
 -- | Adds a variable to current scope of variable storage.
 addVarC :: Id -> Type -> State EnvC ()
 addVarC x t = modify (\env -> env {
-  addresses = case addresses env of (scope:rest) -> (((x,nextAddress env):scope):rest),
+  addresses = case addresses env of
+     (scope:rest) -> (((x,nextAddress env):scope):rest)
+     []           -> [[(x,nextAddress env)]],
   nextAddress = nextAddress env + typeSize t
   })
 
