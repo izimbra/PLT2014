@@ -241,8 +241,8 @@ compileExp (ETyped t e) = --trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"
    
   EInt i    -> emit ("bipush " ++ show i)
   EDouble d -> emit ("ldc2_w " ++ show d)
-  ETrue     -> emit "bipush 1"
-  EFalse    -> emit "bipush 0"
+  ETrue     -> emit "iconst_1"
+  EFalse    -> emit "iconst_0"
   
   EPlus  e1 e2 -> compileExpArithm e1 e2 t "add" --page 101 and 98
   EMinus e1 e2 -> compileExpArithm e1 e2 t "sub"
@@ -346,7 +346,7 @@ compileIncr e t i timing = do
     let (ETyped t (EId x)) = e
     a <- lookupVarC x 
     emitTyped t ("store" +++ show a)
-    where (dup,one) = case t of TInt    -> ("dup" , "bipush 1")
+    where (dup,one) = case t of TInt    -> ("dup" , "iconst_1")
                                 TDouble -> ("dup2", "dconst_1") 
 
 --the jvm Operator is passed as the  string argument
@@ -356,12 +356,12 @@ compileExpCompare jvmOp e1 e2 = do
     let label = drop 7 jvmOp -- all these 6 ops have the same length 9 and we want the last 2
 
     true <- newLabelC ("TRUE"++label)
-    emit "bipush 1"
+    emit "iconst_1"
     compileExp e1
     compileExp e2
     emit $ jvmOp ++ " " ++ true
     emit "pop"
-    emit "bipush 0"
+    emit "iconst_0"
     emit $ true ++ ":"
 
 -- Helper function for emitting type-specific versions of instructions.
