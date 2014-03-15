@@ -123,8 +123,8 @@ compileStm s = case s of
     
   
   SWhile e s -> do --book page 103
-    test <- newLabelC "TEST"
-    end  <- newLabelC "END"
+    test <- newLabelC "TESTwhile"
+    end  <- newLabelC "ENDwhile"
     emit $ test ++ ":"
     compileExp e
     emit $ "ifeq" +++ end
@@ -133,8 +133,8 @@ compileStm s = case s of
     emit $ end ++ ":"
 
   SIfElse e s1 s2 -> do
-    false <- newLabelC "FALSE"
-    true  <- newLabelC "TRUE"
+    false <- newLabelC "FALSEif"
+    true  <- newLabelC "TRUEif"
     compileExp e
     emit $ "ifeq" +++ false
     compileStm s1
@@ -212,18 +212,15 @@ compileExpArithm e1 e2 t s = do
 argTypeC :: Type -> Char 
 argTypeC TInt    = 'I'
 argTypeC TDouble = 'D'
-argTypeC TBool   = 'I'
+argTypeC TBool   = 'I' --maybe should be Z. and maybe this function isn't needed because the environment.hs has something similar
 argTypeC TVoid   = 'V'
 argTypeC t       = error $ "bad type sent to argTypeC: " ++ show t
 
-funCallHelper :: Exp -> String -> State EnvC ()
+funCallHelper :: Exp -> String -> State EnvC () --The String here is the list of chars for ArgTypes used in the jvm such as (II)
 
 funCallHelper (ETyped fType (EApp (Id name) [])) s = do --base case, no more args to compile
-    --apa <- get    
     env <- get
     let className_ = (className env)
-    --error $ "trollolo" ++ show apa
-    --E { a, b, c, d, e, f, g, h, className_ }  <- get
     emit $ "invokestatic " ++ className_ ++ "/" ++ name ++ "(" ++ s ++ ")" ++ [argTypeC fType]
 
 funCallHelper (ETyped fType (EApp (Id name) ( (ETyped aType arg):args))) s = do --self recursive
@@ -299,17 +296,35 @@ compileExp (ETyped t e) = --trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"
     let (ETyped t (EId x)) = e
     a <- lookupVarC x 
     emit $ "istore" +++ show a
+
+    --http://cs.au.dk/~mis/dOvs/jvmspec/ref-Java.html
+  ELt   e1 e2 -> compileExpCompare "if_icmplt" "lt" e1 e2
+  EGt   e1 e2 -> compileExpCompare "if_icmpgt" "lt" e1 e2
+  ELtEq e1 e2 -> compileExpCompare "if_icmple" "lt" e1 e2
+  EGtEq e1 e2 -> compileExpCompare "if_icmpge" "lt" e1 e2
+  EEq   e1 e2 -> compileExpCompare "if_icmpeq" "lt" e1 e2
+  ENEq  e1 e2 -> compileExpCompare "if_icmpne" "lt" e1 e2
+--do --book page 104  
+ --   true <- newLabelC "TRUEelt"
+ --   emit "bipush 1"
+ --   compileExp e1
+ --   compileExp e2
+ --   emit $ "if_icmplt " ++ true
+ --   emit "pop"
+ --   emit "bipush 0"
+ --   emit $ true ++ ":"
+--
+--  EGt  e1 e2 -> do 
+--    true <- newLabelC "TRUEegt"
+--    emit "bipush 1"
+--    compileExp e1
+--    compileExp e2
+--    emit $ "if_icmpgt " ++ true
+--    emit "pop"
+--    emit "bipush 0"
+--    emit $ true ++ ":"
     
-  ELt  e1 e2 -> do --book page 104  
-    true <- newLabelC "TRUE"
-    emit "bipush 1"
-    compileExp e1
-    compileExp e2
-    emit $ "if_icmplt " ++ true
-    emit "pop"
-    emit "bipush 0"
-    emit $ true ++ ":"
-    
+
     --compileExp (ETyped TInt (EPlus (ETyped TInt e)  (ETyped TInt (EInt 1))))
     
   _ -> error ( "\n\nERROR NON EXHAUSTIVE COMPIlEEXP \n " ++
@@ -318,6 +333,18 @@ compileExp (ETyped t e) = --trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"
  
 compileExp e = error $ "NON TYPED EXP IN COMPILEEXP \n" ++ (show e)
 
+compileExpCompare :: String -> String -> Exp -> Exp -> State EnvC ()
+compileExpCompare jvmOp label e1 e2 = do
+    true <- newLabelC ("TRUE"++label)
+    emit "bipush 1"
+    compileExp e1
+    compileExp e2
+    emit $ jvmOp ++ " " ++ true
+    emit "pop"
+    emit "bipush 0"
+    emit $ true ++ ":"
+
+    
 
 
 emitTyped :: Type -> Instruction -> State EnvC ()
