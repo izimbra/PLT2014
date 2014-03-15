@@ -108,8 +108,8 @@ emptyEnvC :: EnvC
 emptyEnvC = E {
   addresses = [[]],
   nextLabel = 0,
-  nextAddress = 1,
-  maxAddress = 1,
+  nextAddress = 0,
+  maxAddress = 0,
   stackSize = 0,
   maxSize = 1,
   code = [],
