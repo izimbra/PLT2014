@@ -266,15 +266,11 @@ compileExp (ETyped t e) = --trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"
   EEq   e1 e2 -> compileExpCompare "if_icmpeq"  e1 e2
   ENEq  e1 e2 -> compileExpCompare "if_icmpne"  e1 e2
 
-  EIncr  e -> compileIncr e t "add" Pre
-  EDecr  e -> compileIncr e t "sub" Pre
-  EPIncr e -> compileIncr e t "add" Post
-  EPDecr e -> compileIncr e t "sub" Post
+  EIncr  e -> compileIncr e t "add" Pre --it is unwrapped here so we send an untyped Exp and its type separately. 
+  EDecr  e -> compileIncr e t "sub" Pre --the function accepts that and it works. it may not follow convention
+  EPIncr e -> compileIncr e t "add" Post --but I think it's worth it. the alternative would be to pass the whole
+  EPDecr e -> compileIncr e t "sub" Post --ETyped EPIncr again, which becomes ugly and loses the point of separation done here.
 
---  EIncr  e -> compilePreIncDec  e "iadd"
---  EDecr  e -> compilePreIncDec  e "isub"
---  EPIncr e -> compilePostIncDec e "iadd"
---  EPDecr e -> compilePostIncDec e "isub"
   -- variable reference loads its value on stack
   EId x  -> do --corresponds to example with EVar
     a <- lookupVarC x
@@ -285,45 +281,36 @@ compileExp (ETyped t e) = --trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"
     addr <- lookupVarC x               -- to load 'x', just look up its address
     --trace ("TRACE\n" ++ show (ETyped t e )++"\nEndTrace\n") $ do  --following bok p102 for assignment statements
     compileExp e
-    case t of 
-      TInt -> do
-        emit "dup"
-        emit $ "istore" +++ show addr
-      TBool -> do
-        emit "dup"
-        emit $ "istore" +++ show addr
-      TDouble -> do
-        emit "dup2"
-        emit $ "dstore" +++ show addr
-      _       -> error $ "COMPILATION ERROR\n" ++
-                         "Assigment of type not in [bool, int, double]" -- should be caught in type checker?
+    emit dup
+    emitTyped t ("store" +++ show addr)
+    where dup = case t of TDouble -> "dup2"
+                          _       -> "dup"   --int or bool. removed the check for a bad type that was here before, but the same check is done in emitTyped, which will crash appropriately if not (double, int, bool), so it will work just as fine as before.
+ 
+--    case t of 
+--      TInt -> do
+--        emit "dup"
+--        emit $ "istore" +++ show addr
+--      TBool -> do
+--        emit "dup"
+--        emit $ "istore" +++ show addr
+--      TDouble -> do
+--        emit "dup2"
+--        emit $ "dstore" +++ show addr
+--      _       -> error $ "COMPILATION ERROR\n" ++
+--                         "Assigment of type not in [bool, int, double]" -- should be caught in type checker?
 
---do
---    compileExp  e
---    emit "bipush 1"
---    emit "iadd"
---    let (ETyped t (EId x)) = e
---    a <- lookupVarC x 
---    emit $ "istore" +++ show a
-
- -- EDecr e -> do
- --   compileExp e
- --   emit "bipush 1"
- --   emit "isub"
-
-    --compileExp (ETyped TInt (EPlus (ETyped TInt e)  (ETyped TInt (EInt 1))))
+  EOr e1 e2 -> error $ "EOr not implemented yet in compileExp"
     
+
   _ -> error ( "\n\nERROR NON EXHAUSTIVE COMPIlEEXP \n " ++
                show (ETyped t e) ++ 
-               "cannot compile case of \n" ++ show e)
+               "\n +++ ++ ++++ cannot compile case of \n" ++ show e)
  
 compileExp e = error $ "NON TYPED EXP IN COMPILEEXP \n" ++ (show e)
 
 --generalised compiler for pre- and post- increment and decrements
 compileIncr :: Exp -> Type -> Instruction -> IncrTiming -> State EnvC ()  
 compileIncr e t i timing = do
-    --let dup = case t of
-       
 
     compileExp e
     emit $ case timing of 
@@ -342,27 +329,6 @@ compileIncr e t i timing = do
     emitTyped t ("store" +++ show a)
     where (dup,one) = case t of TInt    -> ("dup" , "bipush 1")
                                 TDouble -> ("dup2", "dconst_1") 
-          
-
---compilePostIncDec :: Exp -> String -> State EnvC ()
---compilePostIncDec e operation = do
---    compileExp e
---    emit "dup" --dup before operation, so that the original value is left on the stack to return
---    emit "bipush 1"
---    emit operation   
---    let (ETyped t (EId x)) = e
---    a <- lookupVarC x 
---    emit $ "istore" +++ show a-
---
---compilePreIncDec :: Exp -> String -> State EnvC ()
---compilePreIncDec e operation = do
---    compileExp  e
---    emit "bipush 1"
---    emit operation
---    emit $ "dup" --we need a dup here since we want the expression to have a return value . in the case of SExp, SExp will pop -one extra time to take care of it. 
---    let (ETyped t (EId x)) = e
---    a <- lookupVarC x 
---    emit $ "istore" +++ show a
 
 --the jvm Operator is passed as the  string argument
 --book page 104 on how to compile ELt . Same pattern for all 6 which have their own JVM operator.
@@ -379,9 +345,6 @@ compileExpCompare jvmOp e1 e2 = do
     emit "bipush 0"
     emit $ true ++ ":"
 
-    
-
-
 emitTyped :: Type -> Instruction -> State EnvC ()
 emitTyped t i = emit (c ++ i) where
     c = case t of
@@ -394,15 +357,3 @@ emitTyped t i = emit (c ++ i) where
 --any of these types leaves the value of the expression on the stack,
 --so that the outer expr can use it to evaluate something. 
 -- page 102 gives some instructions on this matter.
-  
-  
-  
--- original EPlus below from given code
--- EPlus e1 e2 -> do --need to extend to handle the different combinations of int and double. the original given example only handles ints. 
---    compileExp e1
---    compileExp e2
---    emit "iadd"
---  ETyped _ e -> compileExp e
-
-
-
