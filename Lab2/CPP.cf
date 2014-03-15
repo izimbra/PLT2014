@@ -8,18 +8,19 @@ Arg.       Arg     ::= Type Id ;
 
 separator  Arg "," ;
 
-
-SAss.      Stm    ::= Id "SAss=" Exp ";" ;  --is this necessary or can it be left out and parsed as SExp where Exp has the same effect?
+-- SAss is not used anymore, but we left it here with a bogus string
+-- just in order for the type checker code to compile.
+SAss.      Stm    ::= Id "SAss=" Exp ";" ;
 
 SExp.      Stm    ::= Exp ";" ;
-SDecl.     Stm    ::= Type Id ";"  ;  --is it a bad idea to have both these? Feels like it shoudl cause R/R conflicts the way its written now 
+SDecl.     Stm    ::= Type Id ";"  ;
 SDecls.    Stm    ::= Type [Id] ";" ;
 SInit.     Stm    ::= Type Id "=" Exp ";" ;
 SReturn.   Stm    ::= "return" Exp ";" ;
 SWhile.    Stm    ::= "while" "(" Exp ")" Stm ;
 SBlock.    Stm    ::= "{" [Stm] "}" ;
 SIfElse.   Stm    ::= "if" "(" Exp ")" Stm "else" Stm ;
-SPrint.    Stm    ::= "print" Exp  ";" ;  --for built in functions? typ checker uses it
+--SPrint.    Stm    ::= "print" Exp  ";" ;  --for built in functions? typ checker uses it
 
 terminator Stm "" ;
 
