@@ -22,9 +22,9 @@ compile :: String -> Program -> String
 compile name p = unlines $ reverse $ code $ execState (compileProgram name p) emptyEnvC
 
 compileProgram :: String -> Program -> State EnvC ()
-compileProgram className (Prog defs) = do
+compileProgram className_ (Prog defs) = do
   mapM_ emit [
-    ".class public " ++ className,
+    ".class public " ++ className_,
     ".super java/lang/Object",
     "",
     ".method public <init>()V",
@@ -38,15 +38,17 @@ compileProgram className (Prog defs) = do
     ".limit stack 1000",   --- bogus limit
 
     -- calling the compiled 'main'
-    "invokestatic " ++ className ++ "/main()I",
+    "invokestatic " ++ className_ ++ "/main()I",
     "return",
     ".end method",
     ""
    ]
+  modify (\env -> env {className = className_})  --adds className to state so it can be used in compile
+  env <- get -- is this needed?
+
   mapM_ compileDef defs
 --  emit "return"
 --  emit ".end method"
-
 -- | Compiles a function definition
 compileDef :: Def -> State EnvC ()
 compileDef (Fun t (Id f) args stms) = do
@@ -100,14 +102,14 @@ compileStm s = case s of
     
   SExp (ETyped t e) -> do -- from Stm point of view, all Exp will be ETyped. This code is meant to behave as the rule on book p102
     compileExp (ETyped t e)
-    case e of
-        EAss _ _ -> return ()
-        _ -> case t of
---      case t of
-          TInt    -> emit "pop"
-          TBool   -> emit "pop"
-          TDouble -> emit "pop2"
-          _       -> return ()
+   -- case e of
+   --     EAss _ _ -> return ()
+   --     _ -> case t of
+    case t of
+        TInt    -> emit "pop"
+        TBool   -> emit "pop"
+        TDouble -> emit "pop2"
+        _       -> return ()
     
   
   SWhile e s -> do --book page 103
@@ -195,11 +197,54 @@ compileExpArithm e1 e2 t s = do
     compileExp e2
     emitTyped t s
 
+
+argTypeC :: Type -> Char 
+argTypeC TInt    = 'I'
+argTypeC TDouble = 'D'
+argTypeC TBool   = 'I'
+argTypeC TVoid   = 'V'
+argTypeC t       = error $ "bad type sent to argTypeC: " ++ show t
+
+funCallHelper :: Exp -> String -> State EnvC ()
+
+funCallHelper (ETyped fType (EApp (Id name) [])) s = do --base case, no more args to compile
+    --apa <- get    
+    env <- get
+    let className_ = (className env)
+    --error $ "trollolo" ++ show apa
+    --E { a, b, c, d, e, f, g, h, className_ }  <- get
+    emit $ "invokestatic " ++ className_ ++ "/" ++ name ++ "(" ++ s ++ ")" ++ [argTypeC fType]
+
+funCallHelper (ETyped fType (EApp (Id name) ( (ETyped aType arg):args))) s = do --self recursive
+    compileExp (ETyped aType arg)
+    let s' = s ++ [argTypeC aType]
+    funCallHelper (ETyped fType (EApp (Id name) ( args))) s'  --1 arg popped and 1 argTypeC added
+
+
 compileExp :: Exp -> State EnvC ()
 
 compileExp (ETyped t e) = trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"\nEnd trace\n" ) $ 
  case e of
-    
+  -- Built-in functions
+  EApp (Id "printInt") [e] -> do --function call
+--    mapM_ compileExp es
+    compileExp e
+    emit $ "invokestatic Runtime/printInt(I)V"
+  EApp (Id "printDouble") [e] -> do
+    compileExp e
+    emit $ "invokestatic Runtime/printDouble(D)V"
+  EApp (Id "readInt") _ -> do
+    --compileExp e
+    emit $ "invokestatic Runtime/readInt()I"
+  EApp (Id "readDouble") _ -> do
+    --compileExp e
+    emit $ "invokestatic Runtime/readDouble()D"
+  --EApp (Id name ) [] -> do
+  --  emit $ "invokestatic " ++ show name ++ "()" -- argument TYPES ! ! ! AND FUNCTION TYPE
+  EApp (Id name ) args -> do
+    funCallHelper (ETyped t (EApp (Id name) args)) "" 
+    --compileExp arg
+    --compileExp (ETyped t (EApp (Id name) (args))) --self-recursive one arg at a time  
   EInt i    -> emit ("bipush " ++ show i)
   EDouble d -> emit ("ldc2_w " ++ show d)
   ETrue     -> emit "bipush 1"
@@ -235,20 +280,6 @@ compileExp (ETyped t e) = trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"\n
                          "Assigment of type not in [bool, int, double]" -- should be caught in type checker?
 
 
--- Built-in functions
-  EApp (Id "printInt") [e] -> do --function call
---    mapM_ compileExp es
-    compileExp e
-    emit $ "invokestatic Runtime/printInt(I)V"
-  EApp (Id "printDouble") [e] -> do
-    compileExp e
-    emit $ "invokestatic Runtime/printDouble(D)V"
-  EApp (Id "readInt") _ -> do
-    --compileExp e
-    emit $ "invokestatic Runtime/readInt()I"
-  EApp (Id "readDouble") _ -> do
-    --compileExp e
-    emit $ "invokestatic Runtime/readDouble()D"
 
   EIncr e -> do
     compileExp  e
@@ -275,6 +306,7 @@ compileExp (ETyped t e) = trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"\n
                "cannot compile case of \n" ++ show e)
  
 compileExp e = error $ "NON TYPED EXP IN COMPILEEXP \n" ++ (show e)
+
 
 
 emitTyped :: Type -> Instruction -> State EnvC ()

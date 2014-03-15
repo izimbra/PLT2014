@@ -92,7 +92,8 @@ data EnvC = E {  --temp commented out because it doesnt compile
  stackSize   :: Int,
  maxSize     :: Int,
  code        :: [Instruction],
- funTable    :: SigTabC
+ funTable    :: SigTabC,
+ className   :: String
 }
 
 -- | Jasmin assembly instruction 
@@ -110,7 +111,8 @@ emptyEnvC = E {
   stackSize = 0,
   maxSize = 1,
   code = [],
-  funTable = M.empty       
+  funTable = M.empty,
+  className = ""       
   }
 
 -- | Emits a Jasmin assembly instruction.
