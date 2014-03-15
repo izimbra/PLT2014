@@ -320,6 +320,7 @@ compilePreIncDec e operation = do
         emit operation
         let (ETyped t (EId x)) = e
         a <- lookupVarC x 
+        emit $ "dup" --we need a dup here since we want the expression to have a return value . in the case of SExp, SExp will pop one extra time to take care of it. 
         emit $ "istore" +++ show a
 
 --the jvm Operator is passed as the  string argument
