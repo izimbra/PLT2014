@@ -265,6 +265,9 @@ compileExp (ETyped t e) = --trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"
   EEq   e1 e2 -> compileExpCompare "if_icmpeq"  e1 e2
   ENEq  e1 e2 -> compileExpCompare "if_icmpne"  e1 e2
 
+  EIncr e -> compilePreIncDec e "iadd"
+  EDecr e -> compilePreIncDec e "isub"
+
   -- variable reference loads its value on stack
   EId x  -> do --corresponds to example with EVar
     a <- lookupVarC x
@@ -288,13 +291,18 @@ compileExp (ETyped t e) = --trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"
       _       -> error $ "COMPILATION ERROR\n" ++
                          "Assigment of type not in [bool, int, double]" -- should be caught in type checker?
 
-  EIncr e -> do
-    compileExp  e
-    emit "bipush 1"
-    emit "iadd"
-    let (ETyped t (EId x)) = e
-    a <- lookupVarC x 
-    emit $ "istore" +++ show a
+--do
+--    compileExp  e
+--    emit "bipush 1"
+--    emit "iadd"
+--    let (ETyped t (EId x)) = e
+--    a <- lookupVarC x 
+--    emit $ "istore" +++ show a
+
+ -- EDecr e -> do
+ --   compileExp e
+ --   emit "bipush 1"
+ --   emit "isub"
 
     --compileExp (ETyped TInt (EPlus (ETyped TInt e)  (ETyped TInt (EInt 1))))
     
@@ -303,6 +311,16 @@ compileExp (ETyped t e) = --trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"
                "cannot compile case of \n" ++ show e)
  
 compileExp e = error $ "NON TYPED EXP IN COMPILEEXP \n" ++ (show e)
+
+
+compilePreIncDec :: Exp -> String -> State EnvC ()
+compilePreIncDec e operation = do
+        compileExp  e
+        emit "bipush 1"
+        emit operation
+        let (ETyped t (EId x)) = e
+        a <- lookupVarC x 
+        emit $ "istore" +++ show a
 
 --the jvm Operator is passed as the  string argument
 --book page 104 on how to compile ELt . Same pattern for all 6 which have their own JVM operator.
