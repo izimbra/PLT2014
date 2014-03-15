@@ -298,32 +298,13 @@ compileExp (ETyped t e) = --trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"
     emit $ "istore" +++ show a
 
     --http://cs.au.dk/~mis/dOvs/jvmspec/ref-Java.html
-  ELt   e1 e2 -> compileExpCompare "if_icmplt" "lt" e1 e2
-  EGt   e1 e2 -> compileExpCompare "if_icmpgt" "gt" e1 e2
-  ELtEq e1 e2 -> compileExpCompare "if_icmple" "le" e1 e2
-  EGtEq e1 e2 -> compileExpCompare "if_icmpge" "ge" e1 e2
-  EEq   e1 e2 -> compileExpCompare "if_icmpeq" "eq" e1 e2
-  ENEq  e1 e2 -> compileExpCompare "if_icmpne" "ne" e1 e2
---do --book page 104  
- --   true <- newLabelC "TRUEelt"
- --   emit "bipush 1"
- --   compileExp e1
- --   compileExp e2
- --   emit $ "if_icmplt " ++ true
- --   emit "pop"
- --   emit "bipush 0"
- --   emit $ true ++ ":"
---
---  EGt  e1 e2 -> do 
---    true <- newLabelC "TRUEegt"
---    emit "bipush 1"
---    compileExp e1
---    compileExp e2
---    emit $ "if_icmpgt " ++ true
---    emit "pop"
---    emit "bipush 0"
---    emit $ true ++ ":"
-    
+  ELt   e1 e2 -> compileExpCompare "if_icmplt"  e1 e2
+  EGt   e1 e2 -> compileExpCompare "if_icmpgt"  e1 e2
+  ELtEq e1 e2 -> compileExpCompare "if_icmple"  e1 e2
+  EGtEq e1 e2 -> compileExpCompare "if_icmpge"  e1 e2
+  EEq   e1 e2 -> compileExpCompare "if_icmpeq"  e1 e2
+  ENEq  e1 e2 -> compileExpCompare "if_icmpne"  e1 e2
+
 
     --compileExp (ETyped TInt (EPlus (ETyped TInt e)  (ETyped TInt (EInt 1))))
     
@@ -333,8 +314,12 @@ compileExp (ETyped t e) = --trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"
  
 compileExp e = error $ "NON TYPED EXP IN COMPILEEXP \n" ++ (show e)
 
-compileExpCompare :: String -> String -> Exp -> Exp -> State EnvC ()
-compileExpCompare jvmOp label e1 e2 = do
+--the jvm Operator is passed as the  string argument
+--book page 104 on how to compile ELt . Same pattern for all 6 which have their own JVM operator.
+compileExpCompare :: String -> Exp -> Exp -> State EnvC () 
+compileExpCompare jvmOp e1 e2 = do
+    let label = drop 7 jvmOp -- all these 6 ops have the same length 9 and we want the last 2
+
     true <- newLabelC ("TRUE"++label)
     emit "bipush 1"
     compileExp e1
