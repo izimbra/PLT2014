@@ -213,7 +213,7 @@ compileExpArithm e1 e2 t s = do
 argTypeC :: Type -> Char 
 argTypeC TInt    = 'I'
 argTypeC TDouble = 'D'
-argTypeC TBool   = 'I' --maybe should be Z. and maybe this function isn't needed because the environment.hs has something similar
+argTypeC TBool   = 'Z' --maybe should be Z. and maybe this function isn't needed because the environment.hs has something similar
 argTypeC TVoid   = 'V'
 argTypeC t       = error $ "bad type sent to argTypeC: " ++ show t
 
