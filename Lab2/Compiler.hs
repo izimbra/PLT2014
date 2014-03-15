@@ -22,6 +22,7 @@ compile name p = unlines $ reverse $ code $ execState (compileProgram name p) em
 
 compileProgram :: String -> Program -> State EnvC ()
 compileProgram className_ (Prog defs) = do
+  modify (\env -> env {className = className_})
   mapM_ emit [
     ".class public " ++ className_,
     ".super java/lang/Object",
@@ -42,12 +43,9 @@ compileProgram className_ (Prog defs) = do
     ".end method",
     ""
    ]
-  modify (\env -> env {className = className_})  --adds className to state so it can be used in compile
---  env <- get -- is this needed?
-
   mapM_ compileDef defs
---  emit "return"
---  emit ".end method"
+
+
 -- | Compiles a function definition
 compileDef :: Def -> State EnvC ()
 compileDef (Fun t (Id f) args stms) = do
@@ -58,30 +56,15 @@ compileDef (Fun t (Id f) args stms) = do
          
          --    
   -- storage limits for local variables and stack
--- <<<<<<< HEAD
   emit $ ".limit locals 100"
   emit $ ".limit stack 100"
   modify (\env -> env { addresses = [], nextAddress = 0 })
-  trace ( "\nTRACE ARGS: "
-          ++ show args ++"\nOF FUNCTION " ++ show f
-          ++ "\nEND TRACEARGS" ) $ addArgsHelper args
 
-  -- mapM_ (
-  --       map   (
-  --             addVarC . -- :: Id -> Type -> State EnvC ()
-  --             argId     -- :: Arg -> Id
-  --             ) args    -- :: [Type -> State EnvC ()] -- first map gives a list of functions
-  --       ) (map argType args)
--- =======
---  emit $ ".limit locals 102"
---  emit $ ".limit stack 102"
+  -- add arguments to enviroment
+  addArgsHelper args
 
---  addArgsHelper args
-  --trace ( "\nTRACE ARGS: " ++ show args ++"\nOF FUNCTION " ++ show f ++ "\nEND TRACEARGS" ) $ addArgsHelper args
-
--- >>>>>>> ca27c4a1b30bb28a6d9efc2d05c13401465ea1de
   mapM_ compileStm stms
- 
+  
   -- default return in case of no return statement
   case stms of
     [] -> defaultReturn t
@@ -89,62 +72,54 @@ compileDef (Fun t (Id f) args stms) = do
             (SReturn e) -> emit $ ".end method" 
             _           -> defaultReturn t
 
-argId :: Arg -> Id
-argId (Arg _ id) = id
+  emit ""
+    
+  where -- Add arguments to enviroment
+        addArgsHelper :: [Arg] -> State EnvC ()
+        addArgsHelper [] = do return ()
+        addArgsHelper ( (Arg aType id) : as) = do
+          addVarC id aType
+          addArgsHelper as
 
-addArgsHelper :: [Arg] -> State EnvC ()
--- <<<<<<< HEAD
-addArgsHelper [] = do
-    env <- get 
-    trace ("\naddArgsHelper finished, env has: \n"++  show (addresses env)) $ emit ""
-addArgsHelper ( (Arg aType id) : as) =
-  trace ("\nAddArgsHelper: "
-         ++ show (Arg aType id)
-         ++ "\n" ++ show as ++ "\n") $ do
--- =======
---addArgsHelper [] = return () --do
-   -- env <- get 
-   -- trace ("\naddArgsHelper finished, env has: \n"++  show (addresses env)) $ emit ""
--- addArgsHelper ( (Arg aType id) : as) = do --trace ("\nAddArgsHelper: " ++ show (Arg aType id) ++ "\n" ++ show as ++ "\n") $ do
--- >>>>>>> ca27c4a1b30bb28a6d9efc2d05c13401465ea1de
-    addVarC id aType
-    addArgsHelper as
-
-
--- | Generates default return code for a given function type.                             
-defaultReturn :: Type ->  State EnvC ()
-defaultReturn t =
-  let insts = case t of
-            TInt    -> ["iconst_0","ireturn"]
-            TDouble -> ["dconst_0","dreturn"]
-            TBool   -> ["iconst_0","ireturn"]
-            TVoid   -> ["return"]
-  in mapM_ emit $ insts ++ [".end method"]
+        -- Generate default return code for a given function type.                             
+        defaultReturn :: Type ->  State EnvC ()
+        defaultReturn t =
+          let insts = case t of
+                TInt    -> ["iconst_0","ireturn"]
+                TDouble -> ["dconst_0","dreturn"]
+                TBool   -> ["iconst_0","ireturn"]
+                TVoid   -> ["return"]
+          in mapM_ emit $ insts ++ [".end method"]
   
   
-
 -- | Concatenates two strings with a space between them. 
 (+++) :: String -> String -> String
 a +++ b = a ++ " " ++ b
 
 compileStm :: Stm -> State EnvC ()
 compileStm s = case s of
-  --SExp (EApp id es) -> do probably old
-  --  compileExp (EApp id es)
-    --check the expression type and send pop or pop2 depending (book p103)
-    --or if void, dont send anything at all
-    --emit "pop"
     
-  SExp (ETyped t e) -> do -- from Stm point of view, all Exp will be ETyped. This code is meant to behave as the rule on book p102
+  SExp (ETyped t e) -> do
     compileExp (ETyped t e)
-   -- case e of
-   --     EAss _ _ -> return ()
-   --     _ -> case t of
-    popTyped t
-  
-  SWhile e s -> do --book page 103
-    test <- newLabelC "TESTwhile"
-    end  <- newLabelC "ENDwhile"
+    popTyped t -- pop the previously duplicated value if it's not used 
+
+  -- variable declaration, emits no code
+  SDecl t x    -> addVarC x t
+
+  SDecls t (x:[]) -> compileStm (SDecl t x)
+  SDecls t (x:xs) -> do
+    compileStm (SDecl t x)
+    compileStm (SDecls t xs)
+
+  -- variable initialisation
+  SInit t x e     -> do
+    compileStm (SDecl t x)
+    compileStm (SExp (ETyped t (EAss (ETyped t (EId x)) e)))
+
+
+  SWhile e s -> do
+    test <- newLabelC "while_TEST"
+    end  <- newLabelC "while_END"
     emit $ test ++ ":"
     compileExp e
     emit $ "ifeq" +++ end
@@ -153,8 +128,8 @@ compileStm s = case s of
     emit $ end ++ ":"
 
   SIfElse e s1 s2 -> do
-    false <- newLabelC "FALSEif"
-    true  <- newLabelC "TRUEif"
+    false <- newLabelC "if_FALSE"
+    true  <- newLabelC "if_TRUE"
     compileExp e
     emit $ "ifeq" +++ false
     compileStm s1
@@ -162,27 +137,7 @@ compileStm s = case s of
     emit $ false ++ ":"
     compileStm s2
     emit $ true ++ ":"
-    
-  -- variable declaration, emits no code
-  SDecl t x    -> addVarC x t
-
-  SDecls t (x:[]) -> compileStm (SDecl t x)
-  SDecls t (x:xs) -> do
-    compileStm (SDecl t x)
-    compileStm (SDecls t xs)
-  -- variable initialisation
-  SInit t x e -> --trace ("\nTRACE:\n " ++ show t ++ "\n " ++ show x ++ "\n " ++ show e ++ "\nEND TRACE\n")  $ 
-   do
-    compileStm (SDecl t x)
-    --compileStm (SAss x e) --we removed this from the grammar and decided to use only SExp EAss. The call becomes ugly tho =)
-    
-    compileStm (SExp (ETyped t (EAss (ETyped t (EId x)) e)))  --perHaps you can just compileExp and skip the Stm, I wasn't sure.
-    --compileExp (ETyped t (EAss (ETyped t (EId x)) e)) --seems bad, gets wrong stack height
-    --addVarC x t
-    --compileExp e
-    --addr <- lookupVarC x
-    --emit ("istore " ++ show addr)
-  
+      
   SBlock stms  -> do
     a <- newBlockC
     mapM compileStm stms
@@ -195,15 +150,8 @@ compileStm s = case s of
             TDouble -> "dreturn"
             TBool   -> "ireturn"
             TVoid   -> "return"
-  _            -> error $ "No match in compileExp: " ++ show s
-
--- Helper function for re-using pattern for compiling
--- arithmetic expressions (add, sub, mul, div).  
-compileExpArithm :: Exp -> Exp -> Type -> String -> State EnvC ()
-compileExpArithm e1 e2 t s = do
-    compileExp e1
-    compileExp e2
-    emitTyped t s
+  _            -> error $ "COMPILATION ERROR\n"
+                          ++ "No match in compileExp: " ++ show s
 
 
 funCallHelper :: Exp -> String -> State EnvC () --The String here is the list of chars for ArgTypes used in the jvm such as (II)
@@ -218,15 +166,16 @@ funCallHelper (ETyped fType (EApp (Id name) ( (ETyped aType arg):args))) s = do 
     let s' = s ++ [typeToTypeC aType]
     funCallHelper (ETyped fType (EApp (Id name) ( args))) s'  --1 arg popped and 1 argTypeC added
 
-
+-- Invoke a function in Runtime class
 invokeRuntime :: String -> [Exp] -> State EnvC ()
 invokeRuntime s []  = emit $ "invokestatic Runtime/" ++ s
 invokeRuntime s [e] = do
     compileExp e
     invokeRuntime s []
 
-compileExp :: Exp -> State EnvC ()
 
+-- | Compile expression.
+compileExp :: Exp -> State EnvC ()
 compileExp (ETyped t e) = --trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"\nEnd trace\n" ) $ 
  case e of
   -- Built-in functions
@@ -257,7 +206,7 @@ compileExp (ETyped t e) = --trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"
   EEq   e1 e2 -> compileExpCompare "if_icmpeq"  e1 e2
   ENEq  e1 e2 -> compileExpCompare "if_icmpne"  e1 e2
 
-  EIncr  e -> compileIncr e t "add" Pre --it is unwrapped here so we send an untyped Exp and its type separately. 
+  EIncr  e -> compileIncr e t "add" Pre --it isunwrapped here so we send an untyped Exp and its type separately. 
   EDecr  e -> compileIncr e t "sub" Pre --the function accepts that and it works. it may not follow convention
   EPIncr e -> compileIncr e t "add" Post --but I think it's worth it. the alternative would be to pass the whole
   EPDecr e -> compileIncr e t "sub" Post --ETyped EPIncr again, which becomes ugly and loses the point of separation done here.
@@ -269,11 +218,10 @@ compileExp (ETyped t e) = --trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"
 
   -- variable assignment--following bok p102 for assignment statements
   EAss (ETyped t (EId x)) e -> do -- explicit match on EId because we don't want
-    addr <- lookupVarC x               -- to load 'x', just look up its address   
+    addr <- lookupVarC x          -- to load 'x', just look up its address   
     compileExp e
     dupTyped t
     emitTyped t ("store" +++ show addr)
-       --int or bool. removed the check for a bad type that was here before, but the same check is done in emitTyped, which will crash appropriately if not (double, int, bool), so it will work just as fine as before.
 
   EAnd e1 e2 -> do
     false <- newLabelC "and_FALSE"
@@ -303,10 +251,17 @@ compileExp (ETyped t e) = --trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"
     emit "iconst_1" --1 on stack. if we arrive here, either expression was true
     emit $ end ++ ":" --0 or 1 on stack
     
-
-  _ -> error ( "\n\nERROR NON EXHAUSTIVE COMPIlEEXP \n " ++
+  _ -> error ( "COMPILATION ERROR\n" ++
                show (ETyped t e) ++ 
                "\n +++ ++ ++++ cannot compile case of \n" ++ show e)
+
+ where -- Helper function for re-using pattern for compiling
+       -- arithmetic expressions (add, sub, mul, div).  
+       compileExpArithm :: Exp -> Exp -> Type -> String -> State EnvC ()
+       compileExpArithm e1 e2 t s = do
+           compileExp e1
+           compileExp e2
+           emitTyped t s
 
 compileExp e = error $ "NON TYPED EXP IN COMPILEEXP \n" ++ (show e)
 
@@ -327,7 +282,7 @@ popTyped t = case t of
 
 
 
---generalised compiler for pre- and post- increment and decrements
+-- Generalised compiler for pre- and post- increment and decrements
 compileIncr :: Exp -> Type -> Instruction -> IncrTiming -> State EnvC ()  
 compileIncr e t i timing = do
 
@@ -349,8 +304,8 @@ compileIncr e t i timing = do
     where (dup,one) = case t of TInt    -> ("dup" , "iconst_1")
                                 TDouble -> ("dup2", "dconst_1") 
 
---the jvm Operator is passed as the  string argument
---book page 104 on how to compile ELt . Same pattern for all 6 which have their own JVM operator.
+-- the JVM operator is passed as the  string argument
+-- book page 104 on how to compile ELt . Same pattern for all 6 which have their own JVM operator.
 compileExpCompare :: String -> Exp -> Exp -> State EnvC () 
 compileExpCompare jvmOp e1 e2 = do
     let label = drop 7 jvmOp -- all these 6 ops have the same length 9 and we want the last 2
