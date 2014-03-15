@@ -132,7 +132,7 @@ lookupVarC x = do
   env <- get
   return $ look (addresses env) x 
  where
-   look [] x = error $ "Unknown variable " ++ printTree x ++ "."
+   look [] x = error $ "\nCompiler Lookup: Unknown variable " ++ printTree x ++ "."
    look (scope:rest) x = case lookup x scope of
      Nothing -> look rest x
      Just a  -> a

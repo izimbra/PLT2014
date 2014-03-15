@@ -65,6 +65,8 @@ compileDef (Fun t (Id f) args stms) = do
   mapM_ compileStm stms
   -- return 0 if function has no return statement
   -- for i = 1,...,m : addVarC(xi,ti)
+  --error "trikikki"
+  trace ( "\nTRACE ARGS: " ++ show args ++"\nOF FUNCTION " ++ show f ++ "\nEND TRACEARGS" ) $ addArgsHelper args
 
   -- default return in case of no return statement
   case stms of
@@ -74,6 +76,12 @@ compileDef (Fun t (Id f) args stms) = do
             (SReturn e) -> emit $ ".end method" 
             _           -> defaultReturn t
 
+
+addArgsHelper :: [Arg] -> State EnvC ()
+addArgsHelper [] = emit ""
+addArgsHelper ( (Arg aType id) : as) = do
+    addVarC id aType
+    addArgsHelper as
 
 
 -- | Generates default return code for a given function type.                             
@@ -224,7 +232,7 @@ funCallHelper (ETyped fType (EApp (Id name) ( (ETyped aType arg):args))) s = do 
 
 compileExp :: Exp -> State EnvC ()
 
-compileExp (ETyped t e) = trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"\nEnd trace\n" ) $ 
+compileExp (ETyped t e) = --trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"\nEnd trace\n" ) $ 
  case e of
   -- Built-in functions
   EApp (Id "printInt") [e] -> do --function call
