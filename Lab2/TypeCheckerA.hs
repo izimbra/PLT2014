@@ -70,9 +70,9 @@ checkStm env s =
                                                 checkOne env' t ids
                                   checkOne env t []       = return (SDecls t [],env)
 
-      -- SAss  x e         -> do t  <- lookupVarT env x
-      --                         e' <- checkExp env e t
-      --                         return (SAss x e',env)      
+      SAss  x e         -> do t  <- lookupVarT env x
+                              e' <- checkExp env e t
+                              return (SAss x e',env)      
       SInit t id exp    -> do -- first declare
                               (_,env')     <- checkStm env (SDecl t id)
                               -- then check assignment
