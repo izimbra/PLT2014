@@ -226,7 +226,7 @@ invokeRuntime s []  = emit $ "invokestatic Runtime/" ++ s
 invokeRuntime s [e] = do
     compileExp e
     invokeRuntime s []
-
+ 
 compileExp :: Exp -> State EnvC ()
 
 compileExp (ETyped t e) = --trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"\nEnd trace\n" ) $ 
