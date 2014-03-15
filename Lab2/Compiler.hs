@@ -206,13 +206,6 @@ compileExpArithm e1 e2 t s = do
     emitTyped t s
 
 
--- argTypeC :: Type -> Char 
--- argTypeC TInt    = 'I'
--- argTypeC TDouble = 'D'
--- argTypeC TBool   = 'I' --maybe should be Z. and maybe this function isn't needed because the environment.hs has something similar
--- argTypeC TVoid   = 'V'
--- argTypeC t       = error $ "bad type sent to argTypeC: " ++ show t
-
 funCallHelper :: Exp -> String -> State EnvC () --The String here is the list of chars for ArgTypes used in the jvm such as (II)
 
 funCallHelper (ETyped fType (EApp (Id name) [])) s = do --base case, no more args to compile
