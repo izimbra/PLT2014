@@ -78,8 +78,10 @@ compileDef (Fun t (Id f) args stms) = do
 
 
 addArgsHelper :: [Arg] -> State EnvC ()
-addArgsHelper [] = emit ""
-addArgsHelper ( (Arg aType id) : as) = do
+addArgsHelper [] = do
+    env <- get 
+    trace ("\naddArgsHelper finished, env has: \n"++  show (addresses env)) $ emit ""
+addArgsHelper ( (Arg aType id) : as) = trace ("\nAddArgsHelper: " ++ show (Arg aType id) ++ "\n" ++ show as ++ "\n") $ do
     addVarC id aType
     addArgsHelper as
 

@@ -48,6 +48,7 @@ module Environment (
 
 import qualified Data.Map as M
 import Control.Monad.State
+import Debug.Trace
 
 import AbsCPP
 import PrintCPP
@@ -130,11 +131,11 @@ addVarC x t = modify (\env -> env {
 lookupVarC :: Id -> State EnvC Address
 lookupVarC x = do
   env <- get
-  return $ look (addresses env) x 
+  return $ trace ("\nlookupVarC : " ++ show (addresses env) ++"\n" ) $ look (addresses env) x 
  where
    look [] x = error $ "\nCompiler Lookup: Unknown variable " ++ printTree x ++ "."
    look (scope:rest) x = case lookup x scope of
-     Nothing -> look rest x
+     Nothing -> trace ("\nLOOKUP NOTHING SCOPE:\n" ++ show scope) $ look rest x
      Just a  -> a
 
 
