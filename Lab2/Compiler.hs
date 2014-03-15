@@ -173,7 +173,7 @@ invokeRuntime s [e] = do
     compileExp e
     invokeRuntime s []
 
-
+ 
 -- | Compile expression.
 compileExp :: Exp -> State EnvC ()
 compileExp (ETyped t e) = --trace ("\nTRACE COMPILEEXP ETYPED: \n" ++ show e ++"\nEnd trace\n" ) $ 
