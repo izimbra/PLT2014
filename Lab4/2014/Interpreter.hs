@@ -9,6 +9,15 @@ import qualified Data.Map as M
 import AbsFP
 import PrintFP
 
+-- ECls Exp Vars
+type Name = String 
+type Funs = M.Map Name Exp
+type Vars = M.Map Name Exp
+
+data Value = VInt Integer 
+           | VClos Exp Vars
+  deriving (Show)
+
 -- Sets the call mode: call-by-name fro `True`,
 -- call-by-value fro `False`
 setCallMode :: Bool -> Def
@@ -29,7 +38,7 @@ interpret (Prog defs) callMode = let funs   = funTable $ defs ++ [setCallMode ca
                                      main   = lookup "main" (funs,vars)
                                      result = eval main (funs,vars)
                         in do case result of
-                                EInt i -> putStrLn $ show i
+                                VInt i -> putStrLn $ show i
                                 _      -> error $ "RUNTIME ERROR\n"
                                                   ++ "Bad result type:\n" ++ show result
                                                            
@@ -51,33 +60,38 @@ update :: Vars -> Name -> Exp -> Vars
 update env id v = M.insert id v env
 -- M.union v1 v2 - v1 has priority
 
-evalOperands :: Exp -> Exp -> (Funs,Vars) -> (Integer,Integer)
+evalOperands :: Exp -> Exp -> (Funs,Vars) -> (Value,Value)
 evalOperands e1 e2 (funs,vars) =
    let v1 = eval e1 (funs, vars)
        v2 = eval e2 (funs, vars)
-   in case (v1,v2) of
-         (EInt i1,EInt i2) -> (i1,i2)
-         _                 -> error $ "RUNTIME ERROR\n"
-                                      ++ "binary operation on non-integer expressions"
-                  
+   in (v1, v2)
+--   in case (v1,v2) of
+--        (EInt i1,EInt i2) -> (i1,i2)
+--        _                 -> error $ "RUNTIME ERROR\n"
+--                                      ++ "binary operation on non-integer expressions"
+               
+plus :: Value -> Value -> Value
+plus (VInt n) (VInt m) = VInt $ n + m
+plus _        _        = error "plus: type error"
+   
 -- Evaluate an expression
-eval :: Exp -> (Funs,Vars) -> Exp
+eval :: Exp -> (Funs,Vars) -> Value
 eval exp (funs,vars) =
   case exp of
     -- integer literals
-    EInt i -> exp -- base case -- optional empty env.
+    EInt i -> VInt i -- base case -- optional empty env.
     -- binary operations
-    EAdd e1 e2 -> let (i1,i2) = evalOperands e1 e2 (funs, vars)
-                  in  EInt (i1+i2)
-    ESub e1 e2 -> let (i1,i2) = evalOperands e1 e2 (funs, vars)
-                  in  EInt (i1-i2)
-    ELt  e1 e2 -> let (i1,i2) = evalOperands e1 e2 (funs, vars)
-                  in  EInt $ fromBool (i1<i2)
+    EAdd e1 e2 -> plus (eval e1 (funs,vars)) (eval e2 (funs,vars)) -- = evalOperands e1 e2 (funs, vars)
+     
+    ESub e1 e2 -> let (VInt i1, VInt i2) = evalOperands e1 e2 (funs, vars)
+                  in  VInt (i1-i2)
+    ELt  e1 e2 -> let (VInt i1, VInt i2) = evalOperands e1 e2 (funs, vars)
+                  in  VInt $ fromBool (i1<i2)
     -- function and argument look up, 
     EId (Ident id) -> eval (lookup id (funs,vars)) (funs, vars) -- EInt or ECls
 
-    EApp e1 e2 -> let f = eval e1 (funs, vars) -- ECls
-                      a = eval e2 (funs, vars) -- EInt
+--    EApp e1 e2 -> let f = eval e1 (funs, vars) -- ECls
+--g                      a = eval e2 (funs, vars) -- EInt
                       --This is where we need to force evaluation 
                       --to use call by value. We tried the pragma Bang 
                       --suggested in the google group, we also tried the
@@ -91,21 +105,21 @@ eval exp (funs,vars) =
                       --if (callByName funs)
                       --then eval e2 (funs, vars) -- EInt 
                       --else (eval e2 (funs, vars)) -- EInt 
-                  in  case f of
+--                  in  case f of
                         -- match on closure or ident
-                        ECls (EAbs (Ident id) e) env ->
-                             let env' = env -- M.union env vars
-                             in  eval e (funs,(update env' id a))
+--                        ECls (EAbs (Ident id) e) env ->
+--                             let env' = env -- M.union env vars
+--                             in  eval e (funs,(update env' id a))
                                                             -- update overshadows global ids 
 
 --                        _       -> eval (EApp f a) (funs,vars)
-                        _  -> error $ "Bad app: \n" ++ show f ++ "\n" ++ show a 
+--                        _  -> error $ "Bad app: \n" ++ show f ++ "\n" ++ show a 
 
-    EAbs _ _       -> ECls exp vars
-    ECls e env     -> eval e (funs, env)
+--    EAbs _ _       -> ECls exp vars
+--    ECls e env     -> eval e (funs, env)
     EIf cond e1 e2   -> case eval cond (funs, vars) of
-                          EInt 1 -> eval e1 (funs,vars)
-                          EInt 0 -> eval e2 (funs,vars)
+                          VInt 1 -> eval e1 (funs,vars)
+                          VInt 0 -> eval e2 (funs,vars)
 --    _                -> error $ "Non-exhaustive case in eval: \n" ++ show exp
     -- call-by-name
     -- call-by-value
