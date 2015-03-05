@@ -16,7 +16,8 @@ check callMode s = case pProgram (myLexer s) of
                            putStrLn err
                            exitFailure 
                            
-            Ok  tree -> do interpret tree callMode
+            Ok  tree -> do putStrLn $ printTree tree
+                           interpret tree callMode
 
 main :: IO ()
 main = do args <- getArgs

@@ -6,13 +6,15 @@ import Prelude hiding (lookup)
 import Foreign.Marshal.Utils (fromBool)
 import qualified Data.Map as M
 
+import Debug.Trace
 import AbsFP
 import PrintFP
 
 -- ECls Exp Vars
 type Name = String 
 type Funs = M.Map Name Exp
-type Vars = M.Map Name Exp
+--type Vars = M.Map Name Exp
+type Vars = M.Map Name Value
 
 data Value = VInt Integer 
            | VClos Exp Vars
@@ -46,7 +48,10 @@ interpret (Prog defs) callMode = let funs   = funTable $ defs ++ [setCallMode ca
 lookup :: Name -> (Funs,Vars) -> Exp
 lookup id (funs,vars) =
   case M.lookup id vars of
-    Just e  -> e
+    Just v  -> case v of 
+    			VInt i       -> EInt i
+    			VClos e env  -> e
+
     Nothing -> case M.lookup id funs of
                  Just e  -> e
                  Nothing -> error $ "RUNTIME ERROR\n"
@@ -56,7 +61,7 @@ lookup id (funs,vars) =
    -- error: not found                              
                         
 -- update :: Env -> Ident -> Value
-update :: Vars -> Name -> Exp -> Vars
+update :: Vars -> Name -> Value -> Vars
 update env id v = M.insert id v env
 -- M.union v1 v2 - v1 has priority
 
@@ -76,13 +81,14 @@ plus _        _        = error "plus: type error"
    
 -- Evaluate an expression
 eval :: Exp -> (Funs,Vars) -> Value
-eval exp (funs,vars) =
+eval exp (funs,vars) = --trace exp $
   case exp of
     -- integer literals
     EInt i -> VInt i -- base case -- optional empty env.
     -- binary operations
     EAdd e1 e2 -> plus (eval e1 (funs,vars)) (eval e2 (funs,vars)) -- = evalOperands e1 e2 (funs, vars)
-     
+      
+    
     ESub e1 e2 -> let (VInt i1, VInt i2) = evalOperands e1 e2 (funs, vars)
                   in  VInt (i1-i2)
     ELt  e1 e2 -> let (VInt i1, VInt i2) = evalOperands e1 e2 (funs, vars)
@@ -90,45 +96,18 @@ eval exp (funs,vars) =
     -- function and argument look up, 
     EId (Ident id) -> eval (lookup id (funs,vars)) (funs, vars) -- EInt or ECls
 
---    EApp e1 e2 -> let f = eval e1 (funs, vars) -- ECls
---g                      a = eval e2 (funs, vars) -- EInt
-                      --This is where we need to force evaluation 
-                      --to use call by value. We tried the pragma Bang 
-                      --suggested in the google group, we also tried the
-                      --seq, the ErrM, and some cases, but all of them 
-                      --still didn't force evaluation so as to make 
-                      --good2.fun loop endlessly. 
-                      --Only with trace (show vars) does it loop
-                      --as expected, so that apparently forces evaluation
-                      --of Grow in good2. But that is not a useful final
-                      --solution.
-                      --if (callByName funs)
-                      --then eval e2 (funs, vars) -- EInt 
-                      --else (eval e2 (funs, vars)) -- EInt 
---                  in  case f of
-                        -- match on closure or ident
---                        ECls (EAbs (Ident id) e) env ->
---                             let env' = env -- M.union env vars
---                             in  eval e (funs,(update env' id a))
-                                                            -- update overshadows global ids 
-
---                        _       -> eval (EApp f a) (funs,vars)
---                        _  -> error $ "Bad app: \n" ++ show f ++ "\n" ++ show a 
-
---    EAbs _ _       -> ECls exp vars
---    ECls e env     -> eval e (funs, env)
     EIf cond e1 e2   -> case eval cond (funs, vars) of
                           VInt 1 -> eval e1 (funs,vars)
                           VInt 0 -> eval e2 (funs,vars)
---    _                -> error $ "Non-exhaustive case in eval: \n" ++ show exp
-    -- call-by-name
-    -- call-by-value
 
-    -- ECls exp env -> case exp of
-    --                   EAbs -> undefined -- update env, shrink lambda
-    --                   _    -> eval exp
+    EAbs i e1       -> VClos (EAbs i e1) M.empty
 
-
+    EApp e1 e2      -> case eval e1 (funs, vars) of
+    					VClos (EAbs (Ident i) e') env -> 
+    						let env' = update env i (eval e2 (funs,vars))
+    						in eval e' (funs,env') --add the "eval e2" to the closure environment, given the name of i
+    					_ -> error $ "EApp first argument not closure: \n" ++ show e1
+    _                -> error $ "Non-exhaustive case in eval: \n" ++ show exp
 
 -- | Constructs function symbol table             
 funTable :: [Def] -> Funs
@@ -139,7 +118,7 @@ funTable defs = let kas = map f2abs defs
     f2abs :: Def -> (Name,Exp)
     f2abs (Fun (Ident f) args exp) = 
       let lambda = funhelper (reverse args) exp
-      in (f,lambda)
+      in  trace (show (f,lambda) )$ (f,lambda)
  
     funhelper :: [Ident] -> Exp -> Exp
     funhelper [] exp = exp
