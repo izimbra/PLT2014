@@ -1,0 +1,24 @@
+echo "---  PARSING  good1   ---"
+./lab4 testsuite/good1.fun
+echo "---  PARSING  good2"
+./lab4 testsuite/good2.fun
+echo "---  PARSING  good3"
+./lab4 testsuite/good3.fun
+echo "---  PARSING  good4"
+./lab4 testsuite/good4.fun
+echo "---  PARSING  good5"
+./lab4 testsuite/good5.fun
+echo "---  PARSING  good6"
+./lab4 testsuite/good6.fun
+echo "---  PARSING  good7"
+./lab4 testsuite/good7.fun
+echo "---  PARSING  good8"
+./lab4 testsuite/good8.fun
+echo "---  PARSING  bad1"
+./lab4 testsuite/bad1.fun
+echo "---  PARSING  bad2"
+./lab4 testsuite/bad2.fun
+echo "---  PARSING  bad3"
+./lab4 testsuite/bad3.fun
+echo "---  PARSING  bad4"
+./lab4 testsuite/bad4.fun
