@@ -35,7 +35,8 @@ callByName funs = case lookup "callByName" (funs,M.empty) of
   
 -- Second parameter is call-by-name flag
 interpret :: Program -> Bool -> IO ()
-interpret (Prog defs) callMode = let funs   = funTable $ defs ++ [setCallMode callMode]
+interpret (Prog defs) callMode = let funs   = funTable $ defs 
+                                                         ++ [setCallMode callMode]
                                      vars   = M.empty
                                      main   = lookup "main" (funs,vars)
                                      result = eval main (funs,vars)
@@ -47,10 +48,11 @@ interpret (Prog defs) callMode = let funs   = funTable $ defs ++ [setCallMode ca
 
 lookup :: Name -> (Funs,Vars) -> Exp
 lookup id (funs,vars) =
-  case M.lookup id vars of
+  trace (show funs ++ "\n" ++show vars) $ case M.lookup id vars of
     Just v  -> case v of 
     			VInt i       -> EInt i
-    			VClos e env  -> e
+    			VClos e env  -> trace ("Closure:\n" ++ show env ++ show e) $ 
+                                        lookup id (funs,env)
 
     Nothing -> case M.lookup id funs of
                  Just e  -> e
@@ -100,12 +102,14 @@ eval exp (funs,vars) = --trace exp $
                           VInt 1 -> eval e1 (funs,vars)
                           VInt 0 -> eval e2 (funs,vars)
 
-    EAbs i e1       -> VClos (EAbs i e1) M.empty
+    EAbs i e1       -> let cl = VClos (EAbs i e1) M.empty
+                       in trace ("Closure: " ++ show cl) $ cl
 
     EApp e1 e2      -> case eval e1 (funs, vars) of
     					VClos (EAbs (Ident i) e') env -> 
     						let env' = update env i (eval e2 (funs,vars))
-    						in eval e' (funs,env') --add the "eval e2" to the closure environment, given the name of i
+    						in trace ("Evaluating closure with " ++ show env) 
+                                                       $ eval e' (funs,env') --add the "eval e2" to the closure environment, given the name of i
     					_ -> error $ "EApp first argument not closure: \n" ++ show e1
     _                -> error $ "Non-exhaustive case in eval: \n" ++ show exp
 
@@ -118,7 +122,7 @@ funTable defs = let kas = map f2abs defs
     f2abs :: Def -> (Name,Exp)
     f2abs (Fun (Ident f) args exp) = 
       let lambda = funhelper (reverse args) exp
-      in  trace (show (f,lambda) )$ (f,lambda)
+      in  (f,lambda)
  
     funhelper :: [Ident] -> Exp -> Exp
     funhelper [] exp = exp
