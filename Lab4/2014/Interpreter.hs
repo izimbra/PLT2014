@@ -100,12 +100,13 @@ eval exp (funs,vars) = --trace exp $
                           VInt 1 -> eval e1 (funs,vars)
                           VInt 0 -> eval e2 (funs,vars)
 
-    EAbs i e1       -> VClos (EAbs i e1) M.empty
+    EAbs i e1       -> VClos (EAbs i e1) vars--M.empty
 
     EApp e1 e2      -> case eval e1 (funs, vars) of
     					VClos (EAbs (Ident i) e') env -> 
     						let env' = update env i (eval e2 (funs,vars))
-    						in eval e' (funs,env') --add the "eval e2" to the closure environment, given the name of i
+    						in trace ("\n vars: "++ show vars ++ "\n old env: " ++ show env ++ 
+    						  "\n new env: " ++ show env') $ eval e' (funs,env') --add the "eval e2" to the closure environment, given the name of i
     					_ -> error $ "EApp first argument not closure: \n" ++ show e1
     _                -> error $ "Non-exhaustive case in eval: \n" ++ show exp
 
