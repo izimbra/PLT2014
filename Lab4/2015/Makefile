@@ -2,8 +2,8 @@ all: comp
 
 bnfc:
 	bnfc Fun.cf
-	happy -gca ParFP.y
-	alex -gi LexFP.x
+	happy -gca ParFun.y
+	alex -gi LexFun.x
 
 comp:
 	ghc --make lab4.hs -o lab4

@@ -18,9 +18,14 @@ type Eval = ReaderT Env Err  -- evaluation monad: passes around state (Env)
                              -- and returns `Err a` (either result `a` or error)
 
 interpret :: Strategy -> Program -> Eval Int
-intepret _ (Prog defs) = udnefined 
+interpret _ (Prog defs) = undefined 
+-- Add global function defs to env
 
--- 
+-- Evaluate 'main'
+
+
+eval :: Exp -> Eval Value
+eval = undefined
 
 
 

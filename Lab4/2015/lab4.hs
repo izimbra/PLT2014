@@ -1,22 +1,22 @@
 import System.Environment (getArgs)
 import System.Exit (exitFailure)
 
-import AbsFP
-import LexFP
-import ParFP
+import AbsFun
+import LexFun
+import ParFun(myLexer, pProgram)
 import ErrM
-import PrintFP
+import PrintFun
 --import TypeChecker
-import Interpreter
+--import Interpreter
 
 -- driver
-check :: Bool -> String -> IO () 
+check :: Bool -> FilePath -> IO () 
 check callMode s = case pProgram (myLexer s) of
             Bad err  -> do putStrLn "SYNTAX ERROR"
                            putStrLn err
                            exitFailure 
                            
-            Ok  tree -> do interpret tree callMode
+            Ok  tree -> do putStrLn $ printTree tree -- interpret tree callMode
 
 main :: IO ()
 main = do args <- getArgs
