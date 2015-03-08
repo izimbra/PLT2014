@@ -1,134 +1,141 @@
-{-# LANGUAGE BangPatterns #-}
-
 module Interpreter where
 
-import Prelude hiding (lookup)
-import Foreign.Marshal.Utils (fromBool)
-import qualified Data.Map as M
+import Control.Applicative
+import Control.Monad.Reader
+import Control.Monad.State
 
-import AbsFP
-import PrintFP
+import Data.Functor
+import Data.Map (Map)
+import qualified Data.Map as Map
 
--- Sets the call mode: call-by-name fro `True`,
--- call-by-value fro `False`
-setCallMode :: Bool -> Def
-setCallMode True  = Fun (Ident "callByName") [] (EInt 1) -- call-by-name
-setCallMode False = Fun (Ident "callByName") [] (EInt 0) -- call-by-value
+import AbsFun
+import ErrM
+import PrintFun
 
--- Looks up the special `callByName` in the argument function table
--- and returns call-by-name flag based on its value
-callByName :: Funs -> Bool
-callByName funs = case lookup "callByName" (funs,M.empty) of
-  EInt 1 -> True
-  _      -> False
-  
--- Second parameter is call-by-name flag
-interpret :: Program -> Bool -> IO ()
-interpret (Prog defs) callMode = let funs   = funTable $ defs ++ [setCallMode callMode]
-                                     vars   = M.empty
-                                     main   = lookup "main" (funs,vars)
-                                     result = eval main (funs,vars)
-                        in do case result of
-                                EInt i -> putStrLn $ show i
-                                _      -> error $ "RUNTIME ERROR\n"
-                                                  ++ "Bad result type:\n" ++ show result
-                                                           
+-- | Entry point of interpreter.
+--
+--   A program computes a number.
 
-lookup :: Name -> (Funs,Vars) -> Exp
-lookup id (funs,vars) =
-  case M.lookup id vars of
-    Just e  -> e
-    Nothing -> case M.lookup id funs of
-                 Just e  -> e
-                 Nothing -> error $ "RUNTIME ERROR\n"
-                                    ++ "unknown identifier " ++ id
-            
-   -- overshadowing: function < variable < inner variable
-   -- error: not found                              
-                        
--- update :: Env -> Ident -> Value
-update :: Vars -> Name -> Exp -> Vars
-update env id v = M.insert id v env
--- M.union v1 v2 - v1 has priority
+interpret :: Strategy -> Program -> Err Integer
+interpret strategy (Prog defs) = do
+  let s'  = case strategy of
+              CallByValue -> (VInt 0)
+              CallByName  -> (VInt 1)
+      env' = Map.insert (Ident "callbyname") s' emptyEnv
+      cxt = Cxt (makeGlobal defs) env'
+  v <- eval (EVar $ Ident "main") `runReaderT` cxt
+  case v of
+    VInt i -> return i
+    VClos (EInt i) _ -> return i   
+    _      -> fail $ "main returned a function, but should return an integer\n"-- ++ show v
 
-evalOperands :: Exp -> Exp -> (Funs,Vars) -> (Integer,Integer)
-evalOperands e1 e2 (funs,vars) =
-   let v1 = eval e1 (funs, vars)
-       v2 = eval e2 (funs, vars)
-   in case (v1,v2) of
-         (EInt i1,EInt i2) -> (i1,i2)
-         _                 -> error $ "RUNTIME ERROR\n"
-                                      ++ "binary operation on non-integer expressions"
-                  
--- Evaluate an expression
-eval :: Exp -> (Funs,Vars) -> Exp
-eval exp (funs,vars) =
-  case exp of
-    -- integer literals
-    EInt i -> exp -- base case -- optional empty env.
-    -- binary operations
-    EAdd e1 e2 -> let (i1,i2) = evalOperands e1 e2 (funs, vars)
-                  in  EInt (i1+i2)
-    ESub e1 e2 -> let (i1,i2) = evalOperands e1 e2 (funs, vars)
-                  in  EInt (i1-i2)
-    ELt  e1 e2 -> let (i1,i2) = evalOperands e1 e2 (funs, vars)
-                  in  EInt $ fromBool (i1<i2)
-    -- function and argument look up, 
-    EId (Ident id) -> eval (lookup id (funs,vars)) (funs, vars) -- EInt or ECls
+-- | Evaluation strategy.
 
-    EApp e1 e2 -> let f = eval e1 (funs, vars) -- ECls
-                      a = eval e2 (funs, vars) -- EInt
-                      --This is where we need to force evaluation 
-                      --to use call by value. We tried the pragma Bang 
-                      --suggested in the google group, we also tried the
-                      --seq, the ErrM, and some cases, but all of them 
-                      --still didn't force evaluation so as to make 
-                      --good2.fun loop endlessly. 
-                      --Only with trace (show vars) does it loop
-                      --as expected, so that apparently forces evaluation
-                      --of Grow in good2. But that is not a useful final
-                      --solution.
-                      --if (callByName funs)
-                      --then eval e2 (funs, vars) -- EInt 
-                      --else (eval e2 (funs, vars)) -- EInt 
-                  in  case f of
-                        -- match on closure or ident
-                        ECls (EAbs (Ident id) e) env ->
-                             let env' = env -- M.union env vars
-                             in  eval e (funs,(update env' id a))
-                                                            -- update overshadows global ids 
+data Strategy
+  = CallByName
+  | CallByValue
 
---                        _       -> eval (EApp f a) (funs,vars)
-                        _  -> error $ "Bad app: \n" ++ show f ++ "\n" ++ show a 
+-- | Context for evaluation.
 
-    EAbs _ _       -> ECls exp vars
-    ECls e env     -> eval e (funs, env)
-    EIf cond e1 e2   -> case eval cond (funs, vars) of
-                          EInt 1 -> eval e1 (funs,vars)
-                          EInt 0 -> eval e2 (funs,vars)
---    _                -> error $ "Non-exhaustive case in eval: \n" ++ show exp
-    -- call-by-name
-    -- call-by-value
+data Cxt = Cxt
+  { cxtGlobal :: Sig
+  , cxtLocal  :: Env
+  }
 
-    -- ECls exp env -> case exp of
-    --                   EAbs -> undefined -- update env, shrink lambda
-    --                   _    -> eval exp
+data Value
+  = VInt  Integer  -- ^ Numeric value.
+  | VClos Exp Env  -- ^ Function closure.
+  deriving Show
 
+type Sig = Map Ident Exp    -- ^ Signature: definitions of global functions.
+type Env = Map Ident Value  -- ^ Environment: values of local identifiers.
 
+emptyEnv :: Env
+emptyEnv = Map.empty
 
--- | Constructs function symbol table             
-funTable :: [Def] -> Funs
-funTable defs = let kas = map f2abs defs
-                in M.fromList kas  
-  where
-    -- | Converts function definition to a lambda absraction
-    f2abs :: Def -> (Name,Exp)
-    f2abs (Fun (Ident f) args exp) = 
-      let lambda = funhelper (reverse args) exp
-      in (f,lambda)
- 
-    funhelper :: [Ident] -> Exp -> Exp
-    funhelper [] exp = exp
-    funhelper (id:ids) exp = 
-      let einner = EAbs id exp
-      in funhelper ids einner
+-- | Evaluation monad.
+
+type Eval = ReaderT Cxt Err
+
+-- | Evaluation function.  TODO: missing expressions, call-by-name.
+
+eval :: Exp -> Eval Value
+eval e = case e of
+  EInt i   -> return $ VInt i
+  EVar x   -> lookupCxt x
+  EAbs x b -> do
+    cxt <- ask
+    return $ VClos e $ cxtLocal cxt
+    -- OR:
+    -- loc <- asks cxtLocal
+    -- return $ VClos e loc
+    -- OR:
+    -- VClos e <$> asks cxtLocal
+  EApp f e -> do
+    g <- eval f
+    (VInt strat) <- lookupCxt (Ident "callbyname")
+    v <- case strat of
+      0 -> eval e
+      1 -> return $ VClos e  emptyEnv --cxtLocal cxt
+    apply g v
+  EAdd e1 e2 -> do
+    v1 <- eval e1
+    v2 <- eval e2
+    add v1 v2
+  ESub e1 e2 -> do
+    v1 <- eval e1
+    v2 <- eval e2
+    sub v1 v2
+    
+  EIf cond e1 e2 -> do 
+    (VInt c) <- eval cond
+    if c == 1 then eval e1 else eval e2
+  ELt e1 e2 -> do
+    (VInt i1) <- eval e1
+    (VInt i2) <- eval e2
+    return $ if i1 < i2 then (VInt 1) else (VInt 0)
+  _ -> error ("non-exhaustive pattern in eval : " ++ show e  )
+    
+
+-- | Applying a function value to an argument value (can fail).
+
+apply :: Value -> Value -> Eval Value
+apply f v = case f of
+  VInt{} -> fail $ "attempt to apply an integer to an argument"
+  VClos (EAbs x b) env -> do
+    let env' = Map.insert x v env
+    local (\ cxt -> cxt { cxtLocal = env' }) $ eval b
+
+ -- _ -> error ("non-exhaustive pattern in apply : \n"++show f ++ "\n" ++ show v  )
+-- | Looking up a local or global identifier (can fail).
+
+lookupCxt :: Ident -> Eval Value
+lookupCxt x = do
+  cxt@(Cxt glob loc) <- ask
+  case Map.lookup x loc of
+    Just v -> return v
+    Nothing -> case Map.lookup x glob of
+      Just e  -> eval e
+      Nothing -> fail $ "unbound identifier " ++ printTree x
+
+-- | Numeric addition of two values (can fail).
+
+add :: Value -> Value -> Eval Value
+add (VInt i) (VInt j) = return $ VInt $ i + j
+add _        _        = fail $ "attempt to add non-integers"
+
+sub :: Value -> Value -> Eval Value
+sub (VInt i) (VInt j) = return $ VInt $ i - j
+sub _        _        = fail $ "attempt to sub non-integers"
+
+-- | Building the global environment.
+
+makeGlobal :: [Def] -> Sig
+makeGlobal = foldr addToSig emptySig
+
+emptySig :: Sig
+emptySig = Map.empty
+
+addToSig :: Def -> Sig -> Sig
+addToSig (DDef f xs e) env = Map.insert f b env
+  where b = foldr EAbs e xs

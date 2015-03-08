@@ -7,23 +7,25 @@ import ParFun(myLexer, pProgram)
 import ErrM
 import PrintFun
 --import TypeChecker
---import Interpreter
+import Interpreter
 
 -- driver
-check :: Bool -> FilePath -> IO () 
+check :: Strategy -> FilePath -> IO () 
 check callMode s = case pProgram (myLexer s) of
             Bad err  -> do putStrLn "SYNTAX ERROR"
-                           putStrLn err
                            exitFailure 
                            
-            Ok  tree -> do putStrLn $ printTree tree -- interpret tree callMode
+            Ok  tree -> case (interpret callMode tree) of
+                          Bad err   -> do putStrLn $ "RUNTIME ERROR: " ++ err
+                                          exitFailure 
+                          Ok result -> putStrLn $ show result
 
 main :: IO ()
 main = do args <- getArgs
           case args of
-            [file]      -> readFile file >>= check False 
-            ["-n",file] -> readFile file >>= check True
-            ["-v",file] -> readFile file >>= check False 
+--            [file]      -> readFile file >>= check 
+            ["-n",file] -> readFile file >>= check CallByName
+            ["-v",file] -> readFile file >>= check CallByValue
             _           -> do putStrLn "Usage: lab4 [-n|-v] <SourceFile>"
                               exitFailure
 
