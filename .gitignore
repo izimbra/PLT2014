@@ -25,6 +25,7 @@ Lab1/lab1-testsuite-larger/runtests
 lab2
 lab3
 #lab4
+.sh~
 
 # temporarily disable Haskell source files
 Lab1/*.hs

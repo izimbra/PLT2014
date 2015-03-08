@@ -48,10 +48,11 @@ interpret (Prog defs) callMode = let funs   = funTable $ defs
 
 lookup :: Name -> (Funs,Vars) -> Exp
 lookup id (funs,vars) =
-  trace (show funs ++ "\n" ++show vars) $ case M.lookup id vars of
+  --trace (show funs ++ "\n" ++show vars) $ 
+   case M.lookup id vars of
     Just v  -> case v of 
     			VInt i       -> EInt i
-    			VClos e env  -> trace ("Closure:\n" ++ show env ++ show e) $ 
+    			VClos e env  -> --trace ("Closure:\n" ++ show env ++ show e) $ 
                                         lookup id (funs,env)
 
     Nothing -> case M.lookup id funs of
@@ -103,7 +104,8 @@ eval exp (funs,vars) = --trace exp $
                           VInt 0 -> eval e2 (funs,vars)
 
     EAbs i e1       -> let cl = VClos (EAbs i e1) vars -- M.empty
-                       in trace ("Closure: " ++ show cl) $ cl
+                       in --trace ("Closure: " ++ show cl) $ 
+                          cl
 
     EApp e1 e2      -> case eval e1 (funs, vars) of
     					VClos (EAbs (Ident i) e') env -> 
@@ -112,7 +114,7 @@ eval exp (funs,vars) = --trace exp $
                                                           "\n vars: "++ show vars ++ 
                                                           "\n old env: " ++ show env ++ 
     						          "\n new env: " ++ show env') 
-                                                    $ eval e' (funs,env') --add the "eval e2" to the closure environment, given the name of i
+$ eval e' (funs,env') --add the "eval e2" to the closure environment, given the name of i
 
     					_ -> error $ "EApp first argument not closure: \n" ++ show e1
     _                -> error $ "Non-exhaustive case in eval: \n" ++ show exp
