@@ -13,14 +13,21 @@ cd $codedir
 make
 
 # Good tests
+# the good programs 1, 3-4, 6-8 should pass with both versions
 arr[0]="good1.fun -v 7"
-arr[1]="good2.fun -n 5"
-arr[2]="good3.fun -v 5050"
-arr[3]="good4.fun -v 720"
-arr[4]="good5.fun -n 0"
-arr[5]="good6.fun -v 1073741824"
-arr[6]="good7.fun -v 1"
-arr[7]="good8.fun -v 8"
+arr[1]="good1.fun -n 7"
+arr[2]="good2.fun -n 5" # loop
+arr[3]="good3.fun -v 5050"
+arr[4]="good3.fun -n 5050"
+arr[5]="good4.fun -v 720"
+arr[6]="good4.fun -n 720"
+arr[7]="good5.fun -n 0" # loop
+arr[8]="good6.fun -v 1073741824"
+arr[9]="good6.fun -n 1073741824"
+arr[10]="good7.fun -v 1"
+arr[11]="good7.fun -n 1"
+arr[12]="good8.fun -v 8"
+arr[13]="good8.fun -n 8"
 
 for index in "${!arr[@]}"
 do
