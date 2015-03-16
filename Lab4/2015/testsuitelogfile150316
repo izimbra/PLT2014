@@ -1,0 +1,88 @@
+/PLT2014/Lab4/2015/testsuite $ ./progs-test-lab4.sh ..
+ghc --make lab4.hs -o lab4
+line-map.c: file "<command-line>" left but not entered
+line-map.c: file "<command-line>" left but not entered
+--- good1.fun ---
+     Mode: -v
+Expecting: 7
+   Output: 7
+
+--- good1.fun ---
+     Mode: -n
+Expecting: 7
+   Output: 7
+
+--- good2.fun ---
+     Mode: -n
+Expecting: 5
+   Output: 5
+
+--- good3.fun ---
+     Mode: -v
+Expecting: 5050
+   Output: 5050
+
+--- good3.fun ---
+     Mode: -n
+Expecting: 5050
+   Output: 5050
+
+--- good4.fun ---
+     Mode: -v
+Expecting: 720
+   Output: 720
+
+--- good4.fun ---
+     Mode: -n
+Expecting: 720
+   Output: 720
+
+--- good5.fun ---
+     Mode: -n
+Expecting: 0
+   Output: 0
+
+--- good6.fun ---
+     Mode: -v
+Expecting: 1073741824
+   Output: 1073741824
+
+--- good7.fun ---
+     Mode: -v
+Expecting: 1
+   Output: 1
+
+--- good7.fun ---
+     Mode: -n
+Expecting: 1
+   Output: 1
+
+--- good8.fun ---
+     Mode: -v
+Expecting: 8
+   Output: 8
+
+--- good8.fun ---
+     Mode: -n
+Expecting: 8
+   Output: 8
+
+
+$ ./lab4 -v testsuite/bad1.fun 
+RUNTIME ERROR: unbound identifier mul
+$ ./lab4 -v testsuite/bad2.fun 
+RUNTIME ERROR: unbound identifier main
+$ ./lab4 -v testsuite/bad3.fun 
+RUNTIME ERROR: attempt to add non-integers
+$ ./lab4 -v testsuite/bad4.fun 
+RUNTIME ERROR: main returned a function, but should return an integer
+$ ./lab4 -n testsuite/bad1.fun 
+RUNTIME ERROR: unbound identifier mul
+$ ./lab4 -n testsuite/bad2.fun 
+RUNTIME ERROR: unbound identifier main
+$ ./lab4 -n testsuite/bad3.fun 
+RUNTIME ERROR: attempt to add non-integers
+$ ./lab4 -n testsuite/bad4.fun 
+RUNTIME ERROR: main returned a function, but should return an intege
+
+
