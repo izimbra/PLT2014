@@ -7,7 +7,7 @@ import ParFun(myLexer, pProgram)
 import ErrM
 import PrintFun
 --import TypeChecker
-import Interpreter
+import Interpreter2
 
 -- driver
 check :: Strategy -> FilePath -> IO () 
@@ -15,7 +15,10 @@ check callMode s = case pProgram (myLexer s) of
             Bad err  -> do putStrLn "SYNTAX ERROR"
                            exitFailure 
                            
-            Ok  tree -> case (interpret callMode tree) of
+            Ok  tree -> do 
+--                         putStrLn $ printTree tree
+--                         putStrLn $ show tree ++ "\n"
+                         case (interpret callMode tree) of
                           Bad err   -> do putStrLn $ "RUNTIME ERROR: " ++ err
                                           exitFailure 
                           Ok result -> putStrLn $ show result
